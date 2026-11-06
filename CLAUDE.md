@@ -16,6 +16,7 @@ npm run build      # next build (Turbopack). Also validates Cache Components pre
 npm run lint       # plain `eslint` (next lint was removed in Next 16; flat config in eslint.config.mjs)
 npx tsc --noEmit   # typecheck
 npx next typegen   # regenerate route types (PageProps / LayoutProps / RouteContext helpers)
+npm run rls:check  # two anonymous users prove swipe isolation against the dev project (needs .env.local)
 ```
 
 Tests (Vitest is installed; there is no `test` script or `vitest.config.mts` yet, add both when `lib/voting.ts` lands):
@@ -93,7 +94,8 @@ Next.js App Router, TypeScript, Tailwind, Supabase (Postgres, anonymous auth, Re
 - Every Places request sets an explicit X-Goog-FieldMask. Never "*".
 - Places data is fetched per batch on the server and stored. Clients never call the Places API.
 - Until the batch-route phase, UI uses fake restaurants from lib/fixtures.ts.
-- Every new table enables RLS and gets its policies plus explicit grants in the same migration, matching the "Members can read / write" columns in docs/SPEC.md. Grant to `authenticated` only (anonymous sign-ins use that role); grant nothing to `anon`.
+- Every new table enables RLS and gets its policies plus explicit grants in the same migration, matching the "Members can read / write" columns in docs/SPEC.md. Grant to `authenticated` only (anonymous sign-ins use that role); grant nothing to `anon`. Also `grant all` to `service_role` explicitly: this project uses Supabase's locked-down default privileges, so new tables and functions give the API roles nothing until granted. Apply migrations with the Supabase MCP `apply_migration` tool, save the same SQL under `supabase/migrations/<version>_<name>.sql` using the version the MCP records, then regenerate `lib/database.types.ts` with `generate_typescript_types`.
+- Client writes to `members`, `swipes`, and `rankings` are column-limited by grants. Never upsert from the browser (PostgREST sets every payload column, including the key); insert, then update the allowed columns on conflict. Policy helpers go in the `private` schema (not exposed by the Data API) as security-definer functions with `set search_path = ''`.
 - Voting logic lives in lib/voting.ts as pure functions with Vitest tests.
 - Mobile first. Check layouts at 390px wide.
 - Before calling a task done, run `npm run lint`, `npm run build`, and `npx vitest run --passWithNoTests`.

@@ -6,7 +6,7 @@ Nov 4, 2026 · @Darren Ath-Ly
 
 A mobile-first web app that takes a group of 2 to 8 friends from "where should we eat?" to a decision in about five minutes. The host sets filters, friends join from a link with no account, everyone swipes yes, no, or veto on nearby restaurants dealt in batches of 20, and a voting rule picks the winner from the places people approved.
 
-Scope is Boston, Cambridge, and Somerville for now. The look borrows Too Good To Go's photo cards and bottom sheets, and the longer-term idea borrows Beli's taste memory. The stack is Next.js, Supabase, and Vercel, built with Claude Code.
+The app works anywhere Google Places has data. Testing and the first launch focus on Boston, Cambridge, and Somerville, and V2's curated menu highlights cover only that area. The look borrows Too Good To Go's photo cards and bottom sheets, and the longer-term idea borrows Beli's taste memory. The stack is Next.js, Supabase, and Vercel, built with Claude Code.
 
 ## Features
 
@@ -182,6 +182,8 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 
 Because members can only read their own swipes, tallies stay hidden by the database itself, not just the UI. The server reads all swipes with the secret key when it computes finalists.
 
+Grants follow the table above. `authenticated` (the role anonymous sign-ins use) gets select on everything a member can read, plus insert and update on `members`, `swipes`, and `rankings` limited to the columns a phone legitimately sets (`display_name`, `lat`, `lng` on members; `value` on swipes; `ordering` on rankings, plus the key columns on insert). `vetoes_left`, the done flags, and `created_at` stay server-owned. Because a PostgREST upsert sets every payload column, clients insert and then update instead of upserting. `anon` gets nothing, and `service_role` is granted everything explicitly because new Supabase projects give the API roles no table access by default. The membership check behind every "their session" policy is `private.is_session_member`, a security-definer function in a schema the Data API does not expose. Migrations live in `supabase/migrations/` and are applied to the dev project through the Supabase MCP server, `lib/database.types.ts` is regenerated after each one, and `npm run rls:check` proves the swipe isolation with two anonymous users.
+
 ### Environment variables
 
 | Variable | Exposed to browser |
@@ -262,6 +264,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 - [ ] Veto limit of 1 or 2 per person
 - [ ] Typed-neighborhood fallback for denied location (Geocoding gives 10,000 free requests a month, then $5 per 1,000)
 - [ ] Accounts in the MVP or deferred to V2
+- [ ] How a friend resolves a join code before they are a member, since `sessions` is readable only by its members and host: a security-definer `join_session(code, display_name, lat, lng)` function that inserts the member row and returns the session (keeps session rows private), or a `sessions` select policy open to any signed-in user
 
 ## Sources
 
