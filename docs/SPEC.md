@@ -28,8 +28,8 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 - **Final round.** The host picks how the group decides in the lobby, and it locks when picking starts so the rule can't be chosen after the finalists are known. One vote each (plurality): everyone picks one finalist, most votes wins. Ranked points (Borda count, default): everyone ranks the finalists; with k finalists, first place earns k − 1 points. Quadratic votes: everyone spreads 9 credits, where v votes on one spot cost v² credits; votes are whole numbers of zero or more, and most total votes wins.
 - **Result screen.** Winner, runner-up, directions link, and a button to run it again.
 - **Host controls.** The host can end swiping early when someone stalls. Unswiped cards count as no.
-- **Batches with no cap.** Cards come 20 at a time, and everyone finishes a batch before the next one is dealt. After each batch, a unanimous yes ends it, 3 or more finalists let the host choose ranking or 20 more, and no finalists deals the next batch automatically.
-
+- **Batches with no cap.** Cards come 20 at a time, and everyone finishes a batch before the next one is dealt. After each batch, a single unanimous yes wins outright, several unanimous yeses go straight to the final round, 2 or more finalists let the host choose the final round or 20 more, 1 finalist lets the host go with it or deal 20 more, and no finalists deals the next batch automatically.
+After each ba
 ### Later (V2)
 
 - **Accounts and saved groups.** Upgrade anonymous users to Google sign-in so recurring friend groups persist.
@@ -100,10 +100,10 @@ These run on Vercel with the secret keys. Swipes write straight to Supabase, gua
 | `POST /api/sessions/[id]/add` | Lobby only. Adds a member's spot: checks the session cap and duplicates, fetches Place Details and one photo, inserts with `source = 'member'` and an `adds` row |
 | `DELETE /api/sessions/[id]/add/[placeId]` | Lobby only. Removes one of the caller's own adds |
 | `POST /api/sessions/[id]/start` | Host only, lobby only. Builds batch 1 from the group's adds, then fills to 20 with one Text Search call if suggestions are on, resolves photos, records each adder's yes, moves status to swiping |
-| `POST /api/sessions/[id]/done-swiping` | Marks a member done with the batch. Once the whole group is, ends on a unanimous yes or counts finalists and offers the host ranking or another batch |
+| `POST /api/sessions/[id]/done-swiping` | Marks a member done with the batch (a conditional flip, so a repeat changes nothing) and reports whether the whole group is. Once it is, the tally ends on a unanimous yes or counts finalists and offers the host ranking or another batch, behind `where status = 'swiping'` so it runs once |
 | `POST /api/sessions/[id]/deal` | Host only. Deals the next 20: remaining adds first, then the next page of suggestions, or splits the area into smaller circles past 60, filtering by distance. Resets everyone's done flag for the new batch |
 | `POST /api/sessions/[id]/ballot` | Saves the member's final-round ballot after checking it matches the session's method (one valid pick, a full ordering, or whole-number votes costing at most 9 credits), marks them done, and once everyone has voted computes the winner and moves status to done |
-| `POST /api/sessions/[id]/end-swiping` | Host only. Ends swiping early and runs the same finalist step |
+| `POST /api/sessions/[id]/end-swiping` | Host only. Marks everyone done (their unswiped cards count as no at the tally) and runs the same finalist step |
 
 ## Session lifecycle
 
@@ -112,11 +112,14 @@ stateDiagram-v2
     [*] --> Lobby
     Lobby --> Swiping: host taps Start
     Swiping --> Tally: batch done or host ends
-    Tally --> Result: unanimous yes
-    Tally --> Ranking: host picks rank
-    Tally --> NextBatch: deal 20 more
-    NextBatch --> Swiping
-    Ranking --> Result: ranked
+    Tally --> Result: one unanimous yes
+    Tally --> Ranking: several unanimous yeses
+    Tally --> Deciding: 1 or more finalists
+    Tally --> Swiping: no finalists, next batch dealt
+    Deciding --> Ranking: host picks final round
+    Deciding --> Result: host goes with the one finalist
+    Deciding --> Swiping: host deals 20 more
+    Ranking --> Result: everyone voted or host decides
     Result --> [*]
 ```
 
@@ -143,6 +146,8 @@ Swipes are approval ballots with a veto, and the host's chosen method (plurality
 | Member joins after start | They can watch but don't vote this round. |
 | Adds exceed 20 | Adds fill batches first, round-robin by member. Suggestions come only after every add has been dealt. |
 | Two members add the same spot | One card, and it counts as a yes from both. |
+| Two finalists | Same as three or more: the host picks Go to final round or Deal 20 more. |
+| One finalist | The host picks Go with it, which makes it the winner, or Deal 20 more. |
 
 Tallies stay hidden during swiping to cut strategic voting. Adds deliberately come before suggestions, since they are what the group actually wants; within each, per-member shuffles cancel the bias toward early cards. Because everyone sees every dealt card before the next batch, approval counts stay comparable even with no cap on the deck. Adding many spots gives no extra influence, since each spot still needs yeses from half the group and no veto. Every finalist already passed the approval threshold, so plurality's usual flaw of electing something most people dislike is limited here. Borda can be gamed by burying a rival, which is fine among friends. With a single decision, quadratic voting mostly behaves like plurality, since anyone with a clear favorite puts all 9 credits into 3 votes for it; it differs only for people torn between two spots. The method locks at Start so the host can't pick a rule after seeing which one favors their spot.
 
@@ -201,8 +206,7 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 
 | Table | Key columns | Members can read | Members can write |
 | --- | --- | --- | --- |
-| `sessions` | `id`, `code`, `host_id`, `name`, `status`, `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch` (batches dealt so far), `search_body` (jsonb: the Text Search body plus the nearby-circle count), `page_token` | Their own session | Nothing (server only) |
-| `members` | `session_id`, `user_id`, `display_name`, `color` (1 to 8, unique per session), `lat`, `lng`, `vetoes_left`, `done_swiping` (current batch), `done_ranking` | Everyone in their session | Their own `display_name`, `lat`, `lng`; joining goes through `join_session` |
+| `sessions` | `id`, `code`, `host_id`, `name`, `status` (lobby, swiping, deciding, ranking, done), `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch` (batches dealt so far), `search_body` (jsonb: the Text Search body plus the nearby-circle count), `page_token` | Their own session | Nothing (server only) || `members` | `session_id`, `user_id`, `display_name`, `color` (1 to 8, unique per session), `lat`, `lng`, `vetoes_left`, `done_swiping` (current batch), `done_ranking` | Everyone in their session | Their own `display_name`, `lat`, `lng`; joining goes through `join_session` |
 | `restaurants` | `session_id`, `place_id`, `source` (member or suggested), `batch` (null until dealt), `data` (jsonb with name, price, rating, `photoUri`, hours, links, flags) | Their session's spots | Nothing (server only) |
 | `adds` | `session_id`, `user_id`, `place_id`, `created_at`; unique per user and place | Only their own | Nothing (server only) |
 | `swipes` | `session_id`, `user_id`, `place_id`, `value` (yes, no, veto); unique per user and place | Only their own | Only their own |

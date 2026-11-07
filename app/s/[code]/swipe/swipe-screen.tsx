@@ -11,6 +11,7 @@ import { BOSTON } from "@/lib/places/place";
 import { readRestaurantData, type LatLng, type RestaurantRow } from "@/lib/restaurants";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { DetailsSheet } from "../explore/details-sheet";
+import { endSwiping, markDoneSwiping } from "../session-api";
 import type { MapMember } from "../map-markers";
 import type { MemberView, SessionView } from "../session-types";
 import { useSessionLive } from "../use-session-live";
@@ -94,7 +95,8 @@ export function SwipeScreen({
   const leavingCard = leaving ? (deck.find((card) => card.place_id === leaving.placeId) ?? null) : null;
   const swipedCount = deck.length - unswiped.length;
   const position = Math.min(swipedCount + 1, deck.length);
-  const done = !current && !leaving;
+  // Done: no cards left, or the server says so (the host ended picking for everyone).
+  const done = (!current && !leaving) || Boolean(me?.done_swiping);
 
   const currentData = current ? readRestaurantData(current.data) : null;
 
@@ -172,8 +174,30 @@ export function SwipeScreen({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // Finishing the deck tells the server once per batch; the members row then shows it to everyone.
+  const markDone = useEffectEvent(() => {
+    if (me?.done_swiping) return;
+    markDoneSwiping(session.id)
+      .then(() => live.refetchMembers())
+      .catch((error) => console.warn("done-swiping failed", error));
+  });
+  useEffect(() => {
+    if (done) markDone();
+  }, [done, session.batch]);
+
   if (done) {
-    return <DoneView session={session} members={members} userId={userId} total={deck.length} />;
+    return (
+      <DoneView
+        session={session}
+        members={members}
+        userId={userId}
+        total={deck.length}
+        onEndSwiping={async () => {
+          await endSwiping(session.id);
+          await live.refetchMembers();
+        }}
+      />
+    );
   }
 
   const mapMembers: MapMember[] = members.flatMap((m) =>

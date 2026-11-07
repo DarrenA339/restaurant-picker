@@ -80,7 +80,7 @@ Each batch is one Places API (New) Text Search page + up to 20 photo resolutions
 
 ### Swipe screen
 
-`app/s/[code]/swipe/`: `swipe-screen.tsx` owns the state (deck from `buildMemberDeck` in `lib/deck.ts`, the member's swipes, the leaving card, vetoes left with an optimistic override until the members row catches up), `swipe-card.tsx` is the Motion drag card (horizontal swipe or flick votes, under 8px is a tap that opens details), `vote-buttons.tsx`, `map-strip.tsx` (one map, `gestureHandling="none"`, pans per card), `swipes.ts` (insert then update on conflict; the trigger's check_violation means no vetoes left), and `done-view.tsx` (the placeholder until the done-swiping route exists). `map-markers.tsx` holds the marker components both maps share. Keyboard: Left/Right/V/Enter, ignored while typing.
+`app/s/[code]/swipe/`: `swipe-screen.tsx` owns the state (deck from `buildMemberDeck` in `lib/deck.ts`, the member's swipes, the leaving card, vetoes left with an optimistic override until the members row catches up), `swipe-card.tsx` is the Motion drag card (horizontal swipe or flick votes, under 8px is a tap that opens details), `vote-buttons.tsx`, `map-strip.tsx` (one map, `gestureHandling="none"`, pans per card), `swipes.ts` (insert then update on conflict; the trigger's check_violation means no vetoes left), and `done-view.tsx` (done and waiting: live group progress from the members rows, the host's End picking, and the "Everyone's done" placeholder until the tally lands). Finishing a deck posts `done-swiping` once per batch from an effect; `end-swiping` marks everyone done. `map-markers.tsx` holds the marker components both maps share. Keyboard: Left/Right/V/Enter, ignored while typing.
 
 ### Voting
 
@@ -123,3 +123,5 @@ Next.js App Router, TypeScript, Tailwind, Supabase (Postgres, anonymous auth, Re
 - Mobile first. Check layouts at 390px wide.
 - Before calling a task done, run `npm run lint`, `npm run build`, and `npx vitest run --passWithNoTests`.
 - After any UI change, run the dev server and check the screen with the Playwright MCP at 390×844 and 1280×800. Compare mobile to its image in docs/design/, and desktop to its -desktop image, or to 03-join-desktop.png for flow screens without one. Fix differences before calling the task done.
+- lib/voting.ts is the only place voting rules live. Routes call tally, nextStep, validateBallot, score and pickWinner; never reimplement a rule in a route or in the UI. Don't change lib/voting.ts or lib/voting.test.ts without asking.
+- Yes counts and scores stay server-side until the session is done. Nothing a member can read before the result may reveal them.

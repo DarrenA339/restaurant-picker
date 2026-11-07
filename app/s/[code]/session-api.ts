@@ -43,6 +43,20 @@ export async function startSession(id: string) {
   return (await response.json()) as BatchSummary & { status: string };
 }
 
+/** I finished the current batch. Safe to repeat: the server flips the flag once. */
+export async function markDoneSwiping(id: string) {
+  const response = await fetch(`/api/sessions/${id}/done-swiping`, { method: "POST" });
+  if (!response.ok) return fail(response, "Couldn’t save that.");
+  return (await response.json()) as { done: true; batch: number; everyoneDone: boolean };
+}
+
+/** Host only, while swiping: end the batch for everyone. */
+export async function endSwiping(id: string) {
+  const response = await fetch(`/api/sessions/${id}/end-swiping`, { method: "POST" });
+  if (!response.ok) return fail(response, "Couldn’t end picking.");
+  return (await response.json()) as { batch: number; everyoneDone: true };
+}
+
 /** Host only, while swiping: deal the next batch. */
 export async function dealNextBatch(id: string) {
   const response = await fetch(`/api/sessions/${id}/deal`, { method: "POST" });
