@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FlowScreen } from "@/components/layout/flow-screen";
 import { AvatarStack } from "@/components/ui/avatar";
 import { toPersonColor } from "@/lib/people";
 import type { MemberView, SessionView } from "./session-types";
@@ -33,7 +34,7 @@ type SessionPlaceholderProps = {
 export function SessionPlaceholder({ session, members }: SessionPlaceholderProps) {
   const copy = stage[session.status === "lobby" ? "swiping" : session.status];
   return (
-    <main className="flex min-h-dvh flex-col gap-[18px] px-5 pt-3 pb-5">
+    <FlowScreen bodyClassName="gap-[18px] pt-3 pb-5">
       <div className="flex flex-col gap-3 rounded-button bg-page px-[18px] py-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-px">
@@ -68,6 +69,6 @@ export function SessionPlaceholder({ session, members }: SessionPlaceholderProps
           Back to home
         </Link>
       </div>
-    </main>
+    </FlowScreen>
   );
 }

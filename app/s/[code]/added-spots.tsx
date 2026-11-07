@@ -31,10 +31,10 @@ export function AddedSpots({ spots, mine, origin, onRemove }: AddedSpotsProps) {
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-extrabold">Added so far</h2>
+        <h2 className="text-lg font-extrabold lg:text-[19px]">Added so far</h2>
         <span className="text-sm font-bold text-quiet">{spotsLabel(total)}</span>
       </div>
-      <ul className="rounded-card bg-surface px-3.5 py-1 shadow-[0_1px_3px_rgba(23,24,26,0.07)]">
+      <ul className="rounded-card bg-surface px-3.5 py-1 shadow-[0_1px_3px_rgba(23,24,26,0.07)] lg:px-4">
         {total === 0 ? (
           <li className="flex min-h-[68px] items-center text-sm font-medium text-quiet">
             Nothing added yet. Search a place or a dish to get started.
@@ -48,7 +48,7 @@ export function AddedSpots({ spots, mine, origin, onRemove }: AddedSpotsProps) {
           return (
             <li
               key={spot.place_id}
-              className="flex min-h-[68px] items-center gap-3 border-b border-tint"
+              className="flex min-h-[68px] items-center gap-3 border-b border-tint lg:gap-3.5"
             >
               <span
                 className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#EDE3D3] text-[#5E5A52]"
@@ -68,18 +68,26 @@ export function AddedSpots({ spots, mine, origin, onRemove }: AddedSpotsProps) {
                   <span className="text-[13px] font-semibold text-quiet">{meta}</span>
                 ) : null}
                 {isMine ? (
-                  <span className="text-xs font-extrabold text-accent-text">You added this</span>
+                  <span className="text-xs font-extrabold text-accent-text lg:hidden">
+                    You added this
+                  </span>
                 ) : null}
               </span>
               {isMine ? (
-                <button
-                  type="button"
-                  onClick={() => onRemove(spot.place_id)}
-                  aria-label={`Remove ${name}`}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-full bg-tint p-0 text-ink"
-                >
-                  <CloseIcon size={16} />
-                </button>
+                <>
+                  {/* On desktop the note sits beside the remove button instead. */}
+                  <span className="hidden text-xs font-extrabold whitespace-nowrap text-accent-text lg:inline">
+                    You added this
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(spot.place_id)}
+                    aria-label={`Remove ${name}`}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-tint p-0 text-ink lg:size-10"
+                  >
+                    <CloseIcon size={16} className="lg:size-3.5" />
+                  </button>
+                </>
               ) : null}
             </li>
           );

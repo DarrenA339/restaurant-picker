@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   fillCount,
+  peopleLabel,
   startNote,
   suggestionsText,
   useMethodLabel,
@@ -14,6 +15,11 @@ describe("lobby copy", () => {
     expect(votingMethodLabel("borda")).toBe("Ranked points (Borda count)");
     expect(votingMethodLabel("plurality")).toBe("One vote each (Plurality)");
     expect(useMethodLabel("quadratic")).toBe("Use quadratic votes");
+  });
+
+  it("counts people for the Who's here card", () => {
+    expect(peopleLabel(1)).toBe("1 person");
+    expect(peopleLabel(4)).toBe("4 people");
   });
 
   it("fills the first batch to 20 only when suggestions are on", () => {

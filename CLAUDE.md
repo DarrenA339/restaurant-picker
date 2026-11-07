@@ -54,6 +54,18 @@ RLS is what keeps vote tallies hidden, not the UI: members can only read their o
 
 Supabase clients live in `lib/supabase/`: `browser.ts` for client components (`ensureSignedIn()` reuses an existing anonymous session before creating one), `server.ts` for server components and route handlers (acts as the visitor through cookies, so callers sit behind `<Suspense>`), and `admin.ts` for the secret key (server only). A server component that uses either server client must `await connection()` first: the auth client checks token expiry with `Date.now()`, which Cache Components refuses to prerender.
 
+### Layout and desktop
+
+Mobile is the design; from 1024px (Tailwind's `lg`) every screen takes the desktop layout in docs/SPEC.md "Desktop layout" from the pieces in `components/layout/`, so don't hand-roll widths in a screen:
+
+- `AppShell` (used once, in `app/layout.tsx`): a 430px column below `lg`, full width above.
+- `FlowScreen` (+ `ScreenFooter`): Create, Join, Done, Final round, Winner, edge states, placeholders. Renders the brand header (desktop only) and a centered 480px column; `footer` is sticky at the bottom on phones and inline at the end of the column on desktop. `as="form"` when the screen is one form.
+- `WideScreen` + `TwoColumn`: Welcome (`variant="hero"`), Lobby and Swipe (`variant="panel"`, sticky right column). On phones the columns are `display: contents`, so children sit in the single column in source order; write the JSX in phone order and let `lg:` classes move things.
+- `Brand` / `BrandHeader`: the "[APP NAME]" mark at its two sizes.
+- `components/ui/sheet.tsx`: a bottom sheet on phones, a centered dialog from `lg` (`size="narrow"` 520px for filters and the voting method, `"wide"` 960px for details). `useIsDesktop()` in `components/layout/use-desktop.ts` is the matching media query for client logic.
+
+Phone-only and desktop-only elements (the lobby's avatar stack vs. its "Who's here" list, "Invite" vs. "Copy invite link") are rendered once with `lg:hidden` / `hidden lg:flex`, not duplicated components.
+
 ### Session state machine
 
 `sessions.status` drives everything: `lobby → swiping → (tally)`. After each tally, a unanimous yes goes straight to `done`; otherwise the host picks `ranking` or deals another batch (back to `swiping`), and a tally with no finalists deals the next batch automatically. `ranking → done` once everyone has ranked.

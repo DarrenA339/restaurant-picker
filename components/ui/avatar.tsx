@@ -5,6 +5,7 @@ const sizes = {
   40: "size-10 text-[13px] font-extrabold",
   36: "size-9 text-xs font-extrabold",
   34: "size-[34px] text-xs font-bold",
+  32: "size-8 text-[11px] font-extrabold",
   28: "size-7 text-[11px] font-extrabold",
 } as const;
 
@@ -16,11 +17,13 @@ type AvatarProps = {
   size?: AvatarSize;
   /** Set to make the avatar meaningful to screen readers; hidden otherwise. */
   label?: string;
+  /** Replaces the initials, like "You" for the viewer in the lobby's people list. */
+  text?: string;
   className?: string;
 };
 
 /** A person's initials on their person color. */
-export function Avatar({ name, color, size = 36, label, className = "" }: AvatarProps) {
+export function Avatar({ name, color, size = 36, label, text, className = "" }: AvatarProps) {
   return (
     <span
       role={label ? "img" : undefined}
@@ -28,7 +31,7 @@ export function Avatar({ name, color, size = 36, label, className = "" }: Avatar
       aria-hidden={label ? undefined : true}
       className={`inline-flex shrink-0 items-center justify-center rounded-full leading-none text-white ${personBgClass[color]} ${sizes[size]} ${className}`}
     >
-      {initialsFor(name)}
+      {text ?? initialsFor(name)}
     </span>
   );
 }

@@ -67,6 +67,11 @@ export function spotsLabel(total: number): string {
   return total === 1 ? "1 spot" : `${total} spots`;
 }
 
+/** "4 people" for the desktop lobby's "Who's here" card. */
+export function peopleLabel(count: number): string {
+  return count === 1 ? "1 person" : `${count} people`;
+}
+
 /** The suggestions card's body text. */
 export function suggestionsText(args: {
   suggestionsOn: boolean;

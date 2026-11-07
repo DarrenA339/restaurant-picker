@@ -28,10 +28,11 @@ export function InviteButton({ code }: { code: string }) {
       <button
         type="button"
         onClick={copy}
-        className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-3.5 text-sm font-bold text-ink shadow-[0_1px_3px_rgba(23,24,26,0.1)]"
+        className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-3.5 text-sm font-bold text-ink shadow-[0_1px_3px_rgba(23,24,26,0.1)] lg:gap-2 lg:px-4"
       >
         <CopyIcon size={16} />
-        Invite
+        <span className="lg:hidden">Invite</span>
+        <span className="hidden lg:inline">Copy invite link</span>
       </button>
       {copied ? (
         <div

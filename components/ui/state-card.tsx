@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { FlowScreen } from "@/components/layout/flow-screen";
 
 type Action = { label: string; href: string };
 
@@ -14,8 +15,8 @@ type StateCardProps = {
 /** A full-screen edge state from docs/design/states.png: one card, one clear next step. */
 export function StateCard({ icon, title, body, primary, secondary }: StateCardProps) {
   return (
-    <main className="flex min-h-dvh flex-col px-5 py-6">
-      <div className="my-auto flex flex-col gap-3 rounded-3xl bg-surface p-6 shadow-[0_1px_3px_rgba(23,24,26,0.07)]">
+    <FlowScreen bodyClassName="py-6">
+      <div className="my-auto flex flex-col gap-3 rounded-3xl bg-surface p-6 shadow-[0_1px_3px_rgba(23,24,26,0.07)] lg:my-0">
         <span
           className="flex size-12 items-center justify-center rounded-2xl bg-tint text-ink"
           aria-hidden="true"
@@ -45,6 +46,6 @@ export function StateCard({ icon, title, body, primary, secondary }: StateCardPr
           </div>
         ) : null}
       </div>
-    </main>
+    </FlowScreen>
   );
 }
