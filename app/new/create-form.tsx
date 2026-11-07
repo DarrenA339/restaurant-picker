@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
   AlertIcon,
   BackIcon,
@@ -55,6 +55,8 @@ export function CreateForm() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  // State alone can't stop a second tap that lands before React re-renders.
+  const inFlight = useRef(false);
 
   function patch(changes: Partial<SessionFilters>) {
     setFilters((current) => ({ ...current, ...changes }));
@@ -90,7 +92,7 @@ export function CreateForm() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (submitting) return;
+    if (inFlight.current) return;
 
     const next: Errors = {};
     if (!name.trim()) {
@@ -107,18 +109,28 @@ export function CreateForm() {
 
     setErrors({});
     setSubmitting(true);
+    inFlight.current = true;
     try {
-      await ensureSignedIn();
-      const response = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          hostName: hostName.trim(),
-          filters,
-          center,
-        }),
+      const body = JSON.stringify({
+        name: name.trim(),
+        hostName: hostName.trim(),
+        filters,
+        center,
       });
+      const create = () =>
+        fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        });
+
+      await ensureSignedIn();
+      let response = await create();
+      if (response.status === 401) {
+        // The server didn't accept our session: sign in again and retry once.
+        await ensureSignedIn({ fresh: true });
+        response = await create();
+      }
       const json = (await response.json().catch(() => null)) as
         | { code?: string; error?: string }
         | null;
@@ -134,6 +146,7 @@ export function CreateForm() {
             : "Something went wrong. Try again.",
       });
       setSubmitting(false);
+      inFlight.current = false;
     }
   }
 

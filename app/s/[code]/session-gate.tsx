@@ -6,30 +6,19 @@ import {
 } from "@/components/icons";
 import { StateCard } from "@/components/ui/state-card";
 import { normalizeJoinCode } from "@/lib/join-code";
-import { isPersonColor, MAX_MEMBERS, type PersonColor } from "@/lib/people";
+import { MAX_MEMBERS, toPersonColor } from "@/lib/people";
 import { joinSummary, parseFilters } from "@/lib/session-filters";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { JoinForm } from "./join-form";
-import { LobbyPlaceholder, type LobbyMember } from "./lobby-placeholder";
-
-type MemberRow = {
-  user_id: string;
-  display_name: string;
-  color: number;
-};
-
-function toMember(row: MemberRow): LobbyMember {
-  return {
-    userId: row.user_id,
-    name: row.display_name,
-    color: (isPersonColor(row.color) ? row.color : 1) as PersonColor,
-  };
-}
+import { Lobby } from "./lobby";
+import { SessionPlaceholder } from "./session-placeholder";
+import { MEMBER_VIEW_COLUMNS, SESSION_VIEW_COLUMNS } from "./session-types";
 
 /**
  * Decides which view the visitor gets:
- *   - a member (or the host) sees the session through RLS → lobby;
+ *   - a member (or the host) sees the session through RLS → the view for
+ *     its status (lobby, or the placeholder for everything after);
  *   - anyone else gets a preview read with the secret key → Join screen,
  *     or an edge state if the code is wrong, the dinner ended, or it's full.
  */
@@ -53,24 +42,27 @@ export async function SessionGate({
   if (user) {
     const { data: session } = await supabase
       .from("sessions")
-      .select("id, code, name, status, host_id")
+      .select(SESSION_VIEW_COLUMNS)
       .eq("code", code)
       .maybeSingle();
 
     if (session) {
       const { data: members } = await supabase
         .from("members")
-        .select("user_id, display_name, color")
+        .select(MEMBER_VIEW_COLUMNS)
         .eq("session_id", session.id)
         .order("joined_at", { ascending: true });
 
-      return (
-        <LobbyPlaceholder
-          session={session}
-          members={(members ?? []).map(toMember)}
-          userId={user.id}
-        />
-      );
+      if (session.status === "lobby") {
+        return (
+          <Lobby
+            initialSession={session}
+            initialMembers={members ?? []}
+            userId={user.id}
+          />
+        );
+      }
+      return <SessionPlaceholder session={session} members={members ?? []} />;
     }
   }
 
@@ -90,7 +82,11 @@ export async function SessionGate({
     .select("user_id, display_name, color")
     .eq("session_id", session.id)
     .order("joined_at", { ascending: true });
-  const members = (memberRows ?? []).map(toMember);
+  const members = (memberRows ?? []).map((row) => ({
+    userId: row.user_id,
+    name: row.display_name,
+    color: toPersonColor(row.color),
+  }));
   if (members.length >= MAX_MEMBERS) return <DinnerFull name={session.name} />;
 
   const host = members.find((member) => member.userId === session.host_id);

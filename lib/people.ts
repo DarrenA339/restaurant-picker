@@ -39,6 +39,11 @@ export function isPersonColor(value: unknown): value is PersonColor {
   );
 }
 
+/** A database color (plain number) as a PersonColor; anything odd becomes 1. */
+export function toPersonColor(value: number): PersonColor {
+  return isPersonColor(value) ? value : 1;
+}
+
 /** Colors nobody in the session has yet, lowest first. */
 export function freeColors(taken: Iterable<number>): PersonColor[] {
   const used = new Set(taken);

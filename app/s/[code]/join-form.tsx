@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { AlertIcon, CheckIcon, SendIcon } from "@/components/icons";
 import { Avatar, AvatarStack, type StackPerson } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,8 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
   const [nameError, setNameError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // State alone can't stop a second tap that lands before React re-renders.
+  const inFlight = useRef(false);
 
   const names = members.map((m) => m.name);
   const { text: inText, label: inLabel } = whoIsIn(names);
@@ -86,7 +88,7 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (submitting) return;
+    if (inFlight.current) return;
     if (!name.trim()) {
       setNameError("Tell friends what to call you.");
       return;
@@ -94,18 +96,27 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
     setNameError(null);
     setFormError(null);
     setSubmitting(true);
+    inFlight.current = true;
 
     try {
+      const join = () =>
+        supabaseBrowser()
+          .rpc("join_session", {
+            p_code: code,
+            p_display_name: name.trim(),
+            p_color: color,
+            p_lat: location?.lat,
+            p_lng: location?.lng,
+          })
+          .single();
+
       await ensureSignedIn();
-      const { error } = await supabaseBrowser()
-        .rpc("join_session", {
-          p_code: code,
-          p_display_name: name.trim(),
-          p_color: color,
-          p_lat: location?.lat,
-          p_lng: location?.lng,
-        })
-        .single();
+      let { error } = await join();
+      if (error && (error.message === "not_signed_in" || error.code === "PGRST301")) {
+        // The database didn't see a user behind our token: sign in again, retry once.
+        await ensureSignedIn({ fresh: true });
+        ({ error } = await join());
+      }
       if (error) {
         throw new Error(joinErrors[error.message] ?? "Couldn’t join. Try again.");
       }
@@ -118,6 +129,7 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
           : "Something went wrong. Try again.",
       );
       setSubmitting(false);
+      inFlight.current = false;
     }
   }
 

@@ -158,6 +158,32 @@ export function CheckCircleIcon(props: IconProps) {
   );
 }
 
+export function SearchIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.4} {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3.5-3.5" />
+    </Svg>
+  );
+}
+
+export function MapIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M9 4L3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z" />
+      <path d="M9 4v13.5M15 6.5V20" />
+    </Svg>
+  );
+}
+
+export function CloseIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.6} {...props}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </Svg>
+  );
+}
+
 export function PeopleIcon(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
