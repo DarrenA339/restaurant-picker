@@ -78,6 +78,26 @@ export async function widenDistance(id: string) {
   return (await response.json()) as { distanceMi: number; batch: number; cards: number };
 }
 
+export type BallotBody = { pick: string } | { ordering: string[] } | { votes: Record<string, number> };
+
+/** My final-round ballot, in the session's method. */
+export async function submitBallot(id: string, ballot: BallotBody) {
+  const response = await fetch(`/api/sessions/${id}/ballot`, {
+    method: "POST",
+    headers: json,
+    body: JSON.stringify(ballot),
+  });
+  if (!response.ok) return fail(response, "Couldn’t save your ballot.");
+  return (await response.json()) as { saved: true; everyoneDone: boolean; status?: "done" };
+}
+
+/** Host only, while ranking: decide with the ballots in so far. */
+export async function endRanking(id: string) {
+  const response = await fetch(`/api/sessions/${id}/end-ranking`, { method: "POST" });
+  if (!response.ok) return fail(response, "Couldn’t decide.");
+  return (await response.json()) as { status: "done"; winner: string };
+}
+
 /** Host only, from deciding: deal the next batch instead of ranking. */
 export async function dealNextBatch(id: string) {
   const response = await fetch(`/api/sessions/${id}/deal`, { method: "POST" });

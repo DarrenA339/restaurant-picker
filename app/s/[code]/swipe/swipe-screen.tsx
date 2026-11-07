@@ -192,7 +192,7 @@ export function SwipeScreen({
         members={members}
         userId={userId}
         total={deck.length}
-        onEndSwiping={async () => {
+        onEnd={async () => {
           await endSwiping(session.id);
           await live.refetchMembers();
         }}

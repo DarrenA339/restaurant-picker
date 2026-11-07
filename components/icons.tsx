@@ -284,3 +284,41 @@ export function ArrowRightIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** The drag handle on a ranking row: two columns of dots. */
+export function GripIcon({ size = 24, className = "", ...rest }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+      {...rest}
+    >
+      <circle cx="9" cy="6" r="1.6" />
+      <circle cx="15" cy="6" r="1.6" />
+      <circle cx="9" cy="12" r="1.6" />
+      <circle cx="15" cy="12" r="1.6" />
+      <circle cx="9" cy="18" r="1.6" />
+      <circle cx="15" cy="18" r="1.6" />
+    </svg>
+  );
+}
+
+export function ChevronUpIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.4} {...props}>
+      <path d="M6 15l6-6 6 6" />
+    </Svg>
+  );
+}
+
+export function MinusIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.6} {...props}>
+      <path d="M5 12h14" />
+    </Svg>
+  );
+}

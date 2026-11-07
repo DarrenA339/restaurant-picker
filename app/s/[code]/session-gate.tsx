@@ -13,15 +13,16 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { JoinForm } from "./join-form";
 import { Lobby } from "./lobby";
 import { loadLobbyData } from "./lobby-data";
-import { SessionPlaceholder } from "./session-placeholder";
-import { MEMBER_VIEW_COLUMNS, SESSION_VIEW_COLUMNS } from "./session-types";
 import { DecidingView } from "./deciding/deciding-view";
+import { RankingView } from "./ranking/ranking-view";
+import { MEMBER_VIEW_COLUMNS, SESSION_VIEW_COLUMNS } from "./session-types";
 import { SwipeScreen } from "./swipe/swipe-screen";
+import { WinnerView } from "./winner/winner-view";
 
 /**
  * Decides which view the visitor gets:
  *   - a member (or the host) sees the session through RLS → the view for
- *     its status (lobby, or the placeholder for everything after);
+ *     its status (lobby, swipe, deciding, final round, or the winner);
  *   - anyone else gets a preview read with the secret key → Join screen,
  *     or an edge state if the code is wrong, the dinner ended, or it's full.
  */
@@ -100,7 +101,38 @@ export async function SessionGate({
           />
         );
       }
-      return <SessionPlaceholder session={session} members={members ?? []} />;
+      if (session.status === "ranking") {
+        const [lobby, { data: result }, { data: ballot }] = await Promise.all([
+          loadLobbyData(supabase, session.id),
+          supabase.from("results").select("finalists").eq("session_id", session.id).maybeSingle(),
+          supabase.from("ballots").select("user_id").eq("session_id", session.id).eq("user_id", user.id).maybeSingle(),
+        ]);
+        return (
+          <RankingView
+            initialSession={session}
+            initialMembers={members ?? []}
+            initialRestaurants={lobby.restaurants}
+            initialMyAddIds={lobby.myAddIds}
+            finalists={result?.finalists ?? []}
+            hasBallot={Boolean(ballot)}
+            userId={user.id}
+          />
+        );
+      }
+      const [lobby, { data: result }] = await Promise.all([
+        loadLobbyData(supabase, session.id),
+        supabase.from("results").select("finalists, winner_place_id").eq("session_id", session.id).maybeSingle(),
+      ]);
+      return (
+        <WinnerView
+          session={session}
+          members={members ?? []}
+          restaurants={lobby.restaurants}
+          order={result?.finalists ?? []}
+          winnerId={result?.winner_place_id ?? null}
+          userId={user.id}
+        />
+      );
     }
   }
 

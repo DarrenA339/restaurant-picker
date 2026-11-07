@@ -74,7 +74,7 @@ Mobile is the primary design. At 1024px and wider, screens adapt instead of stre
 | Waiting | You finished the current batch | "3 of 5 done with this batch" with no vote counts and the host's End swiping button. When everyone finishes, the host picks Go to ranking or Deal 20 more |
 | Deciding | Status is deciding | The finalists as compact rows with no vote counts. The host picks Go to final round (Go with it for one finalist) or Deal 20 more; guests see "Waiting for Sam to decide." With no finalists at all the area ran out of places: the "Nothing matches these filters" edge state, with Widen for the host |
 | Final round | Status is ranking | The session's method: pick one finalist, drag the finalists into order, or spread 9 quadratic credits with steppers |
-| Result | Status is done | Map with the winner's pin, winner card, runner-up, directions link, and Run it again |
+| Result | Status is done | The winner's photo and card, Get directions (a Google Maps link by place id), Hours, photos and reviews (the details sheet), the runners-up in final order, and Start a new dinner |
 
 ### Map strip
 
@@ -106,7 +106,8 @@ These run on Vercel with the secret keys. Swipes write straight to Supabase, gua
 | `POST /api/sessions/[id]/final-round` | Host only, from deciding. The stored finalists go to ranking |
 | `POST /api/sessions/[id]/go-with-it` | Host only, from deciding with one finalist. It becomes the winner and the session is done |
 | `POST /api/sessions/[id]/widen` | Host only, from deciding with no finalists. Widens the max distance one step, restarts the suggestions search at the new radius, and deals |
-| `POST /api/sessions/[id]/ballot` | Saves the member's final-round ballot after checking it matches the session's method (one valid pick, a full ordering, or whole-number votes costing at most 9 credits), marks them done, and once everyone has voted computes the winner and moves status to done |
+| `POST /api/sessions/[id]/ballot` | Saves the member's final-round ballot after checking it matches the session's method (one valid pick, a full ordering, or whole-number votes costing at most 9 credits), marks them done, and once everyone has voted ends the round (`lib/finish-ranking.ts`): scores with `score`, orders with `pickWinner` (yeses, rating, the session-seeded coin flip), writes the result with the final order and moves to done behind `where status = 'ranking'` |
+| `POST /api/sessions/[id]/end-ranking` | Host only, while ranking. "Decide without": ends the round with the ballots in so far; missing ballots are left out |
 | `POST /api/sessions/[id]/end-swiping` | Host only. Marks everyone done (their unswiped cards count as no at the tally) and runs the same finalist step |
 
 ## Session lifecycle

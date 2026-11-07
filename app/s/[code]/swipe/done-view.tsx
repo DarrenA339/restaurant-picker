@@ -12,18 +12,22 @@ type DoneViewProps = {
   session: SessionView;
   members: MemberView[];
   userId: string;
-  /** Cards in this member's deck. */
-  total: number;
-  /** The host ends the batch for everyone. */
-  onEndSwiping: () => Promise<void>;
+  /** Picking: the member finished the batch. Ranking: their ballot is in. */
+  mode?: "picking" | "ranking";
+  /** Cards in this member's deck (picking). */
+  total?: number;
+  /** The host ends the batch for everyone (picking) or decides with the ballots in (ranking). */
+  onEnd: () => Promise<void>;
 };
+
+function joinNames(names: string[]): string {
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
 
 /** The host's note: "Spots Nia hasn’t seen will count as a no from them." */
 function pendingNote(names: string[]): string {
   if (names.length === 0) return "";
-  const who =
-    names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-  return `Spots ${who} ${names.length === 1 ? "hasn’t" : "haven’t"} seen will count as a no from them.`;
+  return `Spots ${joinNames(names)} ${names.length === 1 ? "hasn’t" : "haven’t"} seen will count as a no from them.`;
 }
 
 /**
@@ -33,12 +37,13 @@ function pendingNote(names: string[]): string {
  * server tallies and the status moves on; "Everyone's done" shows for the
  * moment in between.
  */
-export function DoneView({ session, members, userId, total, onEndSwiping }: DoneViewProps) {
+export function DoneView({ session, members, userId, mode = "picking", total = 0, onEnd }: DoneViewProps) {
   const isHost = session.host_id === userId;
+  const ranking = mode === "ranking";
   const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isDone = (m: MemberView) => m.user_id === userId || m.done_swiping;
+  const isDone = (m: MemberView) => m.user_id === userId || (ranking ? m.done_ranking : m.done_swiping);
   const doneCount = members.filter(isDone).length;
   const everyoneDone = members.length > 0 && doneCount === members.length;
   const pending = members.filter((m) => !isDone(m)).map((m) => m.display_name);
@@ -48,9 +53,9 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
     setEnding(true);
     setError(null);
     try {
-      await onEndSwiping();
+      await onEnd();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn’t end picking.");
+      setError(err instanceof Error ? err.message : ranking ? "Couldn’t decide." : "Couldn’t end picking.");
     } finally {
       setEnding(false);
     }
@@ -71,7 +76,7 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
               loadingLabel="Ending…"
               className="h-[52px] w-full text-base"
             >
-              End picking for everyone
+              {ranking ? `Decide without ${joinNames(pending)}` : "End picking for everyone"}
             </Button>
             {error ? (
               <p role="alert" className="flex items-center justify-center gap-1.5 text-[13px] font-bold text-[#A3271B]">
@@ -79,7 +84,9 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
                 {error}
               </p>
             ) : (
-              <p className="text-center text-[13px] font-medium text-quiet">{pendingNote(pending)}</p>
+              <p className="text-center text-[13px] font-medium text-quiet">
+                {ranking ? "The winner is picked from the rankings already in." : pendingNote(pending)}
+              </p>
             )}
           </>
         ) : undefined
@@ -88,7 +95,7 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
       <div className="flex items-center justify-between gap-3">
         <span className="text-[13px] font-semibold text-quiet">{session.name}</span>
         <span className="flex h-8 items-center rounded-full bg-surface px-3 text-[13px] font-bold shadow-[0_1px_2px_rgba(23,24,26,0.08)]">
-          Picking
+          {ranking ? "Ranking" : "Picking"}
         </span>
       </div>
 
@@ -101,9 +108,18 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
         </span>
         {everyoneDone ? (
           <>
-            <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">Everyone’s done</h1>
+            <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">
+              {ranking ? "Everyone’s in" : "Everyone’s done"}
+            </h1>
             <p className="text-base leading-[1.45] font-medium text-quiet">
-              Tallying the group’s picks…
+              {ranking ? "Picking the winner…" : "Tallying the group’s picks…"}
+            </p>
+          </>
+        ) : ranking ? (
+          <>
+            <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">Your ranking is in</h1>
+            <p className="text-base leading-[1.45] font-medium text-quiet">
+              Saved. Sit tight while the last ranking comes in.
             </p>
           </>
         ) : (
@@ -149,7 +165,7 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
                     Done
                   </span>
                 ) : (
-                  <span className="text-[13px] font-bold text-quiet">Still picking</span>
+                  <span className="text-[13px] font-bold text-quiet">{ranking ? "Still ranking" : "Still picking"}</span>
                 )}
               </li>
             );
@@ -163,9 +179,11 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
 
       <p className="flex items-start gap-3 text-[15px] leading-[1.45] font-semibold">
         <ArrowRightIcon size={20} className="mt-0.5 shrink-0" />
-        {everyoneDone
-          ? "Next, the group ranks the finalists in the session’s voting method."
-          : "Once everyone finishes, the spots the group liked become finalists, and you’ll rank them."}
+        {ranking
+          ? "Once everyone has ranked, we’ll announce where you’re eating."
+          : everyoneDone
+            ? "Next, the group ranks the finalists in the session’s voting method."
+            : "Once everyone finishes, the spots the group liked become finalists, and you’ll rank them."}
       </p>
     </FlowScreen>
   );
