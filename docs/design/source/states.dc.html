@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Edge states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 1280px; min-height: 1000px; box-sizing: border-box; padding: 48px; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 40px; line-height: 1.05; font-weight: 800; letter-spacing: -0.02em">Edge states</h1>
+<p style="margin: 0; font-size: 16px; font-weight: 500; color: #5E6168">Short, friendly, and always one clear next step.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px">
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">Opening an invite</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.6 0l3-3a4 4 0 0 0-5.6-5.6l-.9.9M14 10a4 4 0 0 0-5.6 0l-3 3a4 4 0 0 0 5.6 5.6l.9-.9M4 4l16 16"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">This invite doesn’t work</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">The link might be old or cut off. Ask for a fresh one, or type the code.</p>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 48px; border-radius: 16px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer">Enter a code</button>
+<button style="height: 44px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 700; cursor: pointer">Start your own dinner</button>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">Joining</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.8-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 15.2 12 21 12 21z"></path><path d="M4 4l16 16"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">We can’t see your location</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">Location is off for this site. Tell us where you’re starting and distances will use that.</p>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 48px; border-radius: 16px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer">Enter a starting area</button>
+<button style="height: 44px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 700; cursor: pointer">Try location again</button>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">Starting a round, host</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">Nothing matches these filters</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">No open spots within 1 mi at $ to $$ right now.</p>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 48px; border-radius: 16px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer">Widen to 2 mi</button>
+<button style="height: 44px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 700; cursor: pointer">Change filters</button>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">After a round</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v4h-4"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">No finalists yet</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">Nothing got enough yeses without a veto, so here’s a fresh set of spots. Used vetoes stay used.</p>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 48px; border-radius: 16px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer">Keep picking</button>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">Lobby, host</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M18 8v6M15 11h6"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">Just you so far</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">Send the link and friends pop in here as they join. You can also start solo.</p>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 48px; border-radius: 16px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer">Copy invite link</button>
+<button style="height: 44px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 700; cursor: pointer">Start anyway</button>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">Any screen</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a10 10 0 0 1 4-2.3M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 4.2-2.6M14.5 6.2A15 15 0 0 1 22 8.8M4 4l16 16"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">Reconnecting…</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">You can keep swiping. Your votes are saved on this phone and sync when you’re back online.</p>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<div role="status" style="min-height: 36px; padding: 6px 12px; border-radius: 12px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; box-sizing: border-box">Banner shown under the header</div>
+<button style="height: 44px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 700; cursor: pointer">Try now</button>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">Swiping</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">No vetoes left</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">You’ve used both. You can still say No to anything you don’t want.</p>
+<div style="margin-top: auto; display: flex; gap: 8px">
+<button disabled="{{true}}" style="flex: 1; height: 56px; border-radius: 16px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; display: flex; align-items: center; justify-content: center; gap: 6px"><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15"><span style="font-size: 15px; font-weight: 700">Veto</span><span style="font-size: 12px; font-weight: 600; color: #5E6168">0 left</span></span></button>
+<button style="flex: 1; height: 56px; border-radius: 16px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 15px; font-weight: 700; cursor: pointer">No</button>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px; min-height: 372px; box-sizing: border-box">
+<span style="font-size: 12px; font-weight: 700; color: #5E6168">Opening an old link</span>
+<span style="width: 48px; height: 48px; border-radius: 16px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800">This dinner has ended</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500; color: #5E6168">Friday dinner already picked a spot.</p>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 48px; border-radius: 16px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 15px; font-weight: 800; cursor: pointer">See where they’re eating</button>
+<button style="height: 44px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 700; cursor: pointer">Start a new dinner</button>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":1280,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#D2432A' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pick a spot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button{font-family:inherit}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 0 20px; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+
+<header style="padding-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="font-size: 13px; font-weight: 600; color: #5E6168">Friday dinner</span>
+<h1 style="margin: 0; font-size: 22px; line-height: 1.2; font-weight: 800; letter-spacing: -0.01em">Pick a spot</h1>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="display: flex; align-items: center" aria-label="4 people in this session" role="img">
+<span style="width: 28px; height: 28px; border-radius: 999px; background: #17181A; color: #FFFFFF; border: 2px solid #FAF9F6; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">You</span>
+<span style="width: 28px; height: 28px; margin-left: -8px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2px solid #FAF9F6; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">MK</span>
+<span style="width: 28px; height: 28px; margin-left: -8px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2px solid #FAF9F6; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">TJ</span>
+<span style="width: 28px; height: 28px; margin-left: -8px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2px solid #FAF9F6; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">NB</span>
+</div>
+<span style="height: 32px; padding: 0 12px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(23, 24, 26, 0.08); display: flex; align-items: center; font-size: 14px; font-weight: 700; white-space: nowrap">{{progressLabel}}</span>
+</div>
+</header>
+
+<div role="progressbar" aria-label="Restaurants reviewed" aria-valuemin="0" aria-valuemax="12" aria-valuenow="{{count}}" style="margin-top: 12px; height: 4px; border-radius: 999px; background: #ECEAE5; overflow: hidden; flex-shrink: 0">
+<div style="height: 100%; width: {{progressPct}}; background: {{accent}}; border-radius: 999px; transition: width 300ms ease"></div>
+</div>
+
+<sc-if value="{{reconnecting}}" hint-placeholder-val="{{false}}">
+<div role="status" style="margin-top: 10px; min-height: 36px; padding: 6px 12px; border-radius: 12px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; box-sizing: border-box; flex-shrink: 0">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v4h-4"></path></svg>Reconnecting. Your votes are saved and will sync.
+</div>
+</sc-if>
+
+<div style="position: relative; margin-top: 14px; height: 188px; flex-shrink: 0; border-radius: 22px; overflow: hidden; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.08)">
+<svg viewBox="0 0 350 188" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of Cambridge showing Juniper and Rice and where each friend is" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect width="350" height="188" fill="#EEF0EB"></rect>
+<path d="M42 22 L96 30 L90 58 L38 52 Z" fill="#DCE7D4"></path>
+<rect x="222" y="16" width="46" height="26" rx="4" fill="#DCE7D4"></rect>
+<path d="M0 156 C 60 144, 112 172, 172 166 S 282 146, 350 156 L350 188 L0 188 Z" fill="#CFE0EA"></path>
+<g fill="none" stroke-linecap="round">
+<g stroke="#E1E3DE" stroke-width="5.5">
+<path d="M18 -10 L44 150"></path>
+<path d="M120 -10 L136 154"></path>
+<path d="M196 -10 L206 160"></path>
+<path d="M286 -10 L300 154"></path>
+<path d="M-10 26 C 90 32, 200 52, 360 86"></path>
+<path d="M-10 128 C 100 132, 220 136, 360 126"></path>
+</g>
+<g stroke="#FFFFFF" stroke-width="3.5">
+<path d="M18 -10 L44 150"></path>
+<path d="M120 -10 L136 154"></path>
+<path d="M196 -10 L206 160"></path>
+<path d="M286 -10 L300 154"></path>
+<path d="M-10 26 C 90 32, 200 52, 360 86"></path>
+<path d="M-10 128 C 100 132, 220 136, 360 126"></path>
+</g>
+<path d="M-10 66 C 80 72, 170 92, 250 108 S 330 122, 360 126" stroke="#E1E3DE" stroke-width="9"></path>
+<path d="M-10 66 C 80 72, 170 92, 250 108 S 330 122, 360 126" stroke="#FFFFFF" stroke-width="6.5"></path>
+<path d="M0 148 C 60 136, 112 164, 172 158 S 282 138, 350 148" stroke="#FFFFFF" stroke-width="4"></path>
+</g>
+<text x="52" y="72" font-size="11" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Harvard Sq</text>
+<text x="252" y="104" font-size="11" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Central Sq</text>
+</svg>
+
+<span style="position: absolute; left: 70px; top: 96px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #17181A; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">You</span>
+<span style="position: absolute; left: 148px; top: 40px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">MK</span>
+<span style="position: absolute; left: 270px; top: 40px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">TJ</span>
+<span style="position: absolute; left: 304px; top: 136px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-sizing: border-box">NB</span>
+
+<div style="position: absolute; left: 196px; top: 104px; transform: translate(-50%, -100%); filter: drop-shadow(0 3px 5px rgba(23, 24, 26, 0.25))" aria-hidden="true">
+<svg width="34" height="42" viewBox="0 0 34 42"><path d="M17 41 C 17 41, 2 25.5, 2 15.5 A 15 15 0 0 1 32 15.5 C 32 25.5, 17 41, 17 41 Z" fill="{{accent}}" stroke="#FFFFFF" stroke-width="2.5"></path><path d="M13 9v6.5a2 2 0 0 0 2 2M15 9v14M11 9v6.5a2 2 0 0 0 2 2M21.5 23V9c-2 1-3 3.2-3 6v3h3" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div style="position: absolute; left: 218px; top: 70px; height: 26px; padding: 0 10px; border-radius: 8px; background: #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.14); display: flex; align-items: center; font-size: 12px; font-weight: 800; white-space: nowrap">Juniper &amp; Rice</div>
+
+<span style="position: absolute; left: 10px; bottom: 6px; font-size: 11px; font-weight: 700; color: #5E6168">Google</span>
+<span style="position: absolute; right: 10px; bottom: 6px; font-size: 11px; color: #5E6168">Map data ©2026</span>
+</div>
+
+<article onPointerDown="{{onDown}}" onPointerMove="{{onMove}}" onPointerUp="{{onUp}}" onPointerCancel="{{onUp}}" aria-label="Juniper and Rice. Swipe right for yes, left for no, or use the buttons below." style="margin-top: 14px; flex: 1; min-height: 0; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 26px; overflow: hidden; box-shadow: 0 12px 32px rgba(23, 24, 26, 0.08), 0 2px 6px rgba(23, 24, 26, 0.05); touch-action: pan-y; user-select: none; cursor: grab; transform: {{cardTransform}}; opacity: {{cardOpacity}}; transition: {{cardTransition}}">
+<div style="position: relative; flex: 1; min-height: 160px; background: #E9E4DA">
+<img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="A table of Korean dishes: a bubbling stew, grilled fish, and many small bowls of banchan" draggable="false" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none">
+<sc-if value="{{fbYes}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; top: 14px; left: 14px; height: 34px; padding: 0 14px; border-radius: 999px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 800; box-shadow: 0 4px 12px rgba(23, 24, 26, 0.2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Yes</span>
+</sc-if>
+<sc-if value="{{fbNo}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; top: 14px; right: 14px; height: 34px; padding: 0 14px; border-radius: 999px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 800; box-shadow: 0 4px 12px rgba(23, 24, 26, 0.2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>No</span>
+</sc-if>
+<sc-if value="{{fbVeto}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; top: 14px; left: 50%; transform: translateX(-50%); height: 34px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; color: #17181A; display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 800; box-shadow: 0 4px 12px rgba(23, 24, 26, 0.2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg>Vetoed</span>
+</sc-if>
+</div>
+<div style="padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+<h2 style="margin: 0; flex: 1; min-width: 0; font-size: 32px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere">Juniper &amp; Rice</h2>
+<a href="Details.dc.html" style="flex-shrink: 0; height: 44px; margin: -4px -8px 0 0; padding: 0 8px; border-radius: 12px; display: flex; align-items: center; gap: 2px; font-size: 14px; font-weight: 700; color: #17181A; text-decoration: none">Details<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+</div>
+<p style="margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 15px; font-weight: 600; color: #5E6168">
+<span>Korean</span><span aria-hidden="true">·</span><span>$$</span><span aria-hidden="true">·</span>
+<span style="display: flex; align-items: center; gap: 4px; color: #17181A"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.6l-5.8 3 1.1-6.4-4.7-4.6 6.5-.9z" fill="#17181A"></path></svg>4.8</span>
+</p>
+<p style="margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 15px; font-weight: 500; color: #5E6168">
+<span style="display: flex; align-items: center; gap: 5px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5E6168" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.8-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 15.2 12 21 12 21z"></path><circle cx="12" cy="9.8" r="2.3"></circle></svg>0.7 mi from you</span>
+<span aria-hidden="true">·</span>
+<span style="display: flex; align-items: center; gap: 5px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5E6168" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>Open until 11 PM</span>
+</p>
+</div>
+</article>
+
+<div style="padding: 16px 0 22px; display: flex; gap: 10px; flex-shrink: 0">
+<button onClick="{{voteNo}}" style="flex: 1; height: 60px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 700; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>No
+</button>
+<button onClick="{{voteVeto}}" disabled="{{vetoDisabled}}" style="flex: 1; height: 60px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg>
+<span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15"><span style="font-size: 16px; font-weight: 700">Veto</span><span style="font-size: 12px; font-weight: 600; color: #5E6168">{{vetoLabel}}</span></span>
+</button>
+<button onClick="{{voteYes}}" style="flex: 1.35; height: 60px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(210, 67, 42, 0.24)">
+<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Yes
+</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"connection":{"editor":"enum","options":["online","reconnecting"],"default":"online"},"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var s = this.state || {};
+    var self = this;
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (err) {}
+    var accent = this.props.accent ?? '#D2432A';
+    var vetoes = s.vetoes == null ? 2 : s.vetoes;
+    var count = s.count == null ? 4 : s.count;
+    var phase = s.phase || 'idle';
+    var dir = s.dir || null;
+    var dragX = s.dragX || 0;
+    var dragging = !!s.dragging;
+
+    var vote = function (d) {
+      var cur = self.state || {};
+      if (cur.phase && cur.phase !== 'idle') { return; }
+      if (d === 'veto' && vetoes <= 0) { return; }
+      self._down = false;
+      self.setState({ phase: 'out', dir: d, dragging: false });
+      setTimeout(function () {
+        self.setState({
+          phase: 'reset',
+          dragX: 0,
+          count: count >= 12 ? 1 : count + 1,
+          vetoes: d === 'veto' ? vetoes - 1 : vetoes
+        });
+        setTimeout(function () { self.setState({ phase: 'idle', dir: null }); }, 40);
+      }, reduce ? 140 : 260);
+    };
+
+    var transform = 'none';
+    var opacity = 1;
+    var transition = reduce ? 'opacity 140ms linear' : 'transform 260ms cubic-bezier(.2,.8,.2,1), opacity 260ms ease-out';
+    if (phase === 'idle' && dragging && !reduce) {
+      transform = 'translateX(' + dragX + 'px) rotate(' + (dragX / 20) + 'deg)';
+      transition = 'none';
+    } else if (phase === 'out') {
+      opacity = 0;
+      if (!reduce) {
+        transition = 'transform 260ms cubic-bezier(.4,0,1,1), opacity 260ms ease-in';
+        if (dir === 'yes') { transform = 'translateX(130%) rotate(12deg)'; }
+        else if (dir === 'no') { transform = 'translateX(-130%) rotate(-12deg)'; }
+        else { transform = 'translateY(-24px) scale(.96)'; }
+      }
+    } else if (phase === 'reset') {
+      transition = 'none';
+      opacity = 0;
+      transform = reduce ? 'none' : 'translateY(16px) scale(.98)';
+    }
+
+    var fb = null;
+    if (phase === 'out') { fb = dir; }
+    else if (dragging && Math.abs(dragX) > 50) { fb = dragX > 0 ? 'yes' : 'no'; }
+
+    return {
+      accent: accent,
+      reconnecting: (this.props.connection ?? 'online') === 'reconnecting',
+      count: count,
+      progressLabel: count + ' of 12',
+      progressPct: Math.round(count / 12 * 100) + '%',
+      vetoLabel: vetoes + ' left',
+      vetoDisabled: vetoes <= 0,
+      cardTransform: transform,
+      cardOpacity: opacity,
+      cardTransition: transition,
+      fbYes: fb === 'yes',
+      fbNo: fb === 'no',
+      fbVeto: fb === 'veto',
+      voteYes: function () { vote('yes'); },
+      voteNo: function () { vote('no'); },
+      voteVeto: function () { vote('veto'); },
+      onDown: function (e) {
+        if (phase !== 'idle') { return; }
+        if (e.target && e.target.closest && e.target.closest('a, button')) { return; }
+        self._sx = e.clientX;
+        self._down = true;
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      },
+      onMove: function (e) {
+        if (!self._down) { return; }
+        var dx = e.clientX - self._sx;
+        if (Math.abs(dx) > 4) { self.setState({ dragging: true, dragX: dx }); }
+      },
+      onUp: function () {
+        if (!self._down) { return; }
+        self._down = false;
+        var dx = (self.state || {}).dragX || 0;
+        if (dx > 110) { vote('yes'); }
+        else if (dx < -110) { vote('no'); }
+        else { self.setState({ dragging: false, dragX: 0 }); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

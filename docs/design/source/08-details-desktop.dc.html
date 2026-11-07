@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Juniper &amp; Rice details, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+</style>
+</helmet>
+<div style="position: relative; width: 100%; min-height: 820px; height: 100vh; box-sizing: border-box; overflow: hidden; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+
+<div aria-hidden="true" style="max-width: 1120px; margin: 0 auto; padding: 28px 32px 0; box-sizing: border-box">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600; color: #5E6168">Friday dinner</span><span style="font-size: 28px; font-weight: 800; letter-spacing: -0.01em">Pick a spot</span></div>
+<span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-size: 15px; font-weight: 700">4 of 12</span>
+</div>
+<div style="margin-top: 16px; height: 4px; border-radius: 999px; background: #ECEAE5"><div style="width: 33%; height: 100%; border-radius: 999px; background: {{accent}}"></div></div>
+<div style="margin-top: 24px; display: flex; gap: 24px; flex-wrap: wrap">
+<div style="flex: 1 1 380px; height: 560px; border-radius: 26px; background: #EEF0EB"></div>
+<div style="flex: 1 1 380px; height: 560px; border-radius: 26px; background: #FFFFFF; overflow: hidden; display: flex; flex-direction: column"><div style="flex: 1; background: #E9E4DA"></div><div style="height: 130px"></div></div>
+</div>
+</div>
+<div style="position: absolute; inset: 0; background: rgba(23, 24, 26, 0.45)" aria-hidden="true"></div>
+
+<div role="dialog" aria-modal="true" aria-labelledby="dd-title" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(960px, calc(100% - 48px)); height: min(700px, calc(100% - 64px)); background: #FFFFFF; border-radius: 28px; box-shadow: 0 24px 60px rgba(23, 24, 26, 0.25); display: flex; flex-direction: column; overflow: hidden">
+
+<div style="flex: 1; min-height: 0; display: flex; flex-wrap: wrap">
+
+<div style="flex: 1 1 380px; min-width: 0; position: relative; background: {{photoTone}}; min-height: 280px">
+<sc-if value="{{isRealPhoto}}" hint-placeholder-val="{{true}}">
+<img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="A table of Korean dishes with a stew and many small side dishes" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block">
+</sc-if>
+<sc-if value="{{isPlaceholder}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #5E5A52">
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#5E5A52" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M8 6l1.5-2h5L16 6"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+<span style="font-size: 14px; font-weight: 700">{{photoLabel}}</span>
+</div>
+</sc-if>
+<button onClick="{{prevPhoto}}" disabled="{{atFirst}}" aria-label="Previous photo" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 999px; border: none; background: #FFFFFF; box-shadow: 0 2px 8px rgba(23, 24, 26, 0.18); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<button onClick="{{nextPhoto}}" disabled="{{atLast}}" aria-label="Next photo" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 999px; border: none; background: #FFFFFF; box-shadow: 0 2px 8px rgba(23, 24, 26, 0.18); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<div style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="height: 28px; padding: 0 10px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 600; color: #3D4047">Photo by&#160;<a href="https://maps.google.com" style="color: #3D4047">{{photoAuthor}}</a>&#160;on Google Maps</span>
+<span aria-live="polite" style="height: 28px; padding: 0 10px; border-radius: 999px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 700">{{photoPosition}}</span>
+</div>
+</div>
+
+<div style="flex: 1 1 380px; min-width: 0; height: 100%; overflow-y: auto; box-sizing: border-box; padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 id="dd-title" style="margin: 0; font-size: 34px; line-height: 1.08; font-weight: 800; letter-spacing: -0.02em">Juniper &amp; Rice</h2>
+<p style="margin: 0; font-size: 15px; font-weight: 600; color: #5E6168">Korean · $$ · <span style="color: #17181A">★ 4.8</span> (1,240 reviews)</p>
+<p style="margin: 0; font-size: 15px; font-weight: 500; color: #5E6168">1186 Mass Ave, Cambridge · 0.7 mi from you</p>
+</div>
+<button aria-label="Close details" style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 999px; border: none; background: #F1EFEA; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+
+<div style="border-radius: 16px; background: #FAF9F6; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>Open until 11 PM</span>
+<ul style="list-style: none; margin: 0; padding: 0 0 0 25px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 20px; font-size: 13px; font-weight: 500; color: #5E6168">
+<li>Mon to Thu, 11:30 AM to 10 PM</li>
+<li style="font-weight: 800; color: #17181A">Fri (today), 11:30 AM to 11 PM</li>
+<li>Sat, 11:30 AM to 11 PM</li>
+<li>Sun, Noon to 9 PM</li>
+</ul>
+</div>
+
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px">
+<li style="height: 32px; padding: 0 12px; border-radius: 999px; background: #F1EFEA; display: flex; align-items: center; font-size: 13px; font-weight: 600">Vegetarian options</li>
+<li style="height: 32px; padding: 0 12px; border-radius: 999px; background: #F1EFEA; display: flex; align-items: center; font-size: 13px; font-weight: 600">Takes reservations</li>
+<li style="height: 32px; padding: 0 12px; border-radius: 999px; background: #F1EFEA; display: flex; align-items: center; font-size: 13px; font-weight: 600">Outdoor seating</li>
+</ul>
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+<p style="margin: 0; font-size: 16px; line-height: 1.5; font-weight: 500">Casual Korean spot known for bubbling stews and a generous banchan spread.</p>
+<span style="font-size: 12px; font-weight: 600; color: #5E6168">Summary from Google</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: baseline; justify-content: space-between"><h3 style="margin: 0; font-size: 18px; font-weight: 800">Reviews</h3><span style="font-size: 13px; font-weight: 600; color: #5E6168">Most relevant</span></div>
+<article style="border-radius: 16px; background: #FAF9F6; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800" aria-hidden="true">DL</span><span style="display: flex; flex-direction: column"><a href="https://maps.google.com" style="font-size: 14px; font-weight: 700; color: #17181A">Dana L.</a><span style="font-size: 12px; font-weight: 600; color: #5E6168">5 stars, 2 weeks ago</span></span></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500">The kimchi jjigae is the move. Banchan refills came without asking and the staff kept our table of six happy even on a packed Friday.</p>
+</article>
+<a href="https://maps.google.com" style="font-size: 14px; font-weight: 700">All reviews on Google Maps</a>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="https://example.com" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #E2E0DB; color: #17181A; text-decoration: none; display: flex; align-items: center; font-size: 14px; font-weight: 700">Website</a>
+<a href="https://maps.google.com" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #E2E0DB; color: #17181A; text-decoration: none; display: flex; align-items: center; font-size: 14px; font-weight: 700">Directions</a>
+<a href="tel:+16175550142" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #E2E0DB; color: #17181A; text-decoration: none; display: flex; align-items: center; font-size: 14px; font-weight: 700">Call</a>
+</div>
+<p style="margin: 0; font-size: 12px; font-weight: 600; color: #5E6168">Restaurant info, photos and reviews from <span style="font-weight: 800; color: #17181A">Google</span> Maps</p>
+</div>
+
+</div>
+
+<div style="flex-shrink: 0; padding: 14px 20px; background: #FFFFFF; box-shadow: 0 -1px 0 #ECEAE5; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px">
+<span style="margin-right: auto; font-size: 13px; font-weight: 600; color: #5E6168">Esc closes. Your place in the deck stays put.</span>
+<button style="width: 140px; height: 56px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 700; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>No</button>
+<button style="width: 140px; height: 56px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15"><span style="font-size: 16px; font-weight: 700">Veto</span><span style="font-size: 12px; font-weight: 600; color: #5E6168">2 left</span></span></button>
+<button style="width: 180px; height: 56px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(210, 67, 42, 0.24)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Yes</button>
+</div>
+
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var s = this.state || {};
+    var self = this;
+    var photos = [
+      { real: true, label: '', tone: '#E9E4DA', author: 'Jae Park' },
+      { real: false, label: 'Bibimbap photo', tone: '#EDE3D3', author: 'Lena Soto' },
+      { real: false, label: 'Kimchi stew photo', tone: '#F0DED6', author: 'Chris Oh' },
+      { real: false, label: 'Dining room photo', tone: '#E6E3DC', author: 'Priya N.' }
+    ];
+    var i = s.photo || 0;
+    var p = photos[i];
+    return {
+      accent: this.props.accent ?? '#D2432A',
+      isRealPhoto: p.real,
+      isPlaceholder: !p.real,
+      photoTone: p.tone,
+      photoLabel: p.label,
+      photoAuthor: p.author,
+      photoPosition: (i + 1) + ' / ' + photos.length,
+      atFirst: i === 0,
+      atLast: i === photos.length - 1,
+      prevPhoto: function () { if (i > 0) { self.setState({ photo: i - 1 }); } },
+      nextPhoto: function () { if (i < photos.length - 1) { self.setState({ photo: i + 1 }); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

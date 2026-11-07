@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Put your favorites first</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spin{animation:none!important}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-size: 13px; font-weight: 600; color: #5E6168">Friday dinner</span>
+<span style="height: 32px; padding: 0 12px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(23, 24, 26, 0.08); display: flex; align-items: center; font-size: 13px; font-weight: 700">Ranked points</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 32px; line-height: 1.08; font-weight: 800; letter-spacing: -0.02em">Put your favorites first</h1>
+<p style="margin: 0; font-size: 15px; font-weight: 500; color: #5E6168">3 finalists. Drag to reorder, or use the arrows.</p>
+</div>
+
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{rows}}" as="item" hint-placeholder-count="3">
+<li style="display: flex; align-items: center; gap: 10px; background: #FFFFFF; border-radius: 20px; padding: 10px 10px 10px 8px; box-shadow: {{item.shadow}}; outline: {{item.outline}}; outline-offset: -2px">
+<span style="width: 24px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: grab" aria-hidden="true">
+<svg width="14" height="20" viewBox="0 0 14 20"><circle cx="4" cy="4" r="1.6" fill="#9A9DA3"></circle><circle cx="10" cy="4" r="1.6" fill="#9A9DA3"></circle><circle cx="4" cy="10" r="1.6" fill="#9A9DA3"></circle><circle cx="10" cy="10" r="1.6" fill="#9A9DA3"></circle><circle cx="4" cy="16" r="1.6" fill="#9A9DA3"></circle><circle cx="10" cy="16" r="1.6" fill="#9A9DA3"></circle></svg>
+</span>
+<span style="position: relative; width: 68px; height: 68px; flex-shrink: 0; border-radius: 16px; overflow: hidden; background: {{item.tone}}">
+<sc-if value="{{item.real}}" hint-placeholder-val="{{false}}">
+<img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block">
+</sc-if>
+<sc-if value="{{item.placeholder}}" hint-placeholder-val="{{true}}">
+<span style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5E5A52" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M8 6l1.5-2h5L16 6"></path><circle cx="12" cy="13" r="3.5"></circle></svg></span>
+</sc-if>
+<span style="position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 999px; background: {{item.badgeBg}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.25)">{{item.rank}}</span>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<sc-if value="{{item.isTop}}" hint-placeholder-val="{{false}}">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 800; color: #B33A22">Your top pick</span>
+</sc-if>
+<span style="font-size: 17px; line-height: 1.2; font-weight: 800">{{item.name}}</span>
+<span style="font-size: 13px; font-weight: 600; color: #5E6168">{{item.meta}}</span>
+</span>
+<span style="display: flex; flex-direction: column; gap: 4px; flex-shrink: 0">
+<button onClick="{{item.up}}" disabled="{{item.isFirst}}" aria-label="{{item.upLabel}}" style="width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid #E2E0DB; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"></path></svg>
+</button>
+<button onClick="{{item.down}}" disabled="{{item.isLast}}" aria-label="{{item.downLabel}}" style="width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid #E2E0DB; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+</span>
+</li>
+</sc-for>
+</ol>
+
+<p style="margin: 0; font-size: 13px; line-height: 1.45; font-weight: 500; color: #5E6168">Your first choice counts the most. If two spots tie, the one more people said yes to wins.</p>
+
+</div>
+
+<div style="flex-shrink: 0; padding: 14px 20px 24px; background: #FAF9F6; box-shadow: 0 -1px 0 #ECEAE5; display: flex; flex-direction: column; gap: 8px">
+<sc-if value="{{notSaved}}" hint-placeholder-val="{{true}}">
+<button onClick="{{submit}}" disabled="{{saving}}" aria-busy="{{saving}}" style="height: 56px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 6px 16px rgba(210, 67, 42, 0.24)">
+<sc-if value="{{saving}}" hint-placeholder-val="{{false}}">
+<svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" aria-hidden="true" style="animation: spin 800ms linear infinite"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+</sc-if>
+{{submitLabel}}
+</button>
+</sc-if>
+<sc-if value="{{saved}}" hint-placeholder-val="{{false}}">
+<a href="Done.dc.html" style="height: 56px; border-radius: 18px; background: #17181A; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Ranking saved. See the group</a>
+</sc-if>
+</div>
+
+<sc-if value="{{saved}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; left: 50%; bottom: 112px; transform: translateX(-50%); height: 44px; padding: 0 16px; border-radius: 14px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 20px rgba(23, 24, 26, 0.2)">Your ranking is in</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var s = this.state || {};
+    var self = this;
+    var accent = this.props.accent ?? '#D2432A';
+    var base = {
+      juniper: { name: 'Juniper & Rice', meta: 'Korean · $$ · 0.7 mi', real: true, tone: '#E9E4DA' },
+      tanuki: { name: 'Tanuki Noodle House', meta: 'Japanese · $$ · 0.4 mi', real: false, tone: '#EDE3D3' },
+      verbena: { name: 'Casa Verbena', meta: 'Mexican · $ · 0.9 mi', real: false, tone: '#F0DED6' }
+    };
+    var order = s.order || ['juniper', 'tanuki', 'verbena'];
+    var status = s.status || 'idle';
+    var n = order.length;
+    var locked = status !== 'idle';
+    var rows = order.map(function (id, i) {
+      var r = base[id];
+      var swap = function (j) {
+        if (locked) { return; }
+        var o = order.slice();
+        var t = o[i]; o[i] = o[j]; o[j] = t;
+        self.setState({ order: o });
+      };
+      var top = i === 0;
+      return {
+        name: r.name, meta: r.meta, real: r.real, placeholder: !r.real, tone: r.tone,
+        rank: i + 1,
+        isTop: top,
+        badgeBg: top ? accent : '#17181A',
+        shadow: top ? '0 10px 28px rgba(23, 24, 26, 0.10)' : '0 1px 3px rgba(23, 24, 26, 0.07)',
+        outline: top ? '2px solid ' + accent : 'none',
+        isFirst: i === 0 || locked,
+        isLast: i === n - 1 || locked,
+        up: function () { if (i > 0) { swap(i - 1); } },
+        down: function () { if (i < n - 1) { swap(i + 1); } },
+        upLabel: 'Move ' + r.name + ' up',
+        downLabel: 'Move ' + r.name + ' down'
+      };
+    });
+    return {
+      accent: accent,
+      rows: rows,
+      saving: status === 'saving',
+      saved: status === 'saved',
+      notSaved: status !== 'saved',
+      submitLabel: status === 'saving' ? 'Saving…' : 'Submit ranking',
+      submit: function () {
+        if (status !== 'idle') { return; }
+        self.setState({ status: 'saving' });
+        setTimeout(function () { self.setState({ status: 'saved' }); }, 900);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

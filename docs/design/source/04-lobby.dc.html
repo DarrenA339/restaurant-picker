@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Friday dinner lobby</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 12px 20px 20px; display: flex; flex-direction: column; gap: 18px">
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<button aria-label="Leave lobby" style="width: 44px; height: 44px; margin-left: -10px; border-radius: 999px; border: none; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</button>
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="display: flex; align-items: center" role="img" aria-label="4 people here: Sam, Maya, Tyler and Nia">
+<span style="width: 28px; height: 28px; border-radius: 999px; background: #17181A; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800">SR</span>
+<span style="width: 28px; height: 28px; margin-left: -8px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800">MK</span>
+<span style="width: 28px; height: 28px; margin-left: -8px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800">TJ</span>
+<span style="width: 28px; height: 28px; margin-left: -8px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800">NB</span>
+</div>
+<button onClick="{{onCopy}}" style="height: 44px; padding: 0 14px; border-radius: 999px; border: none; background: #FFFFFF; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.1); color: #17181A; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2.5"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>Invite
+</button>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 32px; line-height: 1.08; font-weight: 800; letter-spacing: -0.02em">Friday dinner</h1>
+<p style="margin: 0; font-size: 16px; font-weight: 500; color: #5E6168">Add the spots you want. Everyone’s adds go first.</p>
+</div>
+
+<div style="display: flex; gap: 10px">
+<a href="Explore.dc.html" style="flex: 1; min-width: 0; height: 56px; box-sizing: border-box; border-radius: 18px; background: #FFFFFF; box-shadow: 0 6px 18px rgba(23, 24, 26, 0.08), 0 1px 3px rgba(23, 24, 26, 0.06); display: flex; align-items: center; gap: 10px; padding: 0 16px; text-decoration: none; color: #5E6168; font-size: 16px; font-weight: 600">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+Add a place or a dish
+</a>
+<a href="Explore.dc.html" aria-label="Browse the map" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 18px; background: #17181A; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4L3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"></path><path d="M9 4v13.5M15 6.5V20"></path></svg>
+</a>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-size: 18px; font-weight: 800">Added so far</h2>
+<span style="font-size: 14px; font-weight: 700; color: #5E6168">{{totalLabel}}</span>
+</div>
+<ul style="list-style: none; margin: 0; padding: 4px 14px; background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07)">
+<sc-for list="{{spots}}" as="item" hint-placeholder-count="5">
+<li style="display: flex; align-items: center; gap: 12px; min-height: 68px; border-bottom: {{item.divider}}">
+<span style="width: 48px; height: 48px; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: {{item.tone}}" aria-hidden="true">
+<sc-if value="{{item.real}}" hint-placeholder-val="{{false}}"><img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></sc-if>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 16px; font-weight: 800">{{item.name}}</span>
+<span style="font-size: 13px; font-weight: 600; color: #5E6168">{{item.meta}}</span>
+<sc-if value="{{item.mine}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; font-weight: 800; color: #B33A22">You added this</span>
+</sc-if>
+</span>
+<sc-if value="{{item.mine}}" hint-placeholder-val="{{false}}">
+<button onClick="{{item.remove}}" aria-label="{{item.removeLabel}}" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 999px; border: none; background: #F1EFEA; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+</button>
+</sc-if>
+</li>
+</sc-for>
+<li style="min-height: 52px; display: flex; align-items: center">
+<button style="height: 44px; padding: 0; border: none; background: none; color: #17181A; font-size: 14px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">{{seeAllLabel}}</button>
+</li>
+</ul>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 22px; padding: 12px 12px 12px 18px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 800">How we pick the winner</span><span style="font-size: 14px; font-weight: 600; color: #5E6168">Ranked points (Borda count)</span></span>
+<sc-if value="{{isHost}}" hint-placeholder-val="{{true}}">
+<a href="VotingMethod.dc.html" style="height: 44px; padding: 0 14px; flex-shrink: 0; border-radius: 12px; background: #F1EFEA; color: #17181A; text-decoration: none; display: flex; align-items: center; font-size: 14px; font-weight: 700">Change</a>
+</sc-if>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 22px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 800">Then we add suggestions</h2>
+<sc-if value="{{isHost}}" hint-placeholder-val="{{true}}">
+<button role="switch" aria-checked="{{fillChecked}}" aria-label="Add suggestions after the group's spots" onClick="{{toggleFill}}" style="width: 52px; height: 44px; flex-shrink: 0; border: none; background: none; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span style="width: 52px; height: 32px; border-radius: 999px; background: {{trackBg}}; position: relative; display: block; transition: background 160ms ease">
+<span style="position: absolute; top: 3px; left: {{knobLeft}}; width: 26px; height: 26px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.3); transition: left 160ms ease"></span>
+</span>
+</button>
+</sc-if>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.45; font-weight: 500; color: #5E6168">{{fillText}}</p>
+</div>
+
+</div>
+
+<div style="flex-shrink: 0; padding: 14px 20px 24px; background: #FAF9F6; box-shadow: 0 -1px 0 #ECEAE5">
+<sc-if value="{{isHost}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button style="height: 56px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(210, 67, 42, 0.20)">Start picking</button>
+<p style="margin: 0; text-align: center; font-size: 13px; font-weight: 600; color: #5E6168">{{startNote}}</p>
+</div>
+</sc-if>
+<sc-if value="{{isGuest}}" hint-placeholder-val="{{false}}">
+<div role="status" style="min-height: 84px; border-radius: 18px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-sizing: border-box">
+<span style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 999px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800" aria-hidden="true">SR</span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 16px; font-weight: 800">Waiting for Sam to start</span>
+<span style="font-size: 14px; font-weight: 500; color: #5E6168">Keep adding spots until then.</span>
+</span>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{copied}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); height: 44px; padding: 0 16px; border-radius: 14px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 20px rgba(23, 24, 26, 0.2)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Invite link copied
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"viewAs":{"editor":"enum","options":["host","guest"],"default":"host"},"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var s = this.state || {};
+    var self = this;
+    var isHost = (this.props.viewAs ?? 'host') === 'host';
+    var removed = s.removed || {};
+    var fillOn = s.fillOn == null ? true : s.fillOn;
+    var mineIds = isHost ? { juniper: true, golden: true } : { verbena: true };
+    var all = [
+      { id: 'juniper', name: 'Juniper & Rice', meta: 'Korean · $$ · 0.7 mi', tone: '#E9E4DA', real: true },
+      { id: 'golden', name: 'Golden Fold Dumplings', meta: 'Chinese · $ · 0.8 mi', tone: '#EDE3D3', real: false },
+      { id: 'tanuki', name: 'Tanuki Noodle House', meta: 'Japanese · $$ · 0.4 mi', tone: '#E6E3DC', real: false },
+      { id: 'verbena', name: 'Casa Verbena', meta: 'Mexican · $ · 0.9 mi', tone: '#F0DED6', real: false },
+      { id: 'pleat', name: 'Pleat & Steam', meta: 'Taiwanese · $$ · 1.1 mi', tone: '#E9DFD2', real: false }
+    ];
+    var shown = all.filter(function (x) { return !removed[x.id]; });
+    var total = 14 - Object.keys(removed).length;
+    var fill = fillOn ? Math.max(0, 20 - total) : 0;
+    return {
+      accent: this.props.accent ?? '#D2432A',
+      isHost: isHost,
+      isGuest: !isHost,
+      copied: !!s.copied,
+      seeAllLabel: 'See all ' + total + ' spots',
+      totalLabel: total + ' spots',
+      fillChecked: fillOn ? 'true' : 'false',
+      trackBg: fillOn ? '#17181A' : '#D9D6CF',
+      knobLeft: fillOn ? '23px' : '3px',
+      fillText: fillOn
+        ? fill + ' more spots near Harvard Square that fit the plan, up to 2 mi and $ to $$. They come after the group’s adds.'
+        : (isHost ? 'Off. The deck is only what the group added.' : 'Sam turned these off. The deck is only what the group added.'),
+      toggleFill: function () { self.setState({ fillOn: !fillOn }); },
+      startNote: fill > 0 ? total + ' added spots first, then ' + fill + ' suggestions' : total + ' spots, all added by the group',
+      spots: shown.map(function (x, i) {
+        var mine = !!mineIds[x.id];
+        return {
+          name: x.name, meta: x.meta, tone: x.tone, real: x.real,
+          mine: mine,
+          divider: i === shown.length - 1 ? '1px solid #F1EFEA' : '1px solid #F1EFEA',
+          removeLabel: 'Remove ' + x.name,
+          remove: function () { var n = Object.assign({}, removed); n[x.id] = true; self.setState({ removed: n }); }
+        };
+      }),
+      onCopy: function () {
+        self.setState({ copied: true });
+        clearTimeout(self._t);
+        self._t = setTimeout(function () { self.setState({ copied: false }); }, 2000);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Join Friday dinner</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+input:focus{border-color:#17181A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 24px 20px 24px; display: flex; flex-direction: column; gap: 24px">
+
+<div style="background: #FFFFFF; border-radius: 26px; padding: 22px 20px; box-shadow: 0 12px 32px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="display: flex; align-items: center; flex-shrink: 0" role="img" aria-label="{{inLabel}}">
+<sc-for list="{{shownPeople}}" as="item" hint-placeholder-count="3">
+<span style="width: 34px; height: 34px; margin-left: {{item.offset}}; border-radius: 999px; background: {{item.color}}; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{item.initials}}</span>
+</sc-for>
+<sc-if value="{{hasOverflow}}" hint-placeholder-val="{{false}}">
+<span style="height: 34px; min-width: 34px; padding: 0 8px; margin-left: -9px; border-radius: 999px; background: #F1EFEA; color: #17181A; border: 2.5px solid #FFFFFF; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800">{{overflowLabel}}</span>
+</sc-if>
+</div>
+<span style="flex: 1; min-width: 0; font-size: 14px; line-height: 1.35; font-weight: 600; color: #5E6168">{{inText}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<p style="margin: 0; font-size: 15px; font-weight: 600; color: #5E6168">Maya invited you to</p>
+<h1 style="margin: 0; font-size: 34px; line-height: 1.08; font-weight: 800; letter-spacing: -0.02em">Friday dinner</h1>
+</div>
+<p style="margin: 0; font-size: 14px; font-weight: 500; color: #5E6168">Near Harvard Square, up to 2 mi, $ to $$</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="display-name" style="font-size: 14px; font-weight: 700">What should friends call you?</label>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="width: 52px; height: 52px; flex-shrink: 0; border-radius: 999px; background: {{avatarColor}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800" aria-hidden="true">{{initials}}</span>
+<input id="display-name" type="text" defaultValue="Nia" onInput="{{onName}}" autocomplete="nickname" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; padding: 0 16px; font-size: 16px; font-weight: 600; color: #17181A">
+</div>
+<div role="radiogroup" aria-label="Avatar color" style="display: flex; align-items: center; gap: 4px; margin-top: 2px">
+<span style="font-size: 13px; font-weight: 600; color: #5E6168; margin-right: 6px">Color</span>
+<sc-for list="{{swatches}}" as="item" hint-placeholder-count="4">
+<button role="radio" aria-checked="{{item.checked}}" aria-label="{{item.name}}" onClick="{{item.pick}}" style="width: 44px; height: 44px; border: none; background: none; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span style="width: 28px; height: 28px; border-radius: 999px; background: {{item.color}}; box-shadow: {{item.ring}}"></span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 18px; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.07); display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<span style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8z"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 15px; font-weight: 700">Show distances from you</span>
+<span style="font-size: 14px; line-height: 1.4; font-weight: 500; color: #5E6168">Friends see your rough area on the map, never your exact address.</span>
+</div>
+</div>
+<button style="height: 48px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 15px; font-weight: 700; cursor: pointer">Share my location</button>
+<button style="height: 44px; border: none; background: none; color: #B33A22; font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Enter a starting area instead</button>
+</div>
+
+</div>
+
+<div style="flex-shrink: 0; padding: 12px 20px 24px; background: #FAF9F6; box-shadow: 0 -1px 0 #ECEAE5; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 56px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(210, 67, 42, 0.24)">Join dinner</button>
+<p style="margin: 0; text-align: center; font-size: 13px; font-weight: 500; color: #5E6168">No account needed</p>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"alreadyIn":{"editor":"range","default":3,"min":1,"max":7,"step":1},"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var s = this.state || {};
+    var self = this;
+    var name = s.name == null ? 'Nia' : s.name;
+    var color = s.color || '#2E7A64';
+    var words = name.trim().split(/\s+/).filter(function (w) { return w.length; });
+    var initials = words.length === 0 ? '?' : (words.length === 1 ? words[0].slice(0, 2) : words[0][0] + words[1][0]).toUpperCase();
+    var crowd = [
+      { initials: 'MK', name: 'Maya', color: '#2F6F8F' },
+      { initials: 'SR', name: 'Sam', color: '#17181A' },
+      { initials: 'TJ', name: 'Tyler', color: '#6B4FA0' },
+      { initials: 'JD', name: 'Jordan', color: '#A4532E' },
+      { initials: 'PS', name: 'Priya', color: '#8E3B6B' },
+      { initials: 'LW', name: 'Leo', color: '#3E5C76' },
+      { initials: 'AG', name: 'Ana', color: '#5B6B2E' }
+    ];
+    var n = Math.max(1, Math.min(7, Math.round(this.props.alreadyIn ?? 3)));
+    var inSession = crowd.slice(0, n);
+    var shown = n > 3 ? inSession.slice(0, 3) : inSession;
+    var names = inSession.map(function (p) { return p.name; });
+    var inText = n === 1 ? names[0] + ' is in'
+      : n === 2 ? names[0] + ' and ' + names[1] + ' are in'
+      : n === 3 ? names[0] + ', ' + names[1] + ' and ' + names[2] + ' are in'
+      : names[0] + ', ' + names[1] + ' and ' + (n - 2) + ' others are in';
+    var inLabel = (n === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[n - 1]) + (n === 1 ? ' has joined' : ' have joined');
+    var palette = [
+      { color: '#2E7A64', name: 'Green' },
+      { color: '#A4532E', name: 'Rust' },
+      { color: '#8E3B6B', name: 'Plum' },
+      { color: '#3E5C76', name: 'Slate' },
+      { color: '#5B6B2E', name: 'Olive' }
+    ];
+    var taken = {};
+    inSession.forEach(function (p) { taken[p.color] = true; });
+    var swatches = palette.filter(function (sw) { return !taken[sw.color]; }).slice(0, 4);
+    if (!swatches.some(function (sw) { return sw.color === color; })) { color = swatches.length ? swatches[0].color : '#2E7A64'; }
+    return {
+      accent: this.props.accent ?? '#D2432A',
+      initials: initials,
+      avatarColor: color,
+      inText: inText,
+      inLabel: inLabel,
+      hasOverflow: n > 3,
+      overflowLabel: '+' + (n - 3),
+      shownPeople: shown.map(function (p, i) { return { initials: p.initials, color: p.color, offset: i === 0 ? '0' : '-9px' }; }),
+      onName: function (e) { self.setState({ name: e.target.value }); },
+      swatches: swatches.map(function (sw) {
+        var selected = sw.color === color;
+        return {
+          color: sw.color,
+          name: sw.name,
+          checked: selected ? 'true' : 'false',
+          ring: selected ? '0 0 0 2.5px #FAF9F6, 0 0 0 4.5px #17181A' : 'none',
+          pick: function () { self.setState({ color: sw.color }); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

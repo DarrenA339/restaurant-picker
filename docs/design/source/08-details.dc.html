@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Juniper &amp; Rice details</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; position: relative; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+
+<div aria-hidden="true" style="position: absolute; top: 0; left: 0; right: 0; padding: 16px 20px 0">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 13px; font-weight: 600; color: #5E6168">Friday dinner</span><span style="font-size: 22px; font-weight: 800">Pick a spot</span></div>
+<span style="height: 32px; padding: 0 12px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-size: 14px; font-weight: 700">4 of 12</span>
+</div>
+<div style="margin-top: 12px; height: 4px; border-radius: 999px; background: #ECEAE5"><div style="width: 33%; height: 100%; border-radius: 999px; background: {{accent}}"></div></div>
+<div style="margin-top: 14px; height: 120px; border-radius: 22px; background: #EEF0EB; overflow: hidden">
+<svg width="350" height="120" viewBox="0 0 350 120"><path d="M-10 26 C 90 32, 200 52, 360 86" fill="none" stroke="#FFFFFF" stroke-width="4"></path><path d="M-10 66 C 80 72, 170 92, 250 108 S 330 122, 360 126" fill="none" stroke="#FFFFFF" stroke-width="7"></path><path d="M120 -10 L136 154" fill="none" stroke="#FFFFFF" stroke-width="4"></path><path d="M42 22 L96 30 L90 58 L38 52 Z" fill="#DCE7D4"></path></svg>
+</div>
+</div>
+<div style="position: absolute; inset: 0; background: rgba(23, 24, 26, 0.45)" aria-hidden="true"></div>
+
+<div role="dialog" aria-modal="true" aria-labelledby="details-title" style="position: absolute; left: 0; right: 0; bottom: 0; top: 127px; background: #FFFFFF; border-radius: 28px 28px 0 0; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="position: relative; height: 40px; flex-shrink: 0; display: flex; justify-content: center; align-items: center">
+<span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D6CF" aria-hidden="true"></span>
+<a href="SwipeDirection.dc.html" aria-label="Close details" style="position: absolute; top: 6px; right: 12px; width: 44px; height: 44px; border-radius: 999px; background: #F1EFEA; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+</a>
+</div>
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="position: relative; height: 232px; border-radius: 20px; overflow: hidden; background: {{photoTone}}">
+<sc-if value="{{isRealPhoto}}" hint-placeholder-val="{{true}}">
+<img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="A table of Korean dishes with a stew and many small side dishes" style="width: 100%; height: 100%; object-fit: cover; display: block">
+</sc-if>
+<sc-if value="{{isPlaceholder}}" hint-placeholder-val="{{false}}">
+<div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #5E5A52">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5E5A52" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M8 6l1.5-2h5L16 6"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+<span style="font-size: 13px; font-weight: 700">{{photoLabel}}</span>
+</div>
+</sc-if>
+<button onClick="{{prevPhoto}}" disabled="{{atFirst}}" aria-label="Previous photo" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 999px; border: none; background: #FFFFFF; box-shadow: 0 2px 8px rgba(23, 24, 26, 0.18); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+</button>
+<button onClick="{{nextPhoto}}" disabled="{{atLast}}" aria-label="Next photo" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 999px; border: none; background: #FFFFFF; box-shadow: 0 2px 8px rgba(23, 24, 26, 0.18); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+<span aria-live="polite" style="position: absolute; right: 12px; bottom: 12px; height: 28px; padding: 0 10px; border-radius: 999px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 700">{{photoPosition}}</span>
+</div>
+<p style="margin: 0; font-size: 12px; font-weight: 600; color: #5E6168">Photo by <a href="https://maps.google.com" style="color: #5E6168">{{photoAuthor}}</a> on Google Maps</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 id="details-title" style="margin: 0; font-size: 30px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em">Juniper &amp; Rice</h2>
+<p style="margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 15px; font-weight: 600; color: #5E6168">
+<span>Korean</span><span aria-hidden="true">·</span><span>$$</span><span aria-hidden="true">·</span>
+<span style="display: flex; align-items: center; gap: 4px; color: #17181A"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.6l-5.8 3 1.1-6.4-4.7-4.6 6.5-.9z" fill="#17181A"></path></svg>4.8</span><span>(1,240 reviews)</span>
+</p>
+<p style="margin: 0; font-size: 15px; font-weight: 500; color: #5E6168">1186 Mass Ave, Cambridge · 0.7 mi from you</p>
+</div>
+
+<div style="border-radius: 16px; background: #FAF9F6">
+<button onClick="{{toggleHours}}" aria-expanded="{{hoursOpen}}" aria-controls="hours-list" style="width: 100%; min-height: 52px; padding: 0 14px; border: none; background: none; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; color: #17181A">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+<span style="flex: 1; font-size: 15px; font-weight: 700">Open until 11 PM</span>
+<span style="font-size: 13px; font-weight: 600; color: #5E6168">All hours</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: {{hoursChevron}}; transition: transform 200ms ease"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<sc-if value="{{hoursOpen}}" hint-placeholder-val="{{false}}">
+<ul id="hours-list" style="list-style: none; margin: 0; padding: 0 14px 12px 42px; display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+<sc-for list="{{hours}}" as="item" hint-placeholder-count="7">
+<li style="display: flex; justify-content: space-between; gap: 12px; font-weight: {{item.weight}}; color: {{item.color}}"><span>{{item.day}}</span><span>{{item.time}}</span></li>
+</sc-for>
+</ul>
+</sc-if>
+</div>
+
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px">
+<li style="height: 32px; padding: 0 12px; border-radius: 999px; background: #F1EFEA; display: flex; align-items: center; font-size: 13px; font-weight: 600">Vegetarian options</li>
+<li style="height: 32px; padding: 0 12px; border-radius: 999px; background: #F1EFEA; display: flex; align-items: center; font-size: 13px; font-weight: 600">Takes reservations</li>
+<li style="height: 32px; padding: 0 12px; border-radius: 999px; background: #F1EFEA; display: flex; align-items: center; font-size: 13px; font-weight: 600">Outdoor seating</li>
+</ul>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; font-size: 16px; line-height: 1.5; font-weight: 500">Casual Korean spot known for bubbling stews and a generous banchan spread.</p>
+<span style="font-size: 12px; font-weight: 600; color: #5E6168">Summary from Google</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h3 style="margin: 0; font-size: 18px; font-weight: 800">Reviews</h3>
+<span style="font-size: 13px; font-weight: 600; color: #5E6168">Most relevant</span>
+</div>
+<sc-for list="{{reviews}}" as="item" hint-placeholder-count="2">
+<article style="border-radius: 16px; background: #FAF9F6; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 999px; background: {{item.color}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800" aria-hidden="true">{{item.initials}}</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 1px"><a href="https://maps.google.com" style="font-size: 14px; font-weight: 700; color: #17181A">{{item.name}}</a><span style="font-size: 12px; font-weight: 600; color: #5E6168">{{item.meta}}</span></span>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 500">{{item.text}}</p>
+<button onClick="{{item.toggle}}" aria-expanded="{{item.open}}" style="align-self: flex-start; height: 32px; padding: 0; border: none; background: none; font-size: 13px; font-weight: 700; color: #17181A; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">{{item.toggleLabel}}</button>
+</article>
+</sc-for>
+<a href="https://maps.google.com" style="font-size: 14px; font-weight: 700">All reviews on Google Maps</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<a href="https://example.com" style="height: 52px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path></svg>Website</a>
+<a href="https://maps.google.com" style="height: 52px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"></path></svg>Directions</a>
+<a href="tel:+16175550142" style="height: 52px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>Call</a>
+</div>
+
+<p style="margin: 0; font-size: 12px; font-weight: 600; color: #5E6168">Restaurant info, photos and reviews from <span style="font-weight: 800; color: #17181A">Google</span> Maps</p>
+
+</div>
+
+<div style="flex-shrink: 0; padding: 12px 16px 22px; background: #FFFFFF; box-shadow: 0 -1px 0 #ECEAE5; display: flex; gap: 10px">
+<a href="SwipeDirection.dc.html" style="flex: 1; height: 60px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 700; box-sizing: border-box">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>No
+</a>
+<a href="SwipeDirection.dc.html" style="flex: 1; height: 60px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg>
+<span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15"><span style="font-size: 16px; font-weight: 700">Veto</span><span style="font-size: 12px; font-weight: 600; color: #5E6168">2 left</span></span>
+</a>
+<a href="SwipeDirection.dc.html" style="flex: 1.35; height: 60px; border-radius: 18px; background: {{accent}}; color: #FFFFFF; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; font-weight: 800; box-shadow: 0 6px 16px rgba(210, 67, 42, 0.24)">
+<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Yes
+</a>
+</div>
+
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var s = this.state || {};
+    var self = this;
+    var photos = [
+      { real: true, label: '', tone: '#E9E4DA', author: 'Jae Park' },
+      { real: false, label: 'Bibimbap photo', tone: '#EDE3D3', author: 'Lena Soto' },
+      { real: false, label: 'Kimchi stew photo', tone: '#F0DED6', author: 'Chris Oh' },
+      { real: false, label: 'Dining room photo', tone: '#E6E3DC', author: 'Priya N.' }
+    ];
+    var i = s.photo || 0;
+    var p = photos[i];
+    var hoursOpen = !!s.hoursOpen;
+    var openReviews = s.openReviews || {};
+    var days = [
+      ['Monday', '11:30 AM to 10 PM'], ['Tuesday', '11:30 AM to 10 PM'], ['Wednesday', '11:30 AM to 10 PM'],
+      ['Thursday', '11:30 AM to 10 PM'], ['Friday (today)', '11:30 AM to 11 PM'], ['Saturday', '11:30 AM to 11 PM'], ['Sunday', 'Noon to 9 PM']
+    ];
+    var reviews = [
+      { initials: 'DL', name: 'Dana L.', color: '#2F6F8F', meta: '5 stars, 2 weeks ago', short: 'The kimchi jjigae is the move. Banchan refills came without asking and the staff kept our table of six…', full: 'The kimchi jjigae is the move. Banchan refills came without asking and the staff kept our table of six happy even on a packed Friday. Go early or put your name down.' },
+      { initials: 'RM', name: 'Ravi M.', color: '#6B4FA0', meta: '4 stars, a month ago', short: 'Great value for the portion sizes. The bibimbap comes sizzling in a stone bowl. It gets loud…', full: 'Great value for the portion sizes. The bibimbap comes sizzling in a stone bowl. It gets loud after 7, so not the place for a quiet catch-up.' }
+    ];
+    return {
+      accent: this.props.accent ?? '#D2432A',
+      isRealPhoto: p.real,
+      isPlaceholder: !p.real,
+      photoTone: p.tone,
+      photoLabel: p.label,
+      photoAuthor: p.author,
+      photoPosition: (i + 1) + ' / ' + photos.length,
+      atFirst: i === 0,
+      atLast: i === photos.length - 1,
+      prevPhoto: function () { if (i > 0) { self.setState({ photo: i - 1 }); } },
+      nextPhoto: function () { if (i < photos.length - 1) { self.setState({ photo: i + 1 }); } },
+      hoursOpen: hoursOpen,
+      hoursChevron: hoursOpen ? 'rotate(180deg)' : 'none',
+      toggleHours: function () { self.setState({ hoursOpen: !hoursOpen }); },
+      hours: days.map(function (d) {
+        var today = d[0].indexOf('today') !== -1;
+        return { day: d[0], time: d[1], weight: today ? '800' : '500', color: today ? '#17181A' : '#5E6168' };
+      }),
+      reviews: reviews.map(function (r, idx) {
+        var open = !!openReviews[idx];
+        return {
+          initials: r.initials, name: r.name, color: r.color, meta: r.meta,
+          text: open ? r.full : r.short,
+          open: open ? 'true' : 'false',
+          toggleLabel: open ? 'Less' : 'More',
+          toggle: function () { var n = Object.assign({}, openReviews); n[idx] = !open; self.setState({ openReviews: n }); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

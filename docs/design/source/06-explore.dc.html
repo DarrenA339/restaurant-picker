@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Explore and add spots</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:disabled{cursor:default}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+.thin-scroll{scrollbar-width:thin;scrollbar-color:transparent transparent}
+.thin-scroll:hover{scrollbar-color:#D9D6CF transparent}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spin{animation:none!important}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; position: relative; background: #EEF0EB; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+
+<div onPointerDown="{{onPanDown}}" onPointerMove="{{onPanMove}}" onPointerUp="{{onPanUp}}" onPointerCancel="{{onPanUp}}" style="position: absolute; inset: 0; touch-action: none; cursor: grab; transform: translate({{panX}}, {{panY}})">
+<svg viewBox="-100 -100 590 1044" role="img" aria-label="Map of Cambridge showing matching restaurants and where each friend is" style="position: absolute; left: -100px; top: -100px; width: 590px; height: 1044px">
+<rect x="-100" y="-100" width="590" height="1044" fill="#EEF0EB"></rect>
+<path d="M60 130 L150 142 L140 202 L52 190 Z" fill="#DCE7D4"></path>
+<rect x="250" y="520" width="90" height="56" rx="6" fill="#DCE7D4"></rect>
+<path d="M-100 660 C 80 630, 150 700, 230 688 S 340 650, 490 666 L490 944 L-100 944 Z" fill="#CFE0EA"></path>
+<g fill="none" stroke-linecap="round">
+<g stroke="#E1E3DE" stroke-width="6">
+<path d="M10 -100 L66 660"></path><path d="M150 -100 L172 670"></path><path d="M262 -100 L282 660"></path><path d="M370 -100 L392 660"></path>
+<path d="M-100 110 C 120 120, 260 160, 490 205"></path><path d="M-100 470 C 120 478, 260 490, 490 482"></path><path d="M-100 580 C 120 588, 260 596, 490 588"></path>
+</g>
+<g stroke="#FFFFFF" stroke-width="4">
+<path d="M10 -100 L66 660"></path><path d="M150 -100 L172 670"></path><path d="M262 -100 L282 660"></path><path d="M370 -100 L392 660"></path>
+<path d="M-100 110 C 120 120, 260 160, 490 205"></path><path d="M-100 470 C 120 478, 260 490, 490 482"></path><path d="M-100 580 C 120 588, 260 596, 490 588"></path>
+</g>
+<path d="M-100 280 C 100 292, 200 330, 290 360 S 400 384, 490 392" stroke="#E1E3DE" stroke-width="10"></path>
+<path d="M-100 280 C 100 292, 200 330, 290 360 S 400 384, 490 392" stroke="#FFFFFF" stroke-width="7"></path>
+</g>
+<text x="66" y="222" font-size="11" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Harvard Sq</text>
+<text x="296" y="410" font-size="11" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Central Sq</text>
+</svg>
+
+<span style="position: absolute; left: 236px; top: 466px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #17181A; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">You</span>
+<span style="position: absolute; left: 58px; top: 300px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">MK</span>
+<span style="position: absolute; left: 352px; top: 300px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">TJ</span>
+<span style="position: absolute; left: 312px; top: 470px; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">NB</span>
+
+<sc-for list="{{pins}}" as="item" hint-placeholder-count="5">
+<div style="position: absolute; left: {{item.x}}; top: {{item.y}}; width: 0; height: 0; z-index: {{item.z}}">
+<sc-if value="{{item.selected}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; left: 0; bottom: 26px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none">
+<span style="height: 28px; padding: 0 10px; border-radius: 9px; background: #FFFFFF; box-shadow: 0 3px 10px rgba(23, 24, 26, 0.16); display: flex; align-items: center; font-size: 12px; font-weight: 800; white-space: nowrap">{{item.name}}</span>
+<span style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #FFFFFF"></span>
+</div>
+</sc-if>
+<button onClick="{{item.select}}" aria-label="{{item.pinLabel}}" aria-pressed="{{item.pressed}}" style="position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border: none; background: none; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span style="position: relative; width: {{item.size}}; height: {{item.size}}; border-radius: 999px; background: {{accent}}; border: 2.5px solid #FFFFFF; box-shadow: {{item.shadow}}; display: flex; align-items: center; justify-content: center; box-sizing: border-box; transition: width 150ms ease, height 150ms ease">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7a2 2 0 0 0 2 2M9 3v18M11 3v7a2 2 0 0 1-2 2M17 21V3c-2.2 1.2-3.5 3.6-3.5 6.5V13H17"></path></svg>
+<sc-if value="{{item.added}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; top: -6px; right: -6px; width: 17px; height: 17px; border-radius: 999px; background: #17181A; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-sizing: border-box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+</sc-if>
+</span>
+</button>
+</div>
+</sc-for>
+</div>
+
+<div style="position: absolute; top: 16px; left: 16px; right: 16px; display: flex; align-items: center; gap: 8px">
+<a href="LobbyV2.dc.html" aria-label="Done, back to the session" style="height: 48px; padding: 0 14px; flex-shrink: 0; border-radius: 16px; background: #FFFFFF; box-shadow: 0 2px 8px rgba(23, 24, 26, 0.12); display: flex; align-items: center; gap: 4px; color: #17181A; text-decoration: none; font-size: 15px; font-weight: 800">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>Done
+</a>
+<div style="flex: 1; min-width: 0; height: 48px; box-sizing: border-box; border-radius: 16px; background: #FFFFFF; box-shadow: 0 2px 8px rgba(23, 24, 26, 0.12); display: flex; align-items: center; gap: 6px; padding: 0 2px 0 12px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6168" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input id="ex-search" type="search" aria-label="Search a place or a dish" defaultValue="dumplings" onInput="{{onQuery}}" placeholder="Search a place or dish" style="flex: 1; min-width: 0; height: 44px; border: none; background: transparent; font-size: 16px; font-weight: 600; color: #17181A">
+<sc-if value="{{hasQuery}}" hint-placeholder-val="{{true}}">
+<button onClick="{{clearQuery}}" aria-label="Clear search" style="width: 44px; height: 44px; flex-shrink: 0; border: none; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E6168" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</sc-if>
+</div>
+<button onClick="{{openFilters}}" aria-label="{{filtersLabel}}" style="position: relative; width: 48px; height: 48px; flex-shrink: 0; border-radius: 16px; border: none; background: #FFFFFF; box-shadow: 0 2px 8px rgba(23, 24, 26, 0.12); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2.2"></circle><circle cx="10" cy="17" r="2.2"></circle></svg>
+<sc-if value="{{hasActiveFilters}}" hint-placeholder-val="{{true}}">
+<span style="position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: {{accent}}; color: #FFFFFF; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800" aria-hidden="true">{{activeCount}}</span>
+</sc-if>
+</button>
+</div>
+
+<sc-if value="{{showSearchArea}}" hint-placeholder-val="{{false}}">
+<button onClick="{{searchArea}}" disabled="{{searching}}" aria-busy="{{searching}}" style="position: absolute; top: 76px; left: 50%; transform: translateX(-50%); height: 40px; padding: 0 16px; border-radius: 999px; border: none; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(23, 24, 26, 0.18); cursor: pointer; white-space: nowrap">
+<svg class="{{spinClass}}" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="animation: {{spinAnim}}"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v4h-4"></path></svg>{{searchAreaLabel}}
+</button>
+</sc-if>
+
+<div style="position: absolute; left: 12px; bottom: 354px; height: 22px; padding: 0 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; gap: 8px; font-size: 11px; color: #3D4047"><span style="font-weight: 800">Google</span><span>Map data ©2026</span></div>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 344px; background: #FFFFFF; border-radius: 26px 26px 0 0; box-shadow: 0 -8px 24px rgba(23, 24, 26, 0.10); display: flex; flex-direction: column">
+<div style="height: 22px; flex-shrink: 0; display: flex; justify-content: center; align-items: center"><span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D6CF" aria-hidden="true"></span></div>
+<div style="padding: 2px 20px 8px; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0">
+<h2 aria-live="polite" style="margin: 0; font-size: 19px; font-weight: 800">{{countLabel}}</h2>
+<p style="margin: 0; font-size: 14px; font-weight: 500; color: #5E6168">Add spots for your group to vote on.</p>
+</div>
+<ul class="thin-scroll" style="list-style: none; margin: 0; padding: 4px 12px calc(28px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; flex: 1; min-height: 0">
+<sc-for list="{{rows}}" as="item" hint-placeholder-count="5">
+<li id="{{item.rowId}}" style="display: flex; align-items: center; gap: 10px; padding: 4px 8px 4px 10px; border-radius: 16px; background: {{item.rowBg}}; box-shadow: {{item.rowBar}}; scroll-margin: 8px">
+<button onClick="{{item.openDetails}}" aria-label="{{item.detailsLabel}}" style="flex: 1; min-width: 0; min-height: 66px; border: none; background: none; padding: 0; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; color: #17181A">
+<span style="width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: {{item.tone}}" aria-hidden="true">
+<sc-if value="{{item.real}}" hint-placeholder-val="{{false}}"><img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></sc-if>
+</span>
+<span style="min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 16px; line-height: 1.25; font-weight: 800">{{item.name}}</span>
+<span style="font-size: 13px; font-weight: 600; color: #5E6168">{{item.meta}}</span>
+</span>
+</button>
+<span style="width: 100px; flex-shrink: 0; display: flex; justify-content: flex-end">
+<sc-if value="{{item.isAdded}}" hint-placeholder-val="{{false}}">
+<span style="height: 44px; width: 100px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; color: #3D4047"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3D4047" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Added</span>
+</sc-if>
+<sc-if value="{{item.isSaving}}" hint-placeholder-val="{{false}}">
+<button disabled="{{true}}" aria-busy="true" aria-label="{{item.savingLabel}}" style="height: 44px; width: 100px; box-sizing: border-box; border-radius: 999px; border: 1.5px solid #F1CFC7; background: #FFFFFF; color: #B33A22; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px"><svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B33A22" stroke-width="3" stroke-linecap="round" aria-hidden="true" style="animation: spin 800ms linear infinite"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>Adding</button>
+</sc-if>
+<sc-if value="{{item.canAdd}}" hint-placeholder-val="{{true}}">
+<button onClick="{{item.add}}" aria-label="{{item.addLabel}}" style="height: 44px; width: 100px; box-sizing: border-box; border-radius: 999px; border: 1.5px solid #F1CFC7; background: #FFF6F3; color: #B33A22; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B33A22" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add</button>
+</sc-if>
+</span>
+</li>
+</sc-for>
+<sc-if value="{{noResults}}" hint-placeholder-val="{{false}}">
+<li style="padding: 20px 8px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start">
+<span style="font-size: 16px; font-weight: 800">Nothing matches these filters</span>
+<button onClick="{{openFilters}}" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 700; cursor: pointer">Change filters</button>
+</li>
+</sc-if>
+</ul>
+</div>
+
+<sc-if value="{{toastOk}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; left: 50%; bottom: 360px; transform: translateX(-50%); height: 44px; padding: 0 16px; border-radius: 14px; background: #17181A; color: #FFFFFF; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 20px rgba(23, 24, 26, 0.2)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{toastText}}
+</div>
+</sc-if>
+<sc-if value="{{toastError}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="position: absolute; left: 16px; right: 16px; bottom: 360px; min-height: 48px; padding: 4px 6px 4px 14px; box-sizing: border-box; border-radius: 14px; background: #FFFFFF; border: 1.5px solid #EBCFCA; box-shadow: 0 8px 20px rgba(23, 24, 26, 0.12); display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3271B" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5M12 16.5h.01"></path></svg>
+<span style="flex: 1">{{toastText}}</span>
+<button onClick="{{retry}}" style="height: 38px; padding: 0 12px; border-radius: 10px; border: none; background: #17181A; color: #FFFFFF; font-size: 13px; font-weight: 800; cursor: pointer">Try again</button>
+</div>
+</sc-if>
+
+<sc-if value="{{sheetOpen}}" hint-placeholder-val="{{false}}">
+<div onClick="{{closeFilters}}" style="position: absolute; inset: 0; background: rgba(23, 24, 26, 0.45)" aria-hidden="true"></div>
+<div role="dialog" aria-modal="true" aria-labelledby="filters-title" style="position: absolute; left: 0; right: 0; bottom: 0; max-height: 620px; background: #FFFFFF; border-radius: 26px 26px 0 0; display: flex; flex-direction: column">
+<div style="height: 22px; flex-shrink: 0; display: flex; justify-content: center; align-items: center"><span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D6CF" aria-hidden="true"></span></div>
+<div style="padding: 0 12px 0 20px; display: flex; align-items: center; justify-content: space-between">
+<h2 id="filters-title" style="margin: 0; font-size: 22px; font-weight: 800">Filters</h2>
+<button onClick="{{closeFilters}}" aria-label="Close filters" style="width: 44px; height: 44px; border-radius: 999px; border: none; background: #F1EFEA; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="padding: 12px 20px 8px; display: flex; flex-direction: column; gap: 22px; overflow-y: auto">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span id="open-now-label" style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 800">Open now</span><span style="font-size: 13px; font-weight: 500; color: #5E6168">Hide places that are closed</span></span>
+<button role="switch" aria-checked="{{draftOpenChecked}}" aria-labelledby="open-now-label" onClick="{{toggleOpen}}" style="width: 56px; height: 44px; flex-shrink: 0; border: none; background: none; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span style="width: 52px; height: 32px; border-radius: 999px; background: {{openTrack}}; position: relative; display: block; transition: background 160ms ease"><span style="position: absolute; top: 3px; left: {{openKnob}}; width: 26px; height: 26px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.3); transition: left 160ms ease"></span></span>
+</button>
+</div>
+<div role="group" aria-labelledby="price-label" style="display: flex; flex-direction: column; gap: 10px">
+<span id="price-label" style="font-size: 16px; font-weight: 800">Price</span>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{priceChips}}" as="item" hint-placeholder-count="4">
+<button aria-pressed="{{item.pressed}}" aria-label="{{item.aria}}" onClick="{{item.toggle}}" style="height: 44px; border-radius: 999px; border: 1.5px solid {{item.border}}; background: {{item.bg}}; color: {{item.fg}}; font-size: 15px; font-weight: 800; cursor: pointer">{{item.label}}</button>
+</sc-for>
+</div>
+</div>
+<div role="group" aria-labelledby="cuisine-label" style="display: flex; flex-direction: column; gap: 10px">
+<span id="cuisine-label" style="font-size: 16px; font-weight: 800">Cuisine</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{cuisineChips}}" as="item" hint-placeholder-count="6">
+<button aria-pressed="{{item.pressed}}" onClick="{{item.toggle}}" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid {{item.border}}; background: {{item.bg}}; color: {{item.fg}}; font-size: 14px; font-weight: 700; cursor: pointer">{{item.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+<div style="padding: 12px 20px calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 10px; box-shadow: 0 -1px 0 #ECEAE5">
+<button onClick="{{resetFilters}}" style="flex: 1; height: 54px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; font-size: 16px; font-weight: 700; cursor: pointer">Reset</button>
+<button onClick="{{applyFilters}}" style="flex: 2; height: 54px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(210, 67, 42, 0.20)">{{applyLabel}}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{detailsOpen}}" hint-placeholder-val="{{false}}">
+<div onClick="{{closeDetails}}" style="position: absolute; inset: 0; background: rgba(23, 24, 26, 0.45)" aria-hidden="true"></div>
+<div role="dialog" aria-modal="true" aria-labelledby="ex-details-title" style="position: absolute; left: 0; right: 0; bottom: 0; top: 128px; background: #FFFFFF; border-radius: 26px 26px 0 0; display: flex; flex-direction: column; overflow: hidden">
+<div style="position: relative; height: 40px; flex-shrink: 0; display: flex; justify-content: center; align-items: center">
+<span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D6CF" aria-hidden="true"></span>
+<button onClick="{{closeDetails}}" aria-label="Close details" style="position: absolute; top: 6px; right: 12px; width: 44px; height: 44px; border-radius: 999px; border: none; background: #F1EFEA; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div class="thin-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 8px 16px 20px; display: flex; flex-direction: column; gap: 16px">
+<div style="height: 200px; flex-shrink: 0; border-radius: 20px; overflow: hidden; background: {{dTone}}; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{dReal}}" hint-placeholder-val="{{false}}"><img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="Korean dishes on a shared table" style="width: 100%; height: 100%; object-fit: cover; display: block"></sc-if>
+<sc-if value="{{dPlaceholder}}" hint-placeholder-val="{{true}}"><span style="display: flex; flex-direction: column; align-items: center; gap: 6px; color: #5E5A52; font-size: 13px; font-weight: 700"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5E5A52" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M8 6l1.5-2h5L16 6"></path><circle cx="12" cy="13" r="3.5"></circle></svg>Restaurant photo</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 id="ex-details-title" style="margin: 0; font-size: 28px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em">{{dName}}</h2>
+<p style="margin: 0; font-size: 15px; font-weight: 600; color: #5E6168">{{dMeta}}</p>
+<p style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>{{dHours}}</p>
+</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; font-weight: 500">{{dBlurb}}</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<a href="https://example.com" style="height: 48px; border-radius: 14px; border: 1.5px solid #E2E0DB; color: #17181A; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700">Website</a>
+<a href="https://maps.google.com" style="height: 48px; border-radius: 14px; border: 1.5px solid #E2E0DB; color: #17181A; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700">Directions</a>
+</div>
+<p style="margin: 0; font-size: 12px; font-weight: 600; color: #5E6168">Info and photos from <span style="font-weight: 800; color: #17181A">Google</span> Maps</p>
+</div>
+<div style="flex-shrink: 0; padding: 12px 16px calc(22px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -1px 0 #ECEAE5">
+<sc-if value="{{dAdded}}" hint-placeholder-val="{{false}}">
+<div role="status" style="height: 56px; border-radius: 18px; background: #F1EFEA; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 800; color: #3D4047"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D4047" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Added to the group’s deck</div>
+</sc-if>
+<sc-if value="{{dSaving}}" hint-placeholder-val="{{false}}">
+<button disabled="{{true}}" aria-busy="true" style="width: 100%; height: 56px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.85"><svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" aria-hidden="true" style="animation: spin 800ms linear infinite"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>Adding</button>
+</sc-if>
+<sc-if value="{{dCanAdd}}" hint-placeholder-val="{{true}}">
+<button onClick="{{dAdd}}" style="width: 100%; height: 56px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(210, 67, 42, 0.20)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add to the deck</button>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"start":{"editor":"enum","options":["map","filters open"],"default":"map"},"addResult":{"editor":"enum","options":["succeeds","fails"],"default":"succeeds"},"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var s = this.state || {};
+    var self = this;
+    var accent = this.props.accent ?? '#D2432A';
+    var fails = (this.props.addResult ?? 'succeeds') === 'fails';
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (err) {}
+    var defaults = { open: true, prices: { 1: true, 2: true }, cuisines: {} };
+    var applied = s.applied || defaults;
+    var sheetOpen = s.sheetOpen == null ? (this.props.start ?? 'map') === 'filters open' : s.sheetOpen;
+    var draft = s.draft || applied;
+    var added = s.added || { juniper: true };
+    var saving = s.saving || {};
+    var query = s.query == null ? 'dumplings' : s.query;
+    var panX = s.panX || 0;
+    var panY = s.panY || 0;
+    var moved = !!s.moved;
+    var searching = !!s.searching;
+    var detailsId = s.detailsId || null;
+
+    var all = [
+      { id: 'golden', name: 'Golden Fold Dumplings', cuisine: 'Chinese', price: 1, rating: '4.6', dist: '0.8 mi', open: true, x: 250, y: 250, tone: '#EDE3D3', real: false, hours: 'Open until 10 PM', blurb: 'Hand-folded pork and chive dumplings, pan-fried or steamed.' },
+      { id: 'juniper', name: 'Juniper & Rice', cuisine: 'Korean', price: 2, rating: '4.8', dist: '0.7 mi', open: true, x: 196, y: 330, tone: '#E9E4DA', real: true, hours: 'Open until 11 PM', blurb: 'Casual Korean spot known for bubbling stews and a generous banchan spread.' },
+      { id: 'pleat', name: 'Pleat & Steam', cuisine: 'Taiwanese', price: 2, rating: '4.5', dist: '1.1 mi', open: true, x: 312, y: 400, tone: '#F0DED6', real: false, hours: 'Open until 9:30 PM', blurb: 'Soup dumplings and scallion pancakes, made to order.' },
+      { id: 'corner', name: 'Dumpling Corner Kitchen', cuisine: 'Chinese', price: 1, rating: '4.3', dist: '1.4 mi', open: true, x: 104, y: 228, tone: '#E6E3DC', real: false, hours: 'Open until 10 PM', blurb: 'Quick counter service with big portions and late hours on weekends.' },
+      { id: 'mandu', name: 'Mandu House', cuisine: 'Korean', price: 2, rating: '4.4', dist: '1.9 mi', open: true, x: 80, y: 420, tone: '#E9DFD2', real: false, hours: 'Open until 10 PM', blurb: 'Korean dumplings, kimchi pancakes, and noodle soups.' },
+      { id: 'bao', name: 'Bao Atelier', cuisine: 'Taiwanese', price: 3, rating: '4.7', dist: '1.2 mi', open: true, x: 330, y: 160, tone: '#EADFD6', real: false, hours: 'Open until 11 PM', blurb: 'Small plates and steamed buns with a cocktail list.' },
+      { id: 'owl', name: 'Night Owl Dumplings', cuisine: 'Chinese', price: 1, rating: '4.2', dist: '0.9 mi', open: false, x: 172, y: 448, tone: '#E4E1DA', real: false, hours: 'Opens at 5 PM tomorrow', blurb: 'Late-night spot that opens most evenings.' }
+    ];
+    var priceText = function (n) { return '$$$$'.slice(0, n); };
+    var anyKey = function (o) { return Object.keys(o).some(function (k) { return o[k]; }); };
+    var countKeys = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; };
+    var passes = function (r, f) {
+      if (f.open && !r.open) { return false; }
+      if (anyKey(f.prices) && !f.prices[r.price]) { return false; }
+      if (anyKey(f.cuisines) && !f.cuisines[r.cuisine]) { return false; }
+      return true;
+    };
+    var visible = all.filter(function (r) { return passes(r, applied); });
+    var draftCount = all.filter(function (r) { return passes(r, draft); }).length;
+    var selected = s.selected;
+    if (!selected || !visible.some(function (r) { return r.id === selected; })) { selected = visible.length ? visible[0].id : null; }
+    var activeCount = (applied.open ? 1 : 0) + countKeys(applied.prices) + countKeys(applied.cuisines);
+
+    var scrollRow = function (id) {
+      setTimeout(function () {
+        var el = document.getElementById('ex-row-' + id);
+        if (el && el.scrollIntoView) { el.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
+      }, 30);
+    };
+    var add = function (r) {
+      var cur = self.state || {};
+      var curAdded = cur.added || { juniper: true };
+      var curSaving = cur.saving || {};
+      if (curAdded[r.id] || curSaving[r.id]) { return; }
+      var sv = Object.assign({}, curSaving); sv[r.id] = true;
+      self.setState({ saving: sv, selected: r.id, toast: null, lastTry: r.id });
+      setTimeout(function () {
+        var c2 = self.state || {};
+        var sv2 = Object.assign({}, c2.saving || {}); delete sv2[r.id];
+        if (fails) {
+          self.setState({ saving: sv2, toast: 'error', toastText: 'Couldn’t add ' + r.name + '.' });
+        } else {
+          var ad = Object.assign({}, c2.added || { juniper: true }); ad[r.id] = true;
+          self.setState({ saving: sv2, added: ad, toast: 'ok', toastText: 'Added ' + r.name });
+        }
+        clearTimeout(self._tt);
+        self._tt = setTimeout(function () { self.setState({ toast: null }); }, fails ? 5000 : 2200);
+      }, 700);
+    };
+    var byId = {};
+    all.forEach(function (r) { byId[r.id] = r; });
+    var d = detailsId ? byId[detailsId] : null;
+    var meta = function (r) { return r.cuisine + ' · ' + priceText(r.price) + ' · ★ ' + r.rating + ' · ' + r.dist; };
+    var chip = function (on) { return on ? { bg: '#17181A', fg: '#FFFFFF', border: '#17181A' } : { bg: '#FFFFFF', fg: '#17181A', border: '#E2E0DB' }; };
+    var setDraft = function (patch) { self.setState({ draft: Object.assign({}, draft, patch) }); };
+
+    return {
+      accent: accent,
+      panX: panX + 'px',
+      panY: panY + 'px',
+      hasQuery: query.length > 0,
+      countLabel: visible.length + (visible.length === 1 ? ' spot' : ' spots') + (query ? ' for “' + query + '”' : ' nearby'),
+      noResults: visible.length === 0,
+      hasActiveFilters: activeCount > 0,
+      activeCount: activeCount,
+      filtersLabel: activeCount > 0 ? 'Filters, ' + activeCount + ' active' : 'Filters',
+      showSearchArea: moved || searching,
+      searching: searching,
+      searchAreaLabel: searching ? 'Searching' : 'Search this area',
+      spinClass: searching ? 'spin' : '',
+      spinAnim: searching ? 'spin 800ms linear infinite' : 'none',
+      toastOk: s.toast === 'ok',
+      toastError: s.toast === 'error',
+      toastText: s.toastText || '',
+      retry: function () { var r = byId[(self.state || {}).lastTry]; if (r) { add(r); } },
+      onQuery: function (e) { self.setState({ query: e.target.value }); },
+      clearQuery: function () { var el = document.getElementById('ex-search'); if (el) { el.value = ''; el.focus(); } self.setState({ query: '' }); },
+      searchArea: function () {
+        if (searching) { return; }
+        self.setState({ searching: true });
+        setTimeout(function () { self.setState({ searching: false, moved: false }); }, 800);
+      },
+      onPanDown: function (e) {
+        if (e.target && e.target.closest && e.target.closest('button, a')) { return; }
+        self._pd = { x: e.clientX, y: e.clientY, px: panX, py: panY };
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      },
+      onPanMove: function (e) {
+        if (!self._pd) { return; }
+        var dx = e.clientX - self._pd.x;
+        var dy = e.clientY - self._pd.y;
+        var nx = Math.max(-80, Math.min(80, self._pd.px + dx));
+        var ny = Math.max(-80, Math.min(80, self._pd.py + dy));
+        var patch = { panX: nx, panY: ny };
+        if (Math.abs(dx) + Math.abs(dy) > 24) { patch.moved = true; }
+        self.setState(patch);
+      },
+      onPanUp: function () { self._pd = null; },
+      pins: visible.map(function (r) {
+        var isSel = r.id === selected;
+        var isAdded = !!added[r.id];
+        return {
+          name: r.name,
+          x: r.x + 'px', y: r.y + 'px',
+          z: isSel ? 5 : 2,
+          selected: isSel,
+          added: isAdded,
+          pressed: isSel ? 'true' : 'false',
+          size: isSel ? '38px' : '30px',
+          shadow: isSel ? '0 0 0 6px rgba(210, 67, 42, 0.22), 0 3px 8px rgba(23, 24, 26, 0.25)' : '0 3px 8px rgba(23, 24, 26, 0.25)',
+          pinLabel: r.name + (isAdded ? ', added' : '') + (isSel ? ', selected' : ''),
+          select: function () { self.setState({ selected: r.id }); scrollRow(r.id); }
+        };
+      }),
+      rows: visible.map(function (r) {
+        var isSel = r.id === selected;
+        var isAdded = !!added[r.id];
+        var isSaving = !!saving[r.id];
+        return {
+          rowId: 'ex-row-' + r.id,
+          name: r.name, meta: meta(r), tone: r.tone, real: r.real,
+          rowBg: isSel ? '#FDF3F0' : 'transparent',
+          rowBar: isSel ? 'inset 3px 0 0 ' + accent : 'none',
+          isAdded: isAdded,
+          isSaving: isSaving,
+          canAdd: !isAdded && !isSaving,
+          addLabel: 'Add ' + r.name + ' to the deck',
+          savingLabel: 'Adding ' + r.name,
+          detailsLabel: 'Details for ' + r.name,
+          add: function () { add(r); },
+          openDetails: function () { self.setState({ selected: r.id, detailsId: r.id }); }
+        };
+      }),
+      sheetOpen: sheetOpen,
+      openFilters: function () { self.setState({ sheetOpen: true, draft: JSON.parse(JSON.stringify(applied)) }); },
+      closeFilters: function () { self.setState({ sheetOpen: false }); },
+      applyFilters: function () { self.setState({ applied: draft, sheetOpen: false }); },
+      resetFilters: function () { self.setState({ draft: { open: false, prices: {}, cuisines: {} } }); },
+      applyLabel: 'Apply filters · ' + draftCount + (draftCount === 1 ? ' spot' : ' spots'),
+      draftOpenChecked: draft.open ? 'true' : 'false',
+      openTrack: draft.open ? '#17181A' : '#D9D6CF',
+      openKnob: draft.open ? '23px' : '3px',
+      toggleOpen: function () { setDraft({ open: !draft.open }); },
+      priceChips: [1, 2, 3, 4].map(function (n) {
+        var on = !!draft.prices[n];
+        var c = chip(on);
+        var names = { 1: 'Inexpensive', 2: 'Moderate', 3: 'Expensive', 4: 'Very expensive' };
+        return { label: priceText(n), aria: names[n], pressed: on ? 'true' : 'false', bg: c.bg, fg: c.fg, border: c.border,
+          toggle: function () { var p = Object.assign({}, draft.prices); if (p[n]) { delete p[n]; } else { p[n] = true; } setDraft({ prices: p }); } };
+      }),
+      cuisineChips: ['Chinese', 'Korean', 'Japanese', 'Taiwanese', 'Thai', 'Mexican'].map(function (q) {
+        var on = !!draft.cuisines[q];
+        var c = chip(on);
+        return { label: q, pressed: on ? 'true' : 'false', bg: c.bg, fg: c.fg, border: c.border,
+          toggle: function () { var cu = Object.assign({}, draft.cuisines); if (cu[q]) { delete cu[q]; } else { cu[q] = true; } setDraft({ cuisines: cu }); } };
+      }),
+      detailsOpen: !!d,
+      closeDetails: function () { self.setState({ detailsId: null }); },
+      dName: d ? d.name : '',
+      dMeta: d ? meta(d) : '',
+      dHours: d ? d.hours : '',
+      dBlurb: d ? d.blurb : '',
+      dTone: d ? d.tone : '#E9E4DA',
+      dReal: d ? d.real : false,
+      dPlaceholder: d ? !d.real : true,
+      dAdded: d ? !!added[d.id] : false,
+      dSaving: d ? !!saving[d.id] : false,
+      dCanAdd: d ? (!added[d.id] && !saving[d.id]) : true,
+      dAdd: function () { if (d) { add(d); } }
+    };
+  }
+}
+</script>
+</body>
+</html>
