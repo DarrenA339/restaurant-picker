@@ -37,7 +37,7 @@ This is Next 16.4 with `cacheComponents: true` and `partialPrefetching: true` in
 - **Request APIs are async only.** `params`, `searchParams`, `cookies()`, `headers()` must be awaited. Use the generated helpers: `PageProps<'/s/[code]'>`, `LayoutProps<'/'>`, `RouteContext<'/api/sessions/[id]/start'>` (globally available after `next dev`/`next typegen`).
 - **Cache Components is on.** Any uncached read (Supabase query, `cookies()`, `fetch`) in a page or layout must sit inside `<Suspense>` or be wrapped in `'use cache'` + `cacheLife()`, or the build fails with a blocking-route error. Put the async data read as deep in the tree as possible. Reading the Supabase auth cookie is a request-time read, so authenticated UI streams behind Suspense; see `02-guides/authentication-with-cache-components.md`.
 - **Route handlers:** `GET` handlers follow the same prerender model as pages. `POST` handlers (all of this app's `/api/sessions/...` routes) are never cached. `'use cache'` cannot go directly in a route handler body.
-- **`proxy.ts` replaces `middleware.ts`** (export `proxy`, Node runtime only). If a Supabase session-refresh layer is added, it goes in `proxy.ts` at the repo root.
+- **`proxy.ts` replaces `middleware.ts`** (export `proxy`, Node runtime only). The repo-root `proxy.ts` refreshes the Supabase session cookies on every page request; add any new proxy logic there rather than a second file.
 - **Tailwind v4** is wired through the `@tailwindcss/turbopack` loader rule in `next.config.ts`; `app/globals.css` uses `@import "tailwindcss"` and `@theme inline`. There is no `tailwind.config.*`.
 - `AGENTS.md` contains a block managed by `next dev`; commit it as-is rather than deleting it.
 
@@ -47,10 +47,12 @@ This is Next 16.4 with `cacheComponents: true` and `partialPrefetching: true` in
 
 Two paths to data, and which one a piece of logic uses is the main design decision:
 
-- **Browser → Supabase directly** (publishable key, anonymous sign-in, RLS): auth, reading the session/members/restaurants (plus the member's own adds and ballot), writing the member's own swipes, and Realtime subscriptions for lobby presence, the add list, and status changes.
+- **Browser → Supabase directly** (publishable key, anonymous sign-in, RLS): auth, reading the session/members/restaurants (plus the member's own adds and ballot), writing the member's own swipes, and Realtime subscriptions for lobby presence, the add list, and status changes. Joining is the `join_session` RPC (security definer, in `public` so it is callable); clients never insert `members` rows.
 - **Browser → Next.js route handler → Supabase (secret key) / Google Places:** anything that needs a secret or decides an outcome. Creating sessions, dealing batches, tallying, computing winners. These live under `app/api/sessions/...` (see the server-routes table in the spec).
 
 RLS is what keeps vote tallies hidden, not the UI: members can only read their own `swipes`, `adds`, and `ballots` rows. The server reads all of them with `SUPABASE_SECRET_KEY` when it deals and tallies. Don't add client-side reads that would leak counts or who added what. The veto cap is a trigger on `swipes` that decrements `members.vetoes_left` and rejects the veto at zero, so the UI only needs to read `vetoes_left`.
+
+Supabase clients live in `lib/supabase/`: `browser.ts` for client components (`ensureSignedIn()` reuses an existing anonymous session before creating one), `server.ts` for server components and route handlers (acts as the visitor through cookies, so callers sit behind `<Suspense>`), and `admin.ts` for the secret key (server only). A server component that uses either server client must `await connection()` first: the auth client checks token expiry with `Date.now()`, which Cache Components refuses to prerender.
 
 ### Session state machine
 

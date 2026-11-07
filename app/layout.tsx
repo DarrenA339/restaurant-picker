@@ -25,7 +25,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={manrope.variable}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        {/* Phone-width column; desktop layouts come in the polish phase. */}
+        <div className="mx-auto w-full max-w-[430px]">{children}</div>
+      </body>
     </html>
   );
 }

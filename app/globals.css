@@ -29,7 +29,31 @@
   --radius-sheet: 26px;
 }
 
-body {
-  background: var(--color-page);
-  color: var(--color-ink);
+@layer base {
+  body {
+    min-height: 100dvh;
+    background: var(--color-page);
+    color: var(--color-ink);
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 3px;
+  }
 }

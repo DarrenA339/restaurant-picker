@@ -83,6 +83,7 @@ export type Database = {
       }
       members: {
         Row: {
+          color: number
           display_name: string
           done_ranking: boolean
           done_swiping: boolean
@@ -94,6 +95,7 @@ export type Database = {
           vetoes_left: number
         }
         Insert: {
+          color: number
           display_name: string
           done_ranking?: boolean
           done_swiping?: boolean
@@ -105,6 +107,7 @@ export type Database = {
           vetoes_left?: number
         }
         Update: {
+          color?: number
           display_name?: string
           done_ranking?: boolean
           done_swiping?: boolean
@@ -205,6 +208,7 @@ export type Database = {
           filters: Json
           host_id: string
           id: string
+          name: string
           page_token: string | null
           search_body: Json | null
           status: Database["public"]["Enums"]["session_status"]
@@ -220,6 +224,7 @@ export type Database = {
           filters?: Json
           host_id: string
           id?: string
+          name: string
           page_token?: string | null
           search_body?: Json | null
           status?: Database["public"]["Enums"]["session_status"]
@@ -235,6 +240,7 @@ export type Database = {
           filters?: Json
           host_id?: string
           id?: string
+          name?: string
           page_token?: string | null
           search_body?: Json | null
           status?: Database["public"]["Enums"]["session_status"]
@@ -287,7 +293,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      join_session: {
+        Args: {
+          p_code: string
+          p_color?: number
+          p_display_name: string
+          p_lat?: number
+          p_lng?: number
+        }
+        Returns: {
+          id: string
+          status: Database["public"]["Enums"]["session_status"]
+        }[]
+      }
     }
     Enums: {
       restaurant_source: "member" | "suggested"

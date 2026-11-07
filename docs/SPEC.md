@@ -14,8 +14,8 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 
 ### MVP
 
-- **Create a session.** Host picks a max price level (1 to 4 dollar signs), max distance from the group (1, 2, or 5 miles), open now, and vegetarian options, then gets a link and a 6-character code.
-- **Join with no account.** Friends open the link, type a display name, and share location. Anonymous sign-in happens behind the scenes.
+- **Create a session.** Host names it, picks a starting area (typed, or their own location), how far they'll go (0.5, 1, 2, or 5 miles), which price levels work ($ to $$, any mix), optional cuisines, open now, and vegetarian options, then gets a link and a 6-character code. The host's member row is created with the session.
+- **Join with no account.** Friends open the link, type a display name, pick an avatar color nobody in the group has yet, and share location. Anonymous sign-in happens behind the scenes, and locations are stored rounded to about 100 m.
 - **Lobby built around adding.** Everyone sees who has joined and every spot the group has added, in real time. Only the host can start.
 - **Add spots (no limit).** Adding is the main lobby activity. Anyone can add as many restaurants as they want by searching a place or a dish, or from the explore map. Adds skip the price and distance filters but still show both on the card. Adding a spot counts as a yes from whoever added it, and they skip their own adds while swiping. Duplicates are rejected, members can remove their own adds, and adds close when the host starts picking. A quiet cap of 40 adds per session applies, shown only when reached. Search runs through `GET /api/places/autocomplete` with session tokens; `POST /api/sessions/[id]/add` checks the cap and duplicates, fetches Place Details with the standard field mask and one photo, and inserts with `source = 'member'`.
 - **Explore map.** A full-screen Google Map reached from the lobby's add bar and map button. Members search by place name or dish (Text Search), filter with chips, and browse results as pins plus a bottom-sheet list. Panning shows "Search this area" instead of searching automatically. Spots already added show as checked pins.
@@ -54,7 +54,7 @@ The app has three routes. The session page at `/s/[code]` swaps views based on t
 
 | View | When | What it shows |
 | --- | --- | --- |
-| Join | First visit to the link | Display name field and a location permission prompt |
+| Join | First visit to the link | Who's in, the host's invite, a display name and avatar color, and a location prompt |
 | Lobby | Status is lobby | Add bar (search a place or dish, plus a map button), the group's added spots with remove on your own, the voting method (host can change it), the host's suggestions toggle, avatars, invite button, and the host's Start button |
 | Explore | Opened from the lobby's add bar | Full-screen map with search, filter chips, result pins, and a results sheet with Add buttons |
 | Swipe | Status is swiping | Map strip on the top 30% with the current pin and member dots, card deck below, vetoes left, and the details bottom sheet on tap |
@@ -78,7 +78,7 @@ These run on Vercel with the secret keys. Swipes write straight to Supabase, gua
 
 | Route | Does |
 | --- | --- |
-| `POST /api/sessions` | Creates the session and join code |
+| `POST /api/sessions` | Creates the session, its join code, and the host's member row |
 | `PATCH /api/sessions/[id]` | Host only, lobby only. Changes `voting_method` and `suggestions_on` |
 | `GET /api/places/autocomplete` | Name and dish suggestions for the add bar, using session tokens, biased to the session's area |
 | `GET /api/places/search` | The explore map's search and "Search this area," one Text Search call per request |
@@ -185,8 +185,8 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 
 | Table | Key columns | Members can read | Members can write |
 | --- | --- | --- | --- |
-| `sessions` | `id`, `code`, `host_id`, `status`, `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch`, `search_body` (jsonb), `page_token` | Their own session | Nothing (server only) |
-| `members` | `session_id`, `user_id`, `display_name`, `lat`, `lng`, `vetoes_left`, `done_swiping` (current batch), `done_ranking` | Everyone in their session | Their own row |
+| `sessions` | `id`, `code`, `host_id`, `name`, `status`, `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch`, `search_body` (jsonb), `page_token` | Their own session | Nothing (server only) |
+| `members` | `session_id`, `user_id`, `display_name`, `color` (1 to 8, unique per session), `lat`, `lng`, `vetoes_left`, `done_swiping` (current batch), `done_ranking` | Everyone in their session | Their own `display_name`, `lat`, `lng`; joining goes through `join_session` |
 | `restaurants` | `session_id`, `place_id`, `source` (member or suggested), `batch` (null until dealt), `data` (jsonb with name, price, rating, `photoUri`, hours, links, flags) | Their session's spots | Nothing (server only) |
 | `adds` | `session_id`, `user_id`, `place_id`, `created_at`; unique per user and place | Only their own | Nothing (server only) |
 | `swipes` | `session_id`, `user_id`, `place_id`, `value` (yes, no, veto); unique per user and place | Only their own | Only their own |
@@ -195,7 +195,7 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 
 Because members can only read their own swipes, tallies stay hidden by the database itself, not just the UI. The same goes for adds: members can read only their own `adds` rows, which is how the lobby marks "You added this" without revealing who added anything else. The server reads all swipes and adds with the secret key when it builds batches and computes finalists, and it writes each adder's automatic yes into `swipes` when their spot is dealt.
 
-Grants follow the table above. `authenticated` (the role anonymous sign-ins use) gets select on everything a member can read, plus insert and update on `members` and `swipes` limited to the columns a phone legitimately sets (`display_name`, `lat`, `lng` on members; `value` on swipes, plus the key columns on insert). Ballots are written only by the ballot route, because a quadratic ballot's credit budget has to be checked on the server. `vetoes_left`, the done flags, and `created_at` stay server-owned. A trigger on `swipes` spends one of `vetoes_left` for every veto, refunds it when that veto is changed to yes or no, and rejects a veto once none are left, so the limit holds no matter which client writes the swipe. A check constraint on `ballots.payload` allows exactly one of the three shapes, and the ballot route checks everything else. Because a PostgREST upsert sets every payload column, clients insert and then update instead of upserting. `anon` gets nothing, and `service_role` is granted everything explicitly because new Supabase projects give the API roles no table access by default. The membership check behind every "their session" policy is `private.is_session_member`, a security-definer function in a schema the Data API does not expose. `sessions`, `members`, and `restaurants` are in the Realtime publication, and Postgres Changes applies the same select policies, so a phone only receives rows it could read. Migrations live in `supabase/migrations/` and are applied to the dev project through the Supabase MCP server, `lib/database.types.ts` is regenerated after each one, and `npm run rls:check` proves with two anonymous users that members can't read each other's swipes, adds, or ballots, can't write ballots or adds, and can't insert a third veto.
+Grants follow the table above. `authenticated` (the role anonymous sign-ins use) gets select on everything a member can read, plus insert and update on `swipes` and update on `members`, limited to the columns a phone legitimately sets (`display_name`, `lat`, `lng` on members; `value` on swipes, plus the key columns on a swipe insert). Member rows are inserted only by `join_session` and the sessions route, which is how the 8-person cap and the unique colors hold. Ballots are written only by the ballot route, because a quadratic ballot's credit budget has to be checked on the server. `vetoes_left`, the done flags, and `created_at` stay server-owned. A trigger on `swipes` spends one of `vetoes_left` for every veto, refunds it when that veto is changed to yes or no, and rejects a veto once none are left, so the limit holds no matter which client writes the swipe. A check constraint on `ballots.payload` allows exactly one of the three shapes, and the ballot route checks everything else. Because a PostgREST upsert sets every payload column, clients insert and then update instead of upserting. `anon` gets nothing, and `service_role` is granted everything explicitly because new Supabase projects give the API roles no table access by default. The membership check behind every "their session" policy is `private.is_session_member`, a security-definer function in a schema the Data API does not expose. `sessions`, `members`, and `restaurants` are in the Realtime publication, and Postgres Changes applies the same select policies, so a phone only receives rows it could read. Migrations live in `supabase/migrations/` and are applied to the dev project through the Supabase MCP server, `lib/database.types.ts` is regenerated after each one, and `npm run rls:check` proves with two anonymous users that members can't read each other's swipes, adds, or ballots, can't write ballots or adds, and can't insert a third veto. `sessions.filters` holds `{areaLabel, distanceMi, prices, cuisines, openNow, vegetarian}`, validated by `lib/session-filters.ts`.
 
 ### Environment variables
 
@@ -250,7 +250,7 @@ Eleven phases, each about one Claude Code session that ends with something you c
 2. **Scaffold and deploy (done).** Next.js app, CLAUDE.md with project rules, repo on GitHub, and Vercel deploys on every push.
 3. **Database and security (done).** Supabase MCP connected, migrations for the first six tables, RLS policies and grants, and `rls:check` proving one user can't read another's swipes.
 4. **Schema catch-up (done).** One migration that adds the `adds` table, `restaurants.source` with a nullable `batch`, `sessions.suggestions_on` and `sessions.voting_method`, replaces `rankings` with `ballots`, and adds a trigger that rejects a third veto per member per session. `rls:check` proves members can't read each other's adds or ballots, can't write ballots directly, and can't insert a third veto.
-5. **Session flow.** Welcome, Create, Join (with `join_session`), and the add-first lobby: live members and live add list over Realtime, the host's suggestions toggle and voting-method sheet, and Start. Added spots come from `lib/fixtures.ts`.
+5. **Session flow (part 1 done: Welcome, Create, Join, placeholder lobby).** Welcome, Create, Join (with `join_session`), and the add-first lobby: live members and live add list over Realtime, the host's suggestions toggle and voting-method sheet, and Start. Added spots come from `lib/fixtures.ts`.
 6. **Adding spots.** Autocomplete, Place Details, and explore search routes; add and remove with the cap and duplicate checks; the explore map with the Filters sheet and "Search this area"; the lobby list switches from fixtures to real adds.
 7. **Batch route.** Start builds batch 1 adds-first with each adder's automatic yes, fills with Text Search suggestions when they're on, resolves photos once, stores the request body and page token, and the deal route serves later batches without re-hitting Google.
 8. **Swipe UI.** Map strip, cards, details sheet, swipe gestures with button fallbacks, vetoes, per-member shuffle, the waiting screen, and the host's Go to ranking or Deal 20 more choice.
@@ -276,7 +276,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 ### Open decisions
 
 - [ ] App name
-- [ ] Max distance options (1, 2, and 5 miles, or others)
+- [x] Max distance options: 0.5, 1, 2, and 5 miles, as in the Create design
 - [ ] Deck center at the host's location or the group's midpoint
 - [ ] Finalist count of 3 or 5
 - [ ] Quadratic voting credit budget (9, or more if finalists go to 5)
@@ -284,7 +284,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 - [ ] Session cap on adds (40, or another number)
 - [ ] Typed-neighborhood fallback for denied location (Geocoding gives 10,000 free requests a month, then $5 per 1,000)
 - [ ] Accounts in the MVP or deferred to V2
-- [ ] How a friend resolves a join code before they are a member, since `sessions` is readable only by its members and host: a security-definer `join_session(code, display_name, lat, lng)` function that inserts the member row and returns the session (keeps session rows private), or a `sessions` select policy open to any signed-in user
+- [x] How a friend resolves a join code before they are a member: `join_session(code, display_name, color, lat, lng)`, a security-definer function that inserts the member row with a free person color and returns only the session id and status, so `sessions` rows stay private. The Join screen's preview (name, host, who is in, filters) is rendered on the server with the secret key.
 
 ## Sources
 

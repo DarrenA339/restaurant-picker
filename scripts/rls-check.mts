@@ -1,7 +1,10 @@
 /**
  * Proves the row-level security and grants from docs/SPEC.md ("Tables") with
- * two anonymous users:
+ * three anonymous users:
  *
+ *   - joining goes through join_session: it hands back only the session id
+ *     and status, assigns a person color nobody else has, refuses wrong codes,
+ *     blank names, and ended sessions, and members can't insert rows directly.
  *   - swipes: each writes their own, and neither can read, write, or change the
  *     other's (tallies stay hidden by the database).
  *   - adds and ballots: each reads only their own rows, and neither can write
@@ -14,8 +17,8 @@
  *   npm run rls:check
  *   (= node --env-file=.env.local scripts/rls-check.mts)
  *
- * Needs "Allow anonymous sign-ins" enabled on the Supabase project. Creates two
- * throwaway auth users and one session, and deletes them all at the end.
+ * Needs "Allow anonymous sign-ins" enabled on the Supabase project. Creates
+ * three throwaway auth users and one session, and deletes them all at the end.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
@@ -133,7 +136,11 @@ async function main() {
   console.log("\nanonymous sign-in");
   const a = await signInAnonymously("A");
   const b = await signInAnonymously("B");
-  check("two distinct anonymous users signed in", a.id !== b.id);
+  const c = await signInAnonymously("C");
+  check(
+    "three distinct anonymous users signed in",
+    new Set([a.id, b.id, c.id]).size === 3,
+  );
 
   let sessionId: string | undefined;
 
@@ -141,11 +148,18 @@ async function main() {
     // --- Setup with the secret key (what the server routes do) ---------------
     const { data: session, error: sessionError } = await admin
       .from("sessions")
-      .insert({ code: randomCode(), host_id: a.id, status: "swiping", batch: 1 })
-      .select("id, suggestions_on, voting_method")
+      .insert({
+        code: randomCode(),
+        host_id: a.id,
+        name: "RLS check dinner",
+        status: "swiping",
+        batch: 1,
+      })
+      .select("id, code, suggestions_on, voting_method")
       .single();
     if (sessionError) fatal("create session", sessionError);
     sessionId = session.id;
+    const code = session.code;
     check(
       "a new session defaults to suggestions on and Borda",
       session.suggestions_on === true && session.voting_method === "borda",
@@ -195,46 +209,116 @@ async function main() {
       );
     }
 
-    // --- members -------------------------------------------------------------
-    console.log("\nmembers");
+    // --- joining -------------------------------------------------------------
+    console.log("\njoining (through join_session)");
+    {
+      const { error } = await anonRole.rpc("join_session", {
+        p_code: code,
+        p_display_name: "Anon",
+      });
+      check(
+        "anon role cannot call join_session (permission denied)",
+        error?.code === PERMISSION_DENIED,
+        error ?? "no error",
+      );
+    }
     {
       const { error } = await b.client
         .from("members")
-        .insert({ session_id: sessionId, user_id: b.id, display_name: "B", vetoes_left: 99 });
+        .insert({ session_id: sessionId, user_id: b.id, display_name: "B", color: 2 });
       check(
-        "B cannot join with extra vetoes (column privilege)",
+        "B cannot insert a member row directly (no grant)",
         error?.code === PERMISSION_DENIED,
         error ?? "no error",
+      );
+    }
+    {
+      const { data, error } = await a.client
+        .rpc("join_session", {
+          p_code: code,
+          p_display_name: "A",
+          p_lat: 42.3736123,
+          p_lng: -71.1097456,
+        })
+        .single();
+      check(
+        "host A joins and gets back only the session id and status",
+        !error &&
+          data?.id === sessionId &&
+          data.status === "swiping" &&
+          Object.keys(data).length === 2,
+        error ?? data,
+      );
+      const { data: me } = await a.client
+        .from("members")
+        .select("color, lat, vetoes_left")
+        .eq("session_id", sessionId)
+        .eq("user_id", a.id)
+        .single();
+      check(
+        "A got color 1 (lowest free), a rounded location, and 2 vetoes",
+        me?.color === 1 && me.lat === 42.374 && me.vetoes_left === 2,
+        me,
       );
     }
     {
       const { data, error } = await b.client
-        .from("members")
-        .insert({ session_id: sessionId, user_id: b.id, display_name: "B" })
-        .select("display_name, vetoes_left")
+        .rpc("join_session", {
+          p_code: code.toLowerCase(),
+          p_display_name: "B",
+          p_color: 1,
+        })
         .single();
       check(
-        "B can insert their own member row (join) and read it back",
-        !error && data?.display_name === "B" && data.vetoes_left === 2,
+        "B joins with a lowercase code while asking for A's color",
+        !error && data?.id === sessionId,
         error ?? data,
+      );
+      const { data: me } = await b.client
+        .from("members")
+        .select("color")
+        .eq("session_id", sessionId)
+        .eq("user_id", b.id)
+        .single();
+      check("B got color 2 instead (colors are unique per session)", me?.color === 2, me);
+    }
+    {
+      const { data, error } = await b.client
+        .rpc("join_session", { p_code: code, p_display_name: "B again", p_color: 5 })
+        .single();
+      const { data: rows } = await admin
+        .from("members")
+        .select("user_id")
+        .eq("session_id", sessionId);
+      check(
+        "joining twice is harmless (same session, still 2 members)",
+        !error && data?.id === sessionId && rows?.length === 2,
+        error ?? rows,
       );
     }
     {
-      const { error } = await b.client
-        .from("members")
-        .insert({ session_id: sessionId, user_id: a.id, display_name: "Fake A" });
+      const { error } = await c.client
+        .rpc("join_session", { p_code: "ZZZZZZ", p_display_name: "C" })
+        .single();
       check(
-        "B cannot insert a member row for A (RLS violation)",
-        error?.code === PERMISSION_DENIED,
+        "a wrong code is refused with session_not_found",
+        error?.message === "session_not_found",
         error ?? "no error",
       );
     }
     {
-      const { error } = await a.client
-        .from("members")
-        .insert({ session_id: sessionId, user_id: a.id, display_name: "A" });
-      check("A can insert their own member row (join)", !error, error);
+      const { error } = await c.client
+        .rpc("join_session", { p_code: code, p_display_name: "   " })
+        .single();
+      check(
+        "a blank name is refused with display_name_invalid",
+        error?.message === "display_name_invalid",
+        error ?? "no error",
+      );
     }
+
+    // --- members -------------------------------------------------------------
+    console.log("\nmembers");
     {
       const { data } = await b.client.from("sessions").select("id").eq("id", sessionId);
       check("B can read the session once a member", data?.length === 1, data);
@@ -267,6 +351,18 @@ async function main() {
         .eq("user_id", b.id);
       check(
         "B cannot update their own vetoes_left (column privilege)",
+        error?.code === PERMISSION_DENIED,
+        error ?? "no error",
+      );
+    }
+    {
+      const { error } = await b.client
+        .from("members")
+        .update({ color: 1 })
+        .eq("session_id", sessionId)
+        .eq("user_id", b.id);
+      check(
+        "B cannot change their color directly (column privilege)",
         error?.code === PERMISSION_DENIED,
         error ?? "no error",
       );
@@ -675,13 +771,39 @@ async function main() {
         await response.text(),
       );
     }
+
+    // --- an ended session ----------------------------------------------------
+    console.log("\nended session");
+    {
+      const { error } = await admin
+        .from("sessions")
+        .update({ status: "done" })
+        .eq("id", sessionId);
+      if (error) fatal("end session", error);
+      const { data, error: memberError } = await b.client
+        .rpc("join_session", { p_code: code, p_display_name: "B" })
+        .single();
+      check(
+        "a member reopening an ended session still gets it back",
+        !memberError && data?.status === "done",
+        memberError ?? data,
+      );
+      const { error: lateError } = await c.client
+        .rpc("join_session", { p_code: code, p_display_name: "C" })
+        .single();
+      check(
+        "a newcomer cannot join an ended session (session_ended)",
+        lateError?.message === "session_ended",
+        lateError ?? "no error",
+      );
+    }
   } finally {
     console.log("\ncleanup");
     if (sessionId) {
       const { error } = await admin.from("sessions").delete().eq("id", sessionId);
       console.log(error ? `  failed to delete session: ${error.message}` : "  session deleted");
     }
-    for (const user of [a, b]) {
+    for (const user of [a, b, c]) {
       const { error } = await admin.auth.admin.deleteUser(user.id);
       console.log(
         error ? `  failed to delete user ${user.id}: ${error.message}` : `  user ${user.id} deleted`,
