@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Explore and add spots, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+.thin-scroll{scrollbar-width:thin;scrollbar-color:transparent transparent}
+.thin-scroll:hover{scrollbar-color:#D9D6CF transparent}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 800px; height: 100vh; box-sizing: border-box; background: #EEF0EB; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif; display: flex; overflow: hidden">
+
+<aside style="width: 400px; flex-shrink: 0; height: 100%; background: #FFFFFF; box-shadow: 4px 0 24px rgba(23, 24, 26, 0.08); display: flex; flex-direction: column; position: relative; z-index: 2">
+<div style="padding: 20px 20px 12px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 8px">
+<a href="LobbyDesktop.dc.html" aria-label="Done, back to the session" style="height: 44px; padding: 0 12px; flex-shrink: 0; border-radius: 14px; background: #F1EFEA; display: flex; align-items: center; gap: 4px; color: #17181A; text-decoration: none; font-size: 15px; font-weight: 800"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>Done</a>
+<div style="flex: 1; min-width: 0; height: 44px; box-sizing: border-box; border-radius: 14px; border: 1.5px solid #E2E0DB; display: flex; align-items: center; gap: 6px; padding: 0 2px 0 12px">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5E6168" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input type="search" aria-label="Search a place or a dish" defaultValue="dumplings" style="flex: 1; min-width: 0; height: 40px; border: none; background: transparent; font-size: 15px; font-weight: 600; color: #17181A">
+<button aria-label="Clear search" style="width: 40px; height: 40px; flex-shrink: 0; border: none; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5E6168" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<button aria-label="Filters, 3 active" style="position: relative; width: 44px; height: 44px; flex-shrink: 0; border-radius: 14px; border: 1.5px solid #E2E0DB; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2.2"></circle><circle cx="10" cy="17" r="2.2"></circle></svg>
+<span style="position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: {{accent}}; color: #FFFFFF; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800" aria-hidden="true">3</span>
+</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 3px">
+<h1 style="margin: 0; font-size: 20px; font-weight: 800">5 spots for “dumplings”</h1>
+<p style="margin: 0; font-size: 14px; font-weight: 500; color: #5E6168">Add spots for your group to vote on.</p>
+</div>
+</div>
+<ul class="thin-scroll" style="list-style: none; margin: 0; padding: 0 12px 24px; overflow-y: auto; flex: 1; min-height: 0">
+<sc-for list="{{rows}}" as="item" hint-placeholder-count="5">
+<li style="display: flex; align-items: center; gap: 10px; padding: 4px 8px 4px 10px; border-radius: 16px; background: {{item.rowBg}}; box-shadow: {{item.rowBar}}">
+<button style="flex: 1; min-width: 0; min-height: 70px; border: none; background: none; padding: 0; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; color: #17181A">
+<span style="width: 54px; height: 54px; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: {{item.tone}}" aria-hidden="true"><sc-if value="{{item.real}}" hint-placeholder-val="{{false}}"><img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></sc-if></span>
+<span style="min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; line-height: 1.25; font-weight: 800">{{item.name}}</span><span style="font-size: 13px; font-weight: 600; color: #5E6168">{{item.meta}}</span></span>
+</button>
+<sc-if value="{{item.added}}" hint-placeholder-val="{{false}}">
+<span style="height: 40px; width: 96px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; color: #3D4047"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3D4047" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Added</span>
+</sc-if>
+<sc-if value="{{item.canAdd}}" hint-placeholder-val="{{true}}">
+<button aria-label="{{item.addLabel}}" style="height: 40px; width: 96px; flex-shrink: 0; box-sizing: border-box; border-radius: 999px; border: 1.5px solid #F1CFC7; background: #FFF6F3; color: #B33A22; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B33A22" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add</button>
+</sc-if>
+</li>
+</sc-for>
+</ul>
+</aside>
+
+<div style="flex: 1; min-width: 0; height: 100%; position: relative; overflow: hidden">
+<svg viewBox="0 0 880 800" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of Cambridge with matching restaurants and where each friend is" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect width="880" height="800" fill="#EEF0EB"></rect>
+<path d="M120 120 L260 136 L246 236 L106 220 Z" fill="#DCE7D4"></path>
+<rect x="600" y="480" width="130" height="80" rx="8" fill="#DCE7D4"></rect>
+<path d="M0 690 C 160 650, 300 740, 460 724 S 720 660, 880 690 L880 800 L0 800 Z" fill="#CFE0EA"></path>
+<g fill="none" stroke-linecap="round">
+<g stroke="#E1E3DE" stroke-width="6">
+<path d="M80 -10 L130 690"></path><path d="M320 -10 L350 720"></path><path d="M560 -10 L584 700"></path><path d="M780 -10 L800 690"></path>
+<path d="M-10 110 C 240 124, 520 180, 890 240"></path><path d="M-10 560 C 260 570, 560 584, 890 570"></path>
+</g>
+<g stroke="#FFFFFF" stroke-width="4">
+<path d="M80 -10 L130 690"></path><path d="M320 -10 L350 720"></path><path d="M560 -10 L584 700"></path><path d="M780 -10 L800 690"></path>
+<path d="M-10 110 C 240 124, 520 180, 890 240"></path><path d="M-10 560 C 260 570, 560 584, 890 570"></path>
+</g>
+<path d="M-10 330 C 200 344, 420 392, 600 430 S 820 470, 890 478" stroke="#E1E3DE" stroke-width="12"></path>
+<path d="M-10 330 C 200 344, 420 392, 600 430 S 820 470, 890 478" stroke="#FFFFFF" stroke-width="9"></path>
+</g>
+<text x="130" y="302" font-size="12" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Harvard Sq</text>
+<text x="640" y="504" font-size="12" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Central Sq</text>
+</svg>
+
+<button style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); height: 40px; padding: 0 16px; border-radius: 999px; border: none; background: #FFFFFF; color: #17181A; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(23, 24, 26, 0.18); cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v4h-4"></path></svg>Search this area</button>
+
+<span style="position: absolute; left: 44%; top: 62%; transform: translate(-50%, -50%); width: 32px; height: 32px; border-radius: 999px; background: #17181A; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">You</span>
+<span style="position: absolute; left: 14%; top: 46%; transform: translate(-50%, -50%); width: 32px; height: 32px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">MK</span>
+<span style="position: absolute; left: 88%; top: 30%; transform: translate(-50%, -50%); width: 32px; height: 32px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">TJ</span>
+<span style="position: absolute; left: 76%; top: 78%; transform: translate(-50%, -50%); width: 32px; height: 32px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">NB</span>
+
+<sc-for list="{{pins}}" as="item" hint-placeholder-count="5">
+<div style="position: absolute; left: {{item.x}}; top: {{item.y}}; width: 0; height: 0; z-index: {{item.z}}">
+<sc-if value="{{item.selected}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; left: 0; bottom: 27px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none">
+<span style="height: 30px; padding: 0 12px; border-radius: 9px; background: #FFFFFF; box-shadow: 0 3px 10px rgba(23, 24, 26, 0.16); display: flex; align-items: center; font-size: 13px; font-weight: 800; white-space: nowrap">{{item.name}}</span>
+<span style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #FFFFFF"></span>
+</div>
+</sc-if>
+<button aria-label="{{item.name}}" style="position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border: none; background: none; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span style="position: relative; width: {{item.size}}; height: {{item.size}}; border-radius: 999px; background: {{accent}}; border: 2.5px solid #FFFFFF; box-shadow: {{item.shadow}}; display: flex; align-items: center; justify-content: center; box-sizing: border-box">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7a2 2 0 0 0 2 2M9 3v18M11 3v7a2 2 0 0 1-2 2M17 21V3c-2.2 1.2-3.5 3.6-3.5 6.5V13H17"></path></svg>
+<sc-if value="{{item.added}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; width: 17px; height: 17px; border-radius: 999px; background: #17181A; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-sizing: border-box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span></sc-if>
+</span>
+</button>
+</div>
+</sc-for>
+
+<div style="position: absolute; left: 16px; bottom: 12px; height: 22px; padding: 0 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; gap: 8px; font-size: 11px; color: #3D4047"><span style="font-weight: 800">Google</span><span>Map data ©2026</span></div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent ?? '#D2432A';
+    var list = [
+      { id: 'golden', name: 'Golden Fold Dumplings', meta: 'Chinese · $ · ★ 4.6 · 0.8 mi', tone: '#EDE3D3', real: false, added: false, x: '54%', y: '34%', selected: true },
+      { id: 'juniper', name: 'Juniper & Rice', meta: 'Korean · $$ · ★ 4.8 · 0.7 mi', tone: '#E9E4DA', real: true, added: true, x: '40%', y: '46%', selected: false },
+      { id: 'pleat', name: 'Pleat & Steam', meta: 'Taiwanese · $$ · ★ 4.5 · 1.1 mi', tone: '#F0DED6', real: false, added: false, x: '70%', y: '56%', selected: false },
+      { id: 'corner', name: 'Dumpling Corner Kitchen', meta: 'Chinese · $ · ★ 4.3 · 1.4 mi', tone: '#E6E3DC', real: false, added: false, x: '24%', y: '26%', selected: false },
+      { id: 'mandu', name: 'Mandu House', meta: 'Korean · $$ · ★ 4.4 · 1.9 mi', tone: '#E9DFD2', real: false, added: false, x: '20%', y: '68%', selected: false }
+    ];
+    return {
+      accent: accent,
+      rows: list.map(function (r) {
+        return { name: r.name, meta: r.meta, tone: r.tone, real: r.real, added: r.added, canAdd: !r.added,
+          addLabel: 'Add ' + r.name + ' to the deck',
+          rowBg: r.selected ? '#FDF3F0' : 'transparent',
+          rowBar: r.selected ? 'inset 3px 0 0 ' + accent : 'none' };
+      }),
+      pins: list.map(function (r) {
+        return { name: r.name, x: r.x, y: r.y, added: r.added, selected: r.selected, z: r.selected ? 5 : 2,
+          size: r.selected ? '40px' : '32px',
+          shadow: r.selected ? '0 0 0 7px rgba(210, 67, 42, 0.22), 0 3px 8px rgba(23, 24, 26, 0.25)' : '0 3px 8px rgba(23, 24, 26, 0.25)' };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -11,3 +11,7 @@ Use these for exact values: spacing, sizes, radii, colors, font weights, and cop
 - The map drawings stand in for a live Google Map.
 
 Build the real screens in Next.js and Tailwind with the tokens in app/globals.css, matching the images and these values.
+
+## Desktop
+
+Files ending in `-desktop` are the layouts at 1280×800. Screens without their own desktop file (Create, Done, the final-round screens, Voting method, Winner) follow `03-join-desktop`: the mobile content in a centered 480px column, with bottom-pinned buttons placed inline at the end. Details on desktop is `08-details-desktop`.

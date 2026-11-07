@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pick a spot, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#B33A22}a:hover{color:#8F2D1A}
+button,input{font-family:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 800px; height: 100vh; box-sizing: border-box; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif; overflow: auto">
+
+<div style="width: 100%; max-width: 1104px; margin: 0 auto; box-sizing: border-box; padding: 24px 32px 32px">
+
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 600; color: #5E6168">Friday dinner</span>
+<h1 style="margin: 0; font-size: 28px; line-height: 1.1; font-weight: 800; letter-spacing: -0.01em">Pick a spot</h1>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="display: flex; align-items: center" role="img" aria-label="4 people in this session">
+<span style="width: 32px; height: 32px; border-radius: 999px; background: #17181A; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">You</span>
+<span style="width: 32px; height: 32px; margin-left: -8px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">MK</span>
+<span style="width: 32px; height: 32px; margin-left: -8px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">TJ</span>
+<span style="width: 32px; height: 32px; margin-left: -8px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2px solid #FAF9F6; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">NB</span>
+</div>
+<span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(23, 24, 26, 0.08); display: flex; align-items: center; font-size: 15px; font-weight: 700; white-space: nowrap">4 of 12</span>
+</div>
+</header>
+<div role="progressbar" aria-label="Restaurants reviewed" aria-valuemin="0" aria-valuemax="12" aria-valuenow="4" style="margin-top: 14px; height: 4px; border-radius: 999px; background: #ECEAE5; overflow: hidden"><div style="width: 33%; height: 100%; border-radius: 999px; background: {{accent}}"></div></div>
+
+<div style="margin-top: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 28px">
+
+<div style="flex: 1 1 440px; min-width: 0; position: sticky; top: 24px; height: 620px; border-radius: 26px; overflow: hidden; box-shadow: 0 1px 3px rgba(23, 24, 26, 0.08)">
+<svg viewBox="0 0 560 620" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of Cambridge showing Juniper and Rice and where each friend is" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect width="560" height="620" fill="#EEF0EB"></rect>
+<path d="M70 70 L170 82 L160 150 L60 138 Z" fill="#DCE7D4"></path>
+<rect x="370" y="60" width="90" height="56" rx="6" fill="#DCE7D4"></rect>
+<path d="M0 520 C 100 490, 190 560, 290 548 S 450 500, 560 520 L560 620 L0 620 Z" fill="#CFE0EA"></path>
+<g fill="none" stroke-linecap="round">
+<g stroke="#E1E3DE" stroke-width="6">
+<path d="M40 -10 L80 510"></path><path d="M200 -10 L222 540"></path><path d="M340 -10 L356 520"></path><path d="M480 -10 L496 500"></path>
+<path d="M-10 60 C 150 70, 330 110, 570 160"></path><path d="M-10 420 C 170 428, 360 440, 570 426"></path>
+</g>
+<g stroke="#FFFFFF" stroke-width="4">
+<path d="M40 -10 L80 510"></path><path d="M200 -10 L222 540"></path><path d="M340 -10 L356 520"></path><path d="M480 -10 L496 500"></path>
+<path d="M-10 60 C 150 70, 330 110, 570 160"></path><path d="M-10 420 C 170 428, 360 440, 570 426"></path>
+</g>
+<path d="M-10 220 C 140 232, 270 270, 380 300 S 520 330, 570 336" stroke="#E1E3DE" stroke-width="11"></path>
+<path d="M-10 220 C 140 232, 270 270, 380 300 S 520 330, 570 336" stroke="#FFFFFF" stroke-width="8"></path>
+<path d="M0 500 C 100 470, 190 540, 290 528 S 450 480, 560 500" stroke="#FFFFFF" stroke-width="4"></path>
+</g>
+<text x="72" y="206" font-size="12" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Harvard Sq</text>
+<text x="400" y="360" font-size="12" font-weight="700" fill="#5E6168" font-family="Manrope, Arial, sans-serif">Central Sq</text>
+</svg>
+<span style="position: absolute; left: 20%; top: 46%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 999px; background: #17181A; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">You</span>
+<span style="position: absolute; left: 40%; top: 20%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">MK</span>
+<span style="position: absolute; left: 78%; top: 24%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">TJ</span>
+<span style="position: absolute; left: 82%; top: 66%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2.5px solid #FFFFFF; box-shadow: 0 2px 6px rgba(23, 24, 26, 0.22); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-sizing: border-box" aria-hidden="true">NB</span>
+<div style="position: absolute; left: 56%; top: 48%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 4px; filter: drop-shadow(0 3px 5px rgba(23, 24, 26, 0.25))" aria-hidden="true">
+<span style="height: 30px; padding: 0 12px; border-radius: 9px; background: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 800; white-space: nowrap">Juniper &amp; Rice</span>
+<svg width="40" height="50" viewBox="0 0 34 42"><path d="M17 41 C 17 41, 2 25.5, 2 15.5 A 15 15 0 0 1 32 15.5 C 32 25.5, 17 41, 17 41 Z" fill="{{accent}}" stroke="#FFFFFF" stroke-width="2.5"></path><path d="M13 9v6.5a2 2 0 0 0 2 2M15 9v14M11 9v6.5a2 2 0 0 0 2 2M21.5 23V9c-2 1-3 3.2-3 6v3h3" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div style="position: absolute; left: 14px; bottom: 10px; height: 22px; padding: 0 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.85); display: flex; align-items: center; gap: 8px; font-size: 11px; color: #3D4047"><span style="font-weight: 800">Google</span><span>Map data ©2026</span></div>
+</div>
+
+<div style="flex: 0 1 440px; min-width: 340px; display: flex; flex-direction: column; gap: 16px">
+<article style="background: #FFFFFF; border-radius: 26px; overflow: hidden; box-shadow: 0 12px 32px rgba(23, 24, 26, 0.08), 0 2px 6px rgba(23, 24, 26, 0.05)">
+<div style="height: 340px; background: #E9E4DA"><img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="A table of Korean dishes: a bubbling stew, grilled fish, and many small bowls of banchan" style="width: 100%; height: 100%; object-fit: cover; display: block"></div>
+<div style="padding: 18px 22px 20px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+<h2 style="margin: 0; font-size: 34px; line-height: 1.08; font-weight: 800; letter-spacing: -0.02em">Juniper &amp; Rice</h2>
+<a href="DetailsDesktop.dc.html" style="flex-shrink: 0; height: 44px; margin: -4px -8px 0 0; padding: 0 8px; border-radius: 12px; display: flex; align-items: center; gap: 2px; font-size: 14px; font-weight: 700; color: #17181A; text-decoration: none">Details<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+</div>
+<p style="margin: 0; font-size: 15px; font-weight: 600; color: #5E6168">Korean · $$ · <span style="color: #17181A">★ 4.8</span></p>
+<p style="margin: 0; font-size: 15px; font-weight: 500; color: #5E6168">0.7 mi from you · Open until 11 PM</p>
+</div>
+</article>
+
+<div style="display: flex; gap: 10px">
+<button style="flex: 1; height: 60px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 700; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>No</button>
+<button style="flex: 1; height: 60px; border-radius: 18px; border: 1.5px solid #E2E0DB; background: #FFFFFF; color: #17181A; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15"><span style="font-size: 16px; font-weight: 700">Veto</span><span style="font-size: 12px; font-weight: 600; color: #5E6168">2 left</span></span></button>
+<button style="flex: 1.35; height: 60px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(210, 67, 42, 0.24)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Yes</button>
+</div>
+
+<p style="margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; font-size: 13px; font-weight: 600; color: #5E6168">
+<span style="display: flex; align-items: center; gap: 6px"><kbd style="min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid #E2E0DB; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; font-size: 12px; font-weight: 700; color: #17181A">←</kbd>No</span>
+<span style="display: flex; align-items: center; gap: 6px"><kbd style="min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid #E2E0DB; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; font-size: 12px; font-weight: 700; color: #17181A">V</kbd>Veto</span>
+<span style="display: flex; align-items: center; gap: 6px"><kbd style="min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid #E2E0DB; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; font-size: 12px; font-weight: 700; color: #17181A">→</kbd>Yes</span>
+<span style="display: flex; align-items: center; gap: 6px"><kbd style="min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid #E2E0DB; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; font-size: 12px; font-weight: 700; color: #17181A">Enter</kbd>Details</span>
+</p>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#D2432A' };
+  }
+}
+</script>
+</body>
+</html>
