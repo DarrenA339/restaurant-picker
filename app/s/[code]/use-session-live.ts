@@ -14,6 +14,10 @@ import {
 type Args = {
   initialSession: SessionView;
   initialMembers: MemberView[];
+  /** The session's spots as the server read them, so the list starts full. */
+  initialRestaurants?: RestaurantRow[];
+  /** place_ids of the viewer's own adds, likewise. */
+  initialMyAddIds?: string[];
 };
 
 /**
@@ -28,16 +32,26 @@ type Args = {
  *
  * When the session leaves the lobby (or disappears), the server gate owns the
  * next view, so this calls router.refresh() and lets it decide.
+ *
+ * `adds` is not in the publication (and a member only reads their own rows),
+ * so after the viewer's own add or remove the screen calls
+ * refetchRestaurants() itself: joining a spot someone else already added
+ * changes no restaurants row and would otherwise go unnoticed.
  */
-export function useSessionLive({ initialSession, initialMembers }: Args) {
+export function useSessionLive({
+  initialSession,
+  initialMembers,
+  initialRestaurants = [],
+  initialMyAddIds = [],
+}: Args) {
   const router = useRouter();
   const supabase = useMemo(() => supabaseBrowser(), []);
   const sessionId = initialSession.id;
 
   const [session, setSession] = useState<SessionView>(initialSession);
   const [members, setMembers] = useState<MemberView[]>(initialMembers);
-  const [restaurants, setRestaurants] = useState<RestaurantRow[]>([]);
-  const [myAddIds, setMyAddIds] = useState<ReadonlySet<string>>(new Set());
+  const [restaurants, setRestaurants] = useState<RestaurantRow[]>(initialRestaurants);
+  const [myAddIds, setMyAddIds] = useState<ReadonlySet<string>>(() => new Set(initialMyAddIds));
   const [connected, setConnected] = useState(true);
   const statusRef = useRef(initialSession.status);
 
@@ -136,5 +150,6 @@ export function useSessionLive({ initialSession, initialMembers }: Args) {
     connected,
     applySession,
     refetchSession,
+    refetchRestaurants,
   };
 }

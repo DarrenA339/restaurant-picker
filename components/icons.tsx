@@ -192,3 +192,12 @@ export function PeopleIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** The "+ Add" sign on explore rows (stroke 3 in the design). */
+export function PlusIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={3} {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Svg>
+  );
+}

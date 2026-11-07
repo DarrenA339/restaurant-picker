@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
+import { bad, UUID } from "@/lib/api";
 import { Constants } from "@/lib/database.types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type VotingMethod = (typeof Constants.public.Enums.voting_method)[number];
 
@@ -12,10 +11,6 @@ function isVotingMethod(value: unknown): value is VotingMethod {
     typeof value === "string" &&
     (Constants.public.Enums.voting_method as readonly string[]).includes(value)
   );
-}
-
-function bad(error: string, status = 400) {
-  return NextResponse.json({ error }, { status });
 }
 
 /**

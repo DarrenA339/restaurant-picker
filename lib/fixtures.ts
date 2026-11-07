@@ -1,12 +1,12 @@
 import type { RestaurantRow } from "@/lib/restaurants";
 
 /**
- * Fake restaurants for the lobby until phase 6 wires the add routes. They are
- * shaped exactly like `restaurants` rows (source member, no batch yet) so the
- * lobby renders them through the same components as real data. Flip
- * USE_FIXTURES off once real adds land.
+ * Fake restaurants shaped exactly like `restaurants` rows (source member, no
+ * batch yet). They filled the lobby until phase 6 wired the add routes; the
+ * lobby and explore screens now read real rows, so this stays off and is
+ * only here for design checks of a full list.
  */
-export const USE_FIXTURES = true;
+export const USE_FIXTURES = false;
 
 /** Harvard Square, where the fixture spots sit around. */
 export const FIXTURE_ORIGIN = { lat: 42.3736, lng: -71.119 };

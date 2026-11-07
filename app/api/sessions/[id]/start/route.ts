@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
+import { bad, UUID } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function bad(error: string, status = 400) {
-  return NextResponse.json({ error }, { status });
-}
 
 /**
  * POST /api/sessions/[id]/start: the host starts picking. For now this only

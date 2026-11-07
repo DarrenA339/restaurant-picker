@@ -40,7 +40,7 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 
 ## Pages and screens
 
-The app has three routes. The session page at `/s/[code]` swaps views based on the session's status, so Realtime updates move everyone forward without a page navigation.
+The app has four routes. The session page at `/s/[code]` swaps views based on the session's status, so Realtime updates move everyone forward without a page navigation; Explore has its own URL under it so Done is a plain navigation back.
 
 ### Desktop layout
 
@@ -61,6 +61,7 @@ Mobile is the primary design. At 1024px and wider, screens adapt instead of stre
 | `/` | Home | Start a group button and a field to type a join code |
 | `/new` | Create session | Filter form (price, max distance, open now, vegetarian) and the host's display name |
 | `/s/[code]` | Session | One of the views below, picked by session status |
+| `/s/[code]/explore` | Explore | Lobby only (members are sent back to `/s/[code]` otherwise): search, results with Add, and the map |
 
 ### Views inside `/s/[code]`
 
@@ -68,7 +69,7 @@ Mobile is the primary design. At 1024px and wider, screens adapt instead of stre
 | --- | --- | --- |
 | Join | First visit to the link | Who's in, the host's invite, a display name and avatar color, and a location prompt |
 | Lobby | Status is lobby | Add bar (search a place or dish, plus a map button), the group's added spots with remove on your own, the voting method (host can change it), the host's suggestions toggle, avatars, invite button, and the host's Start button |
-| Explore | Opened from the lobby's add bar | Full-screen map with search, filter chips, result pins, and a results sheet with Add buttons |
+| Explore | Opened from the lobby's add bar or map button | Full-screen map with search, filter chips, result pins, and a results sheet with Add buttons. Typing shows autocomplete predictions: a place prediction adds that spot straight away (its Place Details call ends the autocomplete session), a dish prediction or Enter runs one Text Search. Phase 6 part 1 ships the search and the list; the map, pins, "Search this area," filters, and the details sheet follow in part 2 |
 | Swipe | Status is swiping | Map strip on the top 30% with the current pin and member dots, card deck below, vetoes left, and the details bottom sheet on tap |
 | Waiting | You finished the current batch | "3 of 5 done with this batch" with no vote counts and the host's End swiping button. When everyone finishes, the host picks Go to ranking or Deal 20 more |
 | Final round | Status is ranking | The session's method: pick one finalist, drag the finalists into order, or spread 9 quadratic credits with steppers |
@@ -165,7 +166,7 @@ Google bills a request at the highest tier among the fields you ask for ([source
 
 | Tier | Fields |
 | --- | --- |
-| Pro | `places.id`, `places.displayName`, `places.location`, `places.photos`, `places.googleMapsUri` |
+| Pro | `places.id`, `places.displayName`, `places.location`, `places.photos`, `places.googleMapsUri`, `places.primaryTypeDisplayName` (the cuisine line), `places.utcOffsetMinutes` (to print "open until 11 PM" in the place's own time) |
 | Enterprise | `places.rating`, `places.userRatingCount`, `places.priceLevel`, `places.currentOpeningHours`, `places.websiteUri` |
 | Enterprise + Atmosphere | `places.servesVegetarianFood` |
 
@@ -293,7 +294,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 - [ ] Finalist count of 3 or 5
 - [ ] Quadratic voting credit budget (9, or more if finalists go to 5)
 - [ ] Veto limit of 1 or 2 per person
-- [ ] Session cap on adds (40, or another number)
+- [ ] Session cap on adds (40, or another number). Counted as member-added cards, not adds rows, so joining a spot someone else added is always allowed; checked in the add route, so two adds landing at 39 can make 41
 - [ ] Typed-neighborhood fallback for denied location (Geocoding gives 10,000 free requests a month, then $5 per 1,000)
 - [ ] Accounts in the MVP or deferred to V2
 - [x] How a friend resolves a join code before they are a member: `join_session(code, display_name, color, lat, lng)`, a security-definer function that inserts the member row with a free person color and returns only the session id and status, so `sessions` rows stay private. The Join screen's preview (name, host, who is in, filters) is rendered on the server with the secret key.

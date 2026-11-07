@@ -19,10 +19,12 @@ type AddedSpotsProps = {
   /** Where distances are measured from; null hides them. */
   origin: LatLng | null;
   onRemove: (placeId: string) => void;
+  /** A quiet line under the heading, e.g. when the cap is reached. */
+  note?: string;
 };
 
 /** "Added so far": the group's spots, from docs/design/04. */
-export function AddedSpots({ spots, mine, origin, onRemove }: AddedSpotsProps) {
+export function AddedSpots({ spots, mine, origin, onRemove, note }: AddedSpotsProps) {
   const [expanded, setExpanded] = useState(false);
   const total = spots.length;
   const shown = expanded ? spots : spots.slice(0, ROWS_COLLAPSED);
@@ -34,6 +36,7 @@ export function AddedSpots({ spots, mine, origin, onRemove }: AddedSpotsProps) {
         <h2 className="text-lg font-extrabold lg:text-[19px]">Added so far</h2>
         <span className="text-sm font-bold text-quiet">{spotsLabel(total)}</span>
       </div>
+      {note ? <p className="-mt-1 text-[13px] font-semibold text-quiet">{note}</p> : null}
       <ul className="rounded-card bg-surface px-3.5 py-1 shadow-[0_1px_3px_rgba(23,24,26,0.07)] lg:px-4">
         {total === 0 ? (
           <li className="flex min-h-[68px] items-center text-sm font-medium text-quiet">

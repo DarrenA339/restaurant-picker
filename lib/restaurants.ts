@@ -5,10 +5,13 @@ export type RestaurantRow = Tables<"restaurants">;
 
 export type LatLng = { lat: number; lng: number };
 
+/** Who took the photo, shown next to it per Google's attribution rules. */
+export type PhotoAttribution = { name: string; uri?: string };
+
 /**
  * What restaurants.data holds. The add and deal routes write it from the
- * Places field mask in docs/SPEC.md; everything but `name` is optional so a
- * sparse Places result still renders.
+ * Places field mask in docs/SPEC.md (see lib/places/place.ts); everything
+ * but `name` is optional so a sparse Places result still renders.
  */
 export type RestaurantData = {
   name: string;
@@ -18,6 +21,7 @@ export type RestaurantData = {
   userRatingCount?: number;
   location?: LatLng;
   photoUri?: string | null;
+  photoAttributions?: PhotoAttribution[];
   googleMapsUri?: string;
   websiteUri?: string;
   openNow?: boolean;
@@ -32,6 +36,19 @@ function num(value: unknown): number | undefined {
 
 function str(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function attributions(value: unknown): PhotoAttribution[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const list = value.flatMap((item): PhotoAttribution[] => {
+    if (typeof item !== "object" || item === null) return [];
+    const a = item as Record<string, unknown>;
+    const name = str(a.name);
+    if (!name) return [];
+    const uri = str(a.uri);
+    return [uri ? { name, uri } : { name }];
+  });
+  return list.length ? list : undefined;
 }
 
 /** Lenient read of a stored data blob; null only when there is no name. */
@@ -60,6 +77,7 @@ export function readRestaurantData(json: Json): RestaurantData | null {
     userRatingCount: num(d.userRatingCount),
     location: lat !== undefined && lng !== undefined ? { lat, lng } : undefined,
     photoUri: str(d.photoUri) ?? null,
+    photoAttributions: attributions(d.photoAttributions),
     googleMapsUri: str(d.googleMapsUri),
     websiteUri: str(d.websiteUri),
     openNow: typeof d.openNow === "boolean" ? d.openNow : undefined,
@@ -93,6 +111,16 @@ export function restaurantMeta(data: RestaurantData, origin: LatLng | null): str
   const parts: string[] = [];
   if (data.cuisine) parts.push(data.cuisine);
   if (data.priceLevel) parts.push(priceLabel(data.priceLevel));
+  if (origin && data.location) parts.push(formatMiles(distanceMi(origin, data.location)));
+  return parts.join(" · ");
+}
+
+/** The explore row's second line adds the rating: "Chinese · $ · ★ 4.6 · 0.8 mi". */
+export function searchMeta(data: RestaurantData, origin: LatLng | null): string {
+  const parts: string[] = [];
+  if (data.cuisine) parts.push(data.cuisine);
+  if (data.priceLevel) parts.push(priceLabel(data.priceLevel));
+  if (data.rating !== undefined) parts.push(`★ ${data.rating.toFixed(1)}`);
   if (origin && data.location) parts.push(formatMiles(distanceMi(origin, data.location)));
   return parts.join(" · ");
 }

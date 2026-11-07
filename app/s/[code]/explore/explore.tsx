@@ -1,0 +1,497 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  AlertIcon,
+  BackIcon,
+  CameraIcon,
+  CheckIcon,
+  CloseIcon,
+  PinIcon,
+  PlusIcon,
+  SearchIcon,
+  SpinnerIcon,
+} from "@/components/icons";
+import { spotsLabel } from "@/lib/lobby-copy";
+import type { AutocompleteResult, PlaceResult } from "@/lib/places/place";
+import {
+  readRestaurantData,
+  searchMeta,
+  type LatLng,
+  type RestaurantData,
+  type RestaurantRow,
+} from "@/lib/restaurants";
+import { addSpot, ApiError, autocompletePlaces, searchPlaces } from "../session-api";
+import type { MemberView, SessionView } from "../session-types";
+import { useSessionLive } from "../use-session-live";
+
+type ExploreProps = {
+  initialSession: SessionView;
+  initialMembers: MemberView[];
+  initialRestaurants: RestaurantRow[];
+  initialMyAddIds: string[];
+  userId: string;
+};
+
+type Toast = { kind: "ok" | "error"; text: string; retry?: () => void };
+
+const DEBOUNCE_MS = 250;
+const MIN_CHARS = 2;
+const TOAST_OK_MS = 2200;
+const TOAST_ERROR_MS = 6000;
+
+function isAbort(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+/**
+ * Explore and add spots (docs/design/06), without the map for now: Done,
+ * the search field with autocomplete predictions, and the results list with
+ * Add / Adding / Added. A place prediction adds that spot straight away,
+ * which is the Place Details call that ends the autocomplete session; a
+ * dish prediction or Enter runs one Text Search. "Added" means the spot is
+ * in the session, whoever added it.
+ */
+export function Explore({
+  initialSession,
+  initialMembers,
+  initialRestaurants,
+  initialMyAddIds,
+  userId,
+}: ExploreProps) {
+  const live = useSessionLive({ initialSession, initialMembers, initialRestaurants, initialMyAddIds });
+  const { session, members } = live;
+  const me = members.find((m) => m.user_id === userId);
+  const origin: LatLng | null =
+    me?.lat != null && me.lng != null
+      ? { lat: me.lat, lng: me.lng }
+      : session.center_lat != null && session.center_lng != null
+        ? { lat: session.center_lat, lng: session.center_lng }
+        : null;
+  const inSession = new Map(live.restaurants.map((row) => [row.place_id, row]));
+
+  const [query, setQuery] = useState("");
+  const [predictions, setPredictions] = useState<AutocompleteResult | null>(null);
+  const [results, setResults] = useState<PlaceResult[]>([]);
+  const [searched, setSearched] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [adding, setAdding] = useState<ReadonlySet<string>>(new Set());
+  const [toast, setToast] = useState<Toast | null>(null);
+
+  // One autocomplete session token per typing session; it ends with the add
+  // (Place Details) or is dropped after a Text Search.
+  const tokenRef = useRef<string | null>(null);
+  const debounceRef = useRef<number | undefined>(undefined);
+  const predictAbortRef = useRef<AbortController | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const toastTimerRef = useRef<number | undefined>(undefined);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(debounceRef.current);
+      window.clearTimeout(toastTimerRef.current);
+      predictAbortRef.current?.abort();
+      searchAbortRef.current?.abort();
+    },
+    [],
+  );
+
+  const showToast = useCallback((next: Toast) => {
+    window.clearTimeout(toastTimerRef.current);
+    setToast(next);
+    toastTimerRef.current = window.setTimeout(
+      () => setToast(null),
+      next.kind === "ok" ? TOAST_OK_MS : TOAST_ERROR_MS,
+    );
+  }, []);
+
+  function token(): string {
+    tokenRef.current ??= crypto.randomUUID();
+    return tokenRef.current;
+  }
+
+  function stopPredicting() {
+    window.clearTimeout(debounceRef.current);
+    predictAbortRef.current?.abort();
+    predictAbortRef.current = null;
+    setPredictions(null);
+  }
+
+  function onInput(value: string) {
+    setQuery(value);
+    window.clearTimeout(debounceRef.current);
+    const input = value.trim();
+    if (input.length < MIN_CHARS) {
+      predictAbortRef.current?.abort();
+      setPredictions(null);
+      return;
+    }
+    debounceRef.current = window.setTimeout(async () => {
+      predictAbortRef.current?.abort();
+      const controller = new AbortController();
+      predictAbortRef.current = controller;
+      try {
+        const next = await autocompletePlaces(session.id, input, token(), controller.signal);
+        if (!controller.signal.aborted) setPredictions(next);
+      } catch (error) {
+        if (isAbort(error)) return;
+        setPredictions(null);
+      }
+    }, DEBOUNCE_MS);
+  }
+
+  async function search(text: string) {
+    const q = text.trim();
+    if (!q || searching) return;
+    stopPredicting();
+    setQuery(q);
+    inputRef.current?.blur();
+    // The typing session didn't end in Place Details; start fresh next time.
+    tokenRef.current = null;
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    setSearching(true);
+    try {
+      const found = await searchPlaces(session.id, q, controller.signal);
+      if (controller.signal.aborted) return;
+      setResults(found.places);
+      setSearched(q);
+    } catch (error) {
+      if (isAbort(error)) return;
+      showToast({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Search isn’t working right now.",
+        retry: () => void search(q),
+      });
+    } finally {
+      if (!controller.signal.aborted) setSearching(false);
+    }
+  }
+
+  async function add(placeId: string, name: string) {
+    if (adding.has(placeId) || inSession.has(placeId)) return;
+    setAdding((current) => new Set(current).add(placeId));
+    stopPredicting();
+    const sessionToken = tokenRef.current ?? undefined;
+    tokenRef.current = null;
+    try {
+      const { restaurant } = await addSpot(session.id, { placeId, sessionToken });
+      await live.refetchRestaurants();
+      setResults((current) =>
+        current.some((r) => r.placeId === placeId)
+          ? current
+          : [...current, { placeId, data: readRestaurantData(restaurant.data) ?? { name } }],
+      );
+      showToast({ kind: "ok", text: `Added ${name}` });
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "duplicate") {
+        // Someone (maybe this member in another tab) got there first.
+        await live.refetchRestaurants();
+        showToast({ kind: "ok", text: `${name} is already in` });
+        return;
+      }
+      const canRetry = !(error instanceof ApiError && (error.code === "cap" || error.code === "not_lobby"));
+      showToast({
+        kind: "error",
+        text: error instanceof Error ? error.message : `Couldn’t add ${name}.`,
+        retry: canRetry ? () => void add(placeId, name) : undefined,
+      });
+    } finally {
+      setAdding((current) => {
+        const next = new Set(current);
+        next.delete(placeId);
+        return next;
+      });
+    }
+  }
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    void search(query);
+  }
+
+  function clear() {
+    stopPredicting();
+    setQuery("");
+    inputRef.current?.focus();
+  }
+
+  const hasPredictions = Boolean(
+    predictions && (predictions.places.length > 0 || predictions.queries.length > 0),
+  );
+  const label = searching
+    ? "Searching…"
+    : searched !== null
+      ? `${spotsLabel(results.length)} for “${searched}”`
+      : results.length > 0
+        ? "Added just now"
+        : "Add a place or a dish";
+
+  return (
+    <div className="flex h-dvh flex-col bg-page lg:flex-row lg:bg-[#EEF0EB]">
+      <aside className="relative z-10 flex min-h-0 flex-1 flex-col lg:w-[400px] lg:flex-none lg:bg-surface lg:shadow-[4px_0_24px_rgba(23,24,26,0.08)]">
+        {!live.connected ? (
+          <div
+            role="status"
+            className="mx-4 mt-3 flex min-h-9 items-center gap-2 rounded-xl bg-ink px-3 py-1.5 text-[13px] font-bold text-white lg:mx-5 lg:mt-4"
+          >
+            Reconnecting. Added spots update again when you’re back online.
+          </div>
+        ) : null}
+
+        <form
+          role="search"
+          onSubmit={onSubmit}
+          className="flex shrink-0 items-center gap-2 px-4 pt-4 pb-3 lg:px-5 lg:pt-5 lg:pb-3.5"
+        >
+          <Link
+            href={`/s/${session.code}`}
+            aria-label="Done, back to the session"
+            className="flex h-12 shrink-0 items-center gap-1 rounded-2xl bg-surface px-3.5 text-[15px] font-extrabold text-ink shadow-[0_2px_8px_rgba(23,24,26,0.12)] lg:h-11 lg:rounded-[14px] lg:bg-tint lg:px-3 lg:shadow-none"
+          >
+            <BackIcon size={18} strokeWidth={2.6} />
+            Done
+          </Link>
+
+          <div className="relative min-w-0 flex-1">
+            <div className="flex h-12 items-center gap-1.5 rounded-2xl bg-surface pr-0.5 pl-3 shadow-[0_2px_8px_rgba(23,24,26,0.12)] lg:h-11 lg:rounded-[14px] lg:border-[1.5px] lg:border-line lg:shadow-none">
+              <SearchIcon size={18} className="shrink-0 text-quiet" />
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="search"
+                enterKeyHint="search"
+                autoComplete="off"
+                autoFocus
+                aria-label="Search a place or a dish"
+                placeholder="Search a place or dish"
+                value={query}
+                onChange={(event) => onInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") stopPredicting();
+                }}
+                className="h-11 min-w-0 flex-1 bg-transparent text-base font-semibold text-ink placeholder:text-quiet/60 focus-visible:outline-none lg:h-10 lg:text-[15px]"
+              />
+              {query ? (
+                <button
+                  type="button"
+                  onClick={clear}
+                  aria-label="Clear search"
+                  className="flex size-11 shrink-0 items-center justify-center bg-transparent p-0 text-quiet lg:size-10"
+                >
+                  <CloseIcon size={16} strokeWidth={2.4} />
+                </button>
+              ) : null}
+            </div>
+
+            {hasPredictions && predictions ? (
+              <ul
+                aria-label="Suggestions"
+                className="absolute top-[calc(100%+6px)] right-0 left-0 z-20 flex flex-col gap-0.5 rounded-2xl bg-surface p-1.5 shadow-[0_12px_32px_rgba(23,24,26,0.16)]"
+              >
+                {predictions.queries.map((q) => (
+                  <li key={`q-${q.text}`}>
+                    <button
+                      type="button"
+                      onClick={() => void search(q.text)}
+                      className="flex h-12 w-full items-center gap-3 rounded-xl bg-transparent px-3 text-left text-ink"
+                    >
+                      <SearchIcon size={16} className="shrink-0 text-quiet" />
+                      <span className="truncate text-[15px] font-bold">{q.text}</span>
+                    </button>
+                  </li>
+                ))}
+                {predictions.places.map((p) => {
+                  const state = adding.has(p.placeId)
+                    ? "adding"
+                    : inSession.has(p.placeId)
+                      ? "added"
+                      : "idle";
+                  return (
+                    <li key={p.placeId}>
+                      <button
+                        type="button"
+                        onClick={() => void add(p.placeId, p.mainText)}
+                        disabled={state !== "idle"}
+                        aria-busy={state === "adding" || undefined}
+                        aria-label={
+                          state === "added"
+                            ? `${p.mainText}, already added`
+                            : `Add ${p.mainText} to the deck`
+                        }
+                        className="flex min-h-12 w-full items-center gap-3 rounded-xl bg-transparent px-3 py-1.5 text-left text-ink disabled:text-quiet"
+                      >
+                        <PinIcon size={16} className="shrink-0 text-accent-text" />
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-[15px] font-bold">{p.mainText}</span>
+                          {p.secondaryText ? (
+                            <span className="truncate text-[13px] font-semibold text-quiet">
+                              {p.secondaryText}
+                            </span>
+                          ) : null}
+                        </span>
+                        {state === "adding" ? (
+                          <SpinnerIcon size={16} className="shrink-0 text-accent-text" />
+                        ) : state === "added" ? (
+                          <CheckIcon size={16} className="shrink-0 text-[#3D4047]" />
+                        ) : (
+                          <PlusIcon size={14} className="shrink-0 text-accent-text" />
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        </form>
+
+        <section
+          aria-labelledby="explore-title"
+          className="flex min-h-0 flex-1 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(23,24,26,0.10)] lg:rounded-none lg:shadow-none"
+        >
+          <div className="flex h-[22px] shrink-0 items-center justify-center lg:hidden">
+            <span className="h-[5px] w-10 rounded-full bg-[#D9D6CF]" aria-hidden="true" />
+          </div>
+          <div className="flex shrink-0 flex-col gap-[3px] px-5 pt-0.5 pb-2 lg:pt-0 lg:pb-3">
+            <h1 id="explore-title" aria-live="polite" className="text-[19px] font-extrabold lg:text-xl">
+              {label}
+            </h1>
+            <p className="text-sm font-medium text-quiet">Add spots for your group to vote on.</p>
+          </div>
+
+          <ul className="min-h-0 flex-1 overflow-y-auto px-3 pt-1 pb-[calc(28px+env(safe-area-inset-bottom,0px))] lg:pb-6">
+            {results.map((result) => {
+              const row = inSession.get(result.placeId);
+              const data: RestaurantData =
+                (row ? readRestaurantData(row.data) : null) ?? result.data;
+              const state = adding.has(result.placeId) ? "adding" : row ? "added" : "idle";
+              return (
+                <ResultRow
+                  key={result.placeId}
+                  data={data}
+                  origin={origin}
+                  state={state}
+                  onAdd={() => void add(result.placeId, data.name)}
+                />
+              );
+            })}
+            {searched !== null && !searching && results.length === 0 ? (
+              <li className="flex flex-col items-start gap-1.5 px-2 py-5">
+                <span className="text-base font-extrabold">Nothing matches</span>
+                <span className="text-sm font-medium text-quiet">
+                  Try another dish, or a place by name.
+                </span>
+              </li>
+            ) : null}
+            {searched === null && results.length === 0 ? (
+              <li className="px-2 py-5 text-sm leading-[1.45] font-medium text-quiet">
+                Type a dish like “dumplings” or a place by name. Tap a place suggestion to add
+                it straight away, or press Enter to see what’s nearby.
+              </li>
+            ) : null}
+          </ul>
+        </section>
+      </aside>
+
+      {/* Where the map goes in part 2. */}
+      <div aria-hidden="true" className="hidden min-w-0 flex-1 lg:block" />
+
+      {toast ? (
+        toast.kind === "ok" ? (
+          <div
+            role="status"
+            className="fixed bottom-[calc(24px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex h-11 -translate-x-1/2 items-center gap-2 rounded-field bg-ink px-4 text-sm font-bold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(23,24,26,0.2)] lg:left-[200px]"
+          >
+            <CheckIcon size={16} strokeWidth={3} />
+            {toast.text}
+          </div>
+        ) : (
+          <div
+            role="alert"
+            className="fixed right-4 bottom-[calc(24px+env(safe-area-inset-bottom,0px))] left-4 z-30 flex min-h-12 items-center gap-2.5 rounded-field border-[1.5px] border-[#EBCFCA] bg-surface py-1 pr-1.5 pl-3.5 text-sm font-bold text-ink shadow-[0_8px_20px_rgba(23,24,26,0.12)] lg:right-auto lg:left-5 lg:w-[360px]"
+          >
+            <AlertIcon size={16} className="shrink-0 text-[#A3271B]" />
+            <span className="flex-1">{toast.text}</span>
+            {toast.retry ? (
+              <button
+                type="button"
+                onClick={toast.retry}
+                className="h-[38px] shrink-0 rounded-[10px] bg-ink px-3 text-[13px] font-extrabold text-white"
+              >
+                Try again
+              </button>
+            ) : null}
+          </div>
+        )
+      ) : null}
+    </div>
+  );
+}
+
+type ResultRowProps = {
+  data: RestaurantData;
+  origin: LatLng | null;
+  state: "idle" | "adding" | "added";
+  onAdd: () => void;
+};
+
+/** One result from docs/design/06: photo tile, name, meta, and the Add / Adding / Added slot. */
+function ResultRow({ data, origin, state, onAdd }: ResultRowProps) {
+  const meta = searchMeta(data, origin);
+  const slot = "flex h-11 w-[100px] items-center justify-center gap-1.5 text-sm lg:h-10 lg:w-24";
+  return (
+    <li className="flex items-center gap-2.5 rounded-2xl py-1 pr-2 pl-2.5">
+      <div className="flex min-h-[66px] min-w-0 flex-1 items-center gap-3 lg:min-h-[70px]">
+        <span
+          className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#EDE3D3] text-[#5E5A52] lg:size-[54px]"
+          aria-hidden="true"
+        >
+          {data.photoUri ? (
+            // Google photo URIs come from the server; next/image would need a remote pattern per host.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={data.photoUri} alt="" className="block size-full object-cover" />
+          ) : (
+            <CameraIcon size={18} />
+          )}
+        </span>
+        <span className="flex min-w-0 flex-col gap-[3px]">
+          <span className="text-base leading-[1.25] font-extrabold">{data.name}</span>
+          {meta ? <span className="text-[13px] font-semibold text-quiet">{meta}</span> : null}
+        </span>
+      </div>
+      <span className="flex w-[100px] shrink-0 justify-end lg:w-24">
+        {state === "added" ? (
+          <span className={`${slot} font-bold text-[#3D4047]`}>
+            <CheckIcon size={15} strokeWidth={3} />
+            Added
+          </span>
+        ) : state === "adding" ? (
+          <button
+            type="button"
+            disabled
+            aria-busy="true"
+            aria-label={`Adding ${data.name}`}
+            className={`${slot} rounded-full border-[1.5px] border-[#F1CFC7] bg-surface font-extrabold text-accent-text`}
+          >
+            <SpinnerIcon size={14} />
+            Adding
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onAdd}
+            aria-label={`Add ${data.name} to the deck`}
+            className={`${slot} rounded-full border-[1.5px] border-[#F1CFC7] bg-accent-soft font-extrabold text-accent-text`}
+          >
+            <PlusIcon size={14} />
+            Add
+          </button>
+        )}
+      </span>
+    </li>
+  );
+}

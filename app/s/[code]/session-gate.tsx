@@ -12,6 +12,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { JoinForm } from "./join-form";
 import { Lobby } from "./lobby";
+import { loadLobbyData } from "./lobby-data";
 import { SessionPlaceholder } from "./session-placeholder";
 import { MEMBER_VIEW_COLUMNS, SESSION_VIEW_COLUMNS } from "./session-types";
 
@@ -54,10 +55,13 @@ export async function SessionGate({
         .order("joined_at", { ascending: true });
 
       if (session.status === "lobby") {
+        const lobby = await loadLobbyData(supabase, session.id);
         return (
           <Lobby
             initialSession={session}
             initialMembers={members ?? []}
+            initialRestaurants={lobby.restaurants}
+            initialMyAddIds={lobby.myAddIds}
             userId={user.id}
           />
         );

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { AlertIcon, BackIcon, MapIcon, SearchIcon } from "@/components/icons";
+import { MAX_ADDS } from "@/lib/adds";
 import { Brand } from "@/components/layout/brand";
 import { ScreenFooter } from "@/components/layout/flow-screen";
 import { TwoColumn, WideScreen } from "@/components/layout/two-column";
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { FIXTURE_MY_ADDS, FIXTURE_ORIGIN, FIXTURE_RESTAURANTS, USE_FIXTURES } from "@/lib/fixtures";
 import {
   peopleLabel,
   startNote,
@@ -19,11 +19,11 @@ import {
   type VotingMethod,
 } from "@/lib/lobby-copy";
 import { toPersonColor } from "@/lib/people";
-import type { LatLng } from "@/lib/restaurants";
+import type { LatLng, RestaurantRow } from "@/lib/restaurants";
 import { DEFAULT_FILTERS, parseFilters } from "@/lib/session-filters";
 import { AddedSpots } from "./added-spots";
 import { InviteButton } from "./invite-button";
-import { patchSession, startSession } from "./session-api";
+import { ApiError, patchSession, removeAdd, startSession } from "./session-api";
 import type { MemberView, SessionView } from "./session-types";
 import { useSessionLive } from "./use-session-live";
 import { VotingMethodSheet } from "./voting-method-sheet";
@@ -31,6 +31,8 @@ import { VotingMethodSheet } from "./voting-method-sheet";
 type LobbyProps = {
   initialSession: SessionView;
   initialMembers: MemberView[];
+  initialRestaurants: RestaurantRow[];
+  initialMyAddIds: string[];
   userId: string;
 };
 
@@ -42,9 +44,15 @@ function hereLabel(names: string[]): string {
 }
 
 /** The add-first lobby from docs/design/04, host and guest views, phone and desktop. */
-export function Lobby({ initialSession, initialMembers, userId }: LobbyProps) {
+export function Lobby({
+  initialSession,
+  initialMembers,
+  initialRestaurants,
+  initialMyAddIds,
+  userId,
+}: LobbyProps) {
   const router = useRouter();
-  const live = useSessionLive({ initialSession, initialMembers });
+  const live = useSessionLive({ initialSession, initialMembers, initialRestaurants, initialMyAddIds });
   const { session, members } = live;
 
   const isHost = session.host_id === userId;
@@ -55,22 +63,17 @@ export function Lobby({ initialSession, initialMembers, userId }: LobbyProps) {
   // Whoever was here when this page loaded; anyone else arrived live.
   const alreadyHere = useRef(new Set(initialMembers.map((m) => m.user_id)));
 
-  // Until phase 6 wires the add routes, the list is fixtures shaped like
-  // restaurants rows. Removing one is local only.
-  const spots = USE_FIXTURES ? FIXTURE_RESTAURANTS : live.restaurants;
-  const myAdds: ReadonlySet<string> = USE_FIXTURES
-    ? new Set(FIXTURE_MY_ADDS[isHost ? "host" : "guest"])
-    : live.myAddIds;
-  const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set());
-  const visibleSpots = spots.filter((spot) => !removed.has(spot.place_id));
+  // A row being removed disappears right away; it comes back with the error
+  // if the route refuses.
+  const [removing, setRemoving] = useState<ReadonlySet<string>>(new Set());
+  const visibleSpots = live.restaurants.filter((spot) => !removing.has(spot.place_id));
 
-  let origin: LatLng | null =
+  const origin: LatLng | null =
     me?.lat != null && me.lng != null
       ? { lat: me.lat, lng: me.lng }
       : session.center_lat != null && session.center_lng != null
         ? { lat: session.center_lat, lng: session.center_lng }
         : null;
-  if (!origin && USE_FIXTURES) origin = FIXTURE_ORIGIN;
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
@@ -114,6 +117,27 @@ export function Lobby({ initialSession, initialMembers, userId }: LobbyProps) {
     }
   }
 
+  async function remove(placeId: string) {
+    if (removing.has(placeId)) return;
+    setRemoving((current) => new Set(current).add(placeId));
+    setError(null);
+    try {
+      await removeAdd(session.id, placeId);
+    } catch (err) {
+      // Already gone (removed from another tab, say) is not an error worth showing.
+      if (!(err instanceof ApiError && err.code === "not_found")) {
+        setError(err instanceof Error ? err.message : "Couldn’t remove that spot.");
+      }
+    } finally {
+      await live.refetchRestaurants();
+      setRemoving((current) => {
+        const next = new Set(current);
+        next.delete(placeId);
+        return next;
+      });
+    }
+  }
+
   async function start() {
     if (busy) return;
     setBusy("start");
@@ -131,6 +155,7 @@ export function Lobby({ initialSession, initialMembers, userId }: LobbyProps) {
 
   const names = members.map((m) => m.display_name);
   const totalAdds = visibleSpots.length;
+  const explorePath = `/s/${session.code}/explore`;
 
   const header = (
     <header className="flex items-center justify-between gap-3 px-5 pt-3 lg:gap-4 lg:px-8 lg:pt-6">
@@ -184,34 +209,35 @@ export function Lobby({ initialSession, initialMembers, userId }: LobbyProps) {
         className="lg:mt-2.5"
         left={
           <>
-            {/* The add bar. Search and the explore map arrive in phase 6. */}
+            {/* The add bar: both open the explore screen (the map itself lands in part 2). */}
             <div className="flex gap-2.5">
-              <button
-                type="button"
-                aria-disabled="true"
-                title="Adding spots comes next"
+              <Link
+                href={explorePath}
                 className="flex h-14 min-w-0 flex-1 items-center gap-2.5 rounded-button bg-surface px-4 text-left text-base font-semibold text-quiet shadow-[0_6px_18px_rgba(23,24,26,0.08),0_1px_3px_rgba(23,24,26,0.06)] lg:px-[18px]"
               >
                 <SearchIcon size={20} className="shrink-0 text-ink" />
                 Add a place or a dish
-              </button>
-              <button
-                type="button"
-                aria-disabled="true"
+              </Link>
+              <Link
+                href={explorePath}
                 aria-label="Browse the map"
-                title="The explore map comes next"
                 className="flex h-14 w-14 shrink-0 items-center justify-center gap-2 rounded-button bg-ink text-[15px] font-bold text-white lg:w-auto lg:px-5"
               >
                 <MapIcon size={22} className="lg:size-5" />
                 <span className="hidden lg:inline">Browse map</span>
-              </button>
+              </Link>
             </div>
 
             <AddedSpots
               spots={visibleSpots}
-              mine={myAdds}
+              mine={live.myAddIds}
               origin={origin}
-              onRemove={(placeId) => setRemoved((current) => new Set(current).add(placeId))}
+              onRemove={remove}
+              note={
+                totalAdds >= MAX_ADDS
+                  ? `${MAX_ADDS} spots is the most a deck can hold.`
+                  : undefined
+              }
             />
           </>
         }

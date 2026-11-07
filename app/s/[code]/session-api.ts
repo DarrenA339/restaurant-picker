@@ -1,26 +1,85 @@
 import type { VotingMethod } from "@/lib/lobby-copy";
+import type { AutocompleteResult, SearchResult } from "@/lib/places/place";
+import type { RestaurantRow } from "@/lib/restaurants";
 
 type SessionPatch = { voting_method?: VotingMethod; suggestions_on?: boolean };
 
-async function readError(response: Response, fallback: string): Promise<string> {
-  const json = (await response.json().catch(() => null)) as { error?: string } | null;
-  return json?.error ?? fallback;
+/** A route's error, with the machine-readable `code` some responses carry (lib/api.ts). */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code?: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
+
+async function fail(response: Response, fallback: string): Promise<never> {
+  const json = (await response.json().catch(() => null)) as { error?: string; code?: string } | null;
+  throw new ApiError(json?.error ?? fallback, response.status, json?.code);
+}
+
+const json = { "Content-Type": "application/json" };
 
 /** Host only, lobby only: change the voting method and/or suggestions toggle. */
 export async function patchSession(id: string, patch: SessionPatch) {
   const response = await fetch(`/api/sessions/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: json,
     body: JSON.stringify(patch),
   });
-  if (!response.ok) throw new Error(await readError(response, "Couldn’t save that."));
+  if (!response.ok) return fail(response, "Couldn’t save that.");
   return (await response.json()) as { voting_method: VotingMethod; suggestions_on: boolean };
 }
 
 /** Host only: lobby → swiping. */
 export async function startSession(id: string) {
   const response = await fetch(`/api/sessions/${id}/start`, { method: "POST" });
-  if (!response.ok) throw new Error(await readError(response, "Couldn’t start."));
+  if (!response.ok) return fail(response, "Couldn’t start.");
   return (await response.json()) as { status: string };
+}
+
+export type AddSpotResponse = { restaurant: RestaurantRow; joined: boolean };
+
+/** Lobby only: add a spot. `sessionToken` is the autocomplete session it ends. */
+export async function addSpot(id: string, body: { placeId: string; sessionToken?: string }) {
+  const response = await fetch(`/api/sessions/${id}/add`, {
+    method: "POST",
+    headers: json,
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) return fail(response, "Couldn’t add that spot.");
+  return (await response.json()) as AddSpotResponse;
+}
+
+/** Lobby only: remove one of the caller's own adds. */
+export async function removeAdd(id: string, placeId: string) {
+  const response = await fetch(`/api/sessions/${id}/add/${encodeURIComponent(placeId)}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) return fail(response, "Couldn’t remove that spot.");
+  return (await response.json()) as { removed: true };
+}
+
+/** Name and dish predictions for what the member is typing. */
+export async function autocompletePlaces(
+  sessionId: string,
+  q: string,
+  token: string,
+  signal?: AbortSignal,
+) {
+  const params = new URLSearchParams({ session: sessionId, q, token });
+  const response = await fetch(`/api/places/autocomplete?${params}`, { signal });
+  if (!response.ok) return fail(response, "Search isn’t working right now.");
+  return (await response.json()) as AutocompleteResult;
+}
+
+/** One Text Search for the explore list. */
+export async function searchPlaces(sessionId: string, q: string, signal?: AbortSignal) {
+  const params = new URLSearchParams({ session: sessionId, q });
+  const response = await fetch(`/api/places/search?${params}`, { signal });
+  if (!response.ok) return fail(response, "Search isn’t working right now.");
+  return (await response.json()) as SearchResult;
 }
