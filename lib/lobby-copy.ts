@@ -1,4 +1,5 @@
 import type { Database } from "@/lib/database.types";
+import { BATCH_SIZE } from "@/lib/deck";
 import {
   formatDistance,
   priceRangeText,
@@ -8,7 +9,7 @@ import {
 
 export type VotingMethod = Database["public"]["Enums"]["voting_method"];
 
-export const BATCH_SIZE = 20;
+export { BATCH_SIZE };
 
 export type VotingMethodInfo = {
   id: VotingMethod;
@@ -92,8 +93,14 @@ export function suggestionsText(args: {
   )} and ${priceRangeText(filters.prices)}. They come after the group’s adds.`;
 }
 
+/** Start needs something to deal: an add, or suggestions. */
+export function canStart(totalAdds: number, suggestionsOn: boolean): boolean {
+  return totalAdds > 0 || suggestionsOn;
+}
+
 /** The line under the host's Start button. */
 export function startNote(totalAdds: number, suggestionsOn: boolean): string {
+  if (!canStart(totalAdds, suggestionsOn)) return "Add a spot or turn suggestions on to start.";
   const fill = fillCount(totalAdds, suggestionsOn);
   if (fill > 0) {
     return `${totalAdds} added ${totalAdds === 1 ? "spot" : "spots"} first, then ${fill} ${

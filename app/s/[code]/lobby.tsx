@@ -12,6 +12,7 @@ import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
+  canStart,
   peopleLabel,
   startNote,
   suggestionsText,
@@ -308,6 +309,7 @@ export function Lobby({
                     onClick={start}
                     loading={busy === "start"}
                     loadingLabel="Starting…"
+                    disabled={!canStart(totalAdds, session.suggestions_on)}
                     className="w-full shadow-[0_4px_12px_rgba(210,67,42,0.20)]"
                   >
                     Start picking

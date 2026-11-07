@@ -13,10 +13,11 @@ export type SessionView = Pick<
   | "filters"
   | "center_lat"
   | "center_lng"
+  | "batch"
 >;
 
 export const SESSION_VIEW_COLUMNS =
-  "id, code, name, status, host_id, voting_method, suggestions_on, filters, center_lat, center_lng";
+  "id, code, name, status, host_id, voting_method, suggestions_on, filters, center_lat, center_lng, batch";
 
 /** The member columns everyone in the session may see. */
 export type MemberView = Pick<

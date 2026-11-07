@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canStart,
   fillCount,
   peopleLabel,
   startNote,
@@ -33,6 +34,13 @@ describe("lobby copy", () => {
     expect(startNote(1, true)).toBe("1 added spot first, then 19 suggestions");
     expect(startNote(14, false)).toBe("14 spots, all added by the group");
     expect(startNote(1, false)).toBe("1 spot, all added by the group");
+    expect(startNote(0, false)).toBe("Add a spot or turn suggestions on to start.");
+  });
+
+  it("only lets the host start with something to deal", () => {
+    expect(canStart(0, false)).toBe(false);
+    expect(canStart(0, true)).toBe(true);
+    expect(canStart(1, false)).toBe(true);
   });
 
   it("explains suggestions from the host's filters, or who turned them off", () => {

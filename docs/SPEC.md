@@ -101,7 +101,7 @@ These run on Vercel with the secret keys. Swipes write straight to Supabase, gua
 | `DELETE /api/sessions/[id]/add/[placeId]` | Lobby only. Removes one of the caller's own adds |
 | `POST /api/sessions/[id]/start` | Host only, lobby only. Builds batch 1 from the group's adds, then fills to 20 with one Text Search call if suggestions are on, resolves photos, records each adder's yes, moves status to swiping |
 | `POST /api/sessions/[id]/done-swiping` | Marks a member done with the batch. Once the whole group is, ends on a unanimous yes or counts finalists and offers the host ranking or another batch |
-| `POST /api/sessions/[id]/deal` | Host only. Deals the next 20: remaining adds first, then the next page of suggestions, or splits the area into smaller circles past 60, filtering by distance |
+| `POST /api/sessions/[id]/deal` | Host only. Deals the next 20: remaining adds first, then the next page of suggestions, or splits the area into smaller circles past 60, filtering by distance. Resets everyone's done flag for the new batch |
 | `POST /api/sessions/[id]/ballot` | Saves the member's final-round ballot after checking it matches the session's method (one valid pick, a full ordering, or whole-number votes costing at most 9 credits), marks them done, and once everyone has voted computes the winner and moves status to done |
 | `POST /api/sessions/[id]/end-swiping` | Host only. Ends swiping early and runs the same finalist step |
 
@@ -156,12 +156,12 @@ Each member add takes one Place Details call and one photo. Suggestions take one
 | Places API (New) Place Details | Each spot a member adds | 1 per add | MVP |
 | Places API (New) Autocomplete + Place Details (Essentials) | A typed starting area on Create or Join | 1 session + 1 location-only details call per typed area | MVP |
 | Places API (New) Text Search | Suggestions after the group's adds, up to 60 per area at 20 per page, plus explore map searches | 1 per batch of suggestions, 1 per explore search | MVP |
-| Places API (New) Nearby Search | Suggestions past 60, by splitting the area into smaller circles and removing duplicates by place ID | 1 per smaller circle | MVP |
+| Places API (New) Nearby Search | Suggestions past 60: the area becomes seven smaller circles (the center and six around it at 0.6 r, each r/2), one call per circle until the batch fills, duplicates removed by place ID, and price and open-now applied in code since Nearby has no such filters | 1 per smaller circle | MVP |
 | Places API (New) Place Photos | One photo per card | 1 per add or suggestion | MVP |
 | Restaurant's own website | Menu link in the bottom sheet | 0 | MVP |
 | Curated menu summaries | Popular dishes for about 150 restaurants | 0 (built once) | V2 |
 
-Nearby Search returns at most 20 places with no next page, which is why suggestions start with Text Search. When paging, every request field except the page token must match the first request, so the session stores the original request body and the latest `nextPageToken`. Text Search treats the circle as a preference, not a hard limit, so suggestions are filtered by distance before they are dealt.
+Nearby Search returns at most 20 places with no next page, which is why suggestions start with Text Search. When paging, every request field except the page token must match the first request, so the session stores the original request body and the latest `nextPageToken` (`search_body` holds `{ body, nearbyNext }`: that body plus how many of the smaller circles have been used; `page_token` holds the token). Text Search treats the circle as a preference, not a hard limit, so suggestions are filtered by distance before they are dealt. Suggestions begin only once every add has been dealt, and the first Text Search happens whenever that first fill is needed, which can be a later batch when the group added more than 20. A batch comes up short rather than costing a second search; when the circles are used up too, the deal route reports the area as exhausted so the host can widen the distance.
 
 ### Search field mask
 
@@ -201,7 +201,7 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 
 | Table | Key columns | Members can read | Members can write |
 | --- | --- | --- | --- |
-| `sessions` | `id`, `code`, `host_id`, `name`, `status`, `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch`, `search_body` (jsonb), `page_token` | Their own session | Nothing (server only) |
+| `sessions` | `id`, `code`, `host_id`, `name`, `status`, `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch` (batches dealt so far), `search_body` (jsonb: the Text Search body plus the nearby-circle count), `page_token` | Their own session | Nothing (server only) |
 | `members` | `session_id`, `user_id`, `display_name`, `color` (1 to 8, unique per session), `lat`, `lng`, `vetoes_left`, `done_swiping` (current batch), `done_ranking` | Everyone in their session | Their own `display_name`, `lat`, `lng`; joining goes through `join_session` |
 | `restaurants` | `session_id`, `place_id`, `source` (member or suggested), `batch` (null until dealt), `data` (jsonb with name, price, rating, `photoUri`, hours, links, flags) | Their session's spots | Nothing (server only) |
 | `adds` | `session_id`, `user_id`, `place_id`, `created_at`; unique per user and place | Only their own | Nothing (server only) |

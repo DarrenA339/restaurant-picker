@@ -27,11 +27,14 @@ export const PLACE_FIELDS = [
 /** Place Details: plain field names. */
 export const DETAILS_FIELD_MASK = PLACE_FIELDS.join(",");
 
-/** Text Search and Nearby Search: `places.`-prefixed, plus the page token. */
+/** Text Search: `places.`-prefixed, plus the page token. */
 export const SEARCH_FIELD_MASK = [
   ...PLACE_FIELDS.map((field) => `places.${field}`),
   "nextPageToken",
 ].join(",");
+
+/** Nearby Search: the same fields; it has no pages. */
+export const NEARBY_FIELD_MASK = PLACE_FIELDS.map((field) => `places.${field}`).join(",");
 
 /**
  * A typed starting area: only Essentials fields, so resolving one bills

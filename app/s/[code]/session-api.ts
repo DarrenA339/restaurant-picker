@@ -34,11 +34,20 @@ export async function patchSession(id: string, patch: SessionPatch) {
   return (await response.json()) as { voting_method: VotingMethod; suggestions_on: boolean };
 }
 
-/** Host only: lobby → swiping. */
+export type BatchSummary = { batch: number; cards: number; exhausted: boolean };
+
+/** Host only: lobby → swiping, dealing batch 1. */
 export async function startSession(id: string) {
   const response = await fetch(`/api/sessions/${id}/start`, { method: "POST" });
   if (!response.ok) return fail(response, "Couldn’t start.");
-  return (await response.json()) as { status: string };
+  return (await response.json()) as BatchSummary & { status: string };
+}
+
+/** Host only, while swiping: deal the next batch. */
+export async function dealNextBatch(id: string) {
+  const response = await fetch(`/api/sessions/${id}/deal`, { method: "POST" });
+  if (!response.ok) return fail(response, "Couldn’t deal the next batch.");
+  return (await response.json()) as BatchSummary;
 }
 
 export type AddSpotResponse = { restaurant: RestaurantRow; joined: boolean };

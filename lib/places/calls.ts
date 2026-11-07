@@ -1,6 +1,6 @@
-export type CallKind = "autocomplete" | "search" | "details" | "photo";
+export type CallKind = "autocomplete" | "search" | "nearby" | "details" | "photo";
 
-const ORDER: CallKind[] = ["autocomplete", "search", "details", "photo"];
+const ORDER: CallKind[] = ["autocomplete", "search", "nearby", "details", "photo"];
 
 /**
  * Counts the Google calls one request makes, so every Places route can log

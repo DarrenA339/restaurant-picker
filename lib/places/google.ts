@@ -1,6 +1,6 @@
 import "server-only";
 import type { CallKind, CallLog } from "./calls";
-import { AUTOCOMPLETE_FIELD_MASK, DETAILS_FIELD_MASK, SEARCH_FIELD_MASK } from "./fields";
+import { AUTOCOMPLETE_FIELD_MASK, DETAILS_FIELD_MASK, NEARBY_FIELD_MASK, SEARCH_FIELD_MASK } from "./fields";
 import type { GooglePlace, PlacesPort, Prediction } from "./place";
 
 /**
@@ -57,9 +57,21 @@ export type SearchTextBody = {
 
 export type SearchTextResponse = { places?: GooglePlace[]; nextPageToken?: string };
 
+export type SearchNearbyBody = {
+  includedTypes: string[];
+  maxResultCount: number;
+  locationRestriction: { circle: Circle };
+  rankPreference?: "POPULARITY" | "DISTANCE";
+  languageCode?: string;
+  regionCode?: string;
+};
+
+export type SearchNearbyResponse = { places?: GooglePlace[] };
+
 export type PlacesClient = Omit<PlacesPort, "details"> & {
   autocomplete(body: AutocompleteBody): Promise<AutocompleteResponse>;
   searchText(body: SearchTextBody): Promise<SearchTextResponse>;
+  searchNearby(body: SearchNearbyBody): Promise<SearchNearbyResponse>;
   /** Place Details; a narrower mask than the card's picks a cheaper SKU. */
   details(placeId: string, sessionToken?: string, fieldMask?: string): Promise<GooglePlace>;
 };
@@ -129,6 +141,13 @@ export function googlePlaces(calls: CallLog): PlacesClient {
       return call<SearchTextResponse>("search", "/places:searchText", {
         method: "POST",
         fieldMask: SEARCH_FIELD_MASK,
+        body,
+      });
+    },
+    searchNearby(body) {
+      return call<SearchNearbyResponse>("nearby", "/places:searchNearby", {
+        method: "POST",
+        fieldMask: NEARBY_FIELD_MASK,
         body,
       });
     },

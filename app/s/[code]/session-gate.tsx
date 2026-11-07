@@ -66,7 +66,15 @@ export async function SessionGate({
           />
         );
       }
-      return <SessionPlaceholder session={session} members={members ?? []} />;
+      const { restaurants } = await loadLobbyData(supabase, session.id);
+      return (
+        <SessionPlaceholder
+          session={session}
+          members={members ?? []}
+          restaurants={restaurants}
+          userId={user.id}
+        />
+      );
     }
   }
 
