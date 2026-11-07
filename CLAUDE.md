@@ -47,10 +47,10 @@ This is Next 16.4 with `cacheComponents: true` and `partialPrefetching: true` in
 
 Two paths to data, and which one a piece of logic uses is the main design decision:
 
-- **Browser → Supabase directly** (publishable key, anonymous sign-in, RLS): auth, reading the session/members/restaurants, writing the member's own swipes and rankings, and Realtime subscriptions for lobby presence and status changes.
+- **Browser → Supabase directly** (publishable key, anonymous sign-in, RLS): auth, reading the session/members/restaurants (plus the member's own adds and ballot), writing the member's own swipes, and Realtime subscriptions for lobby presence, the add list, and status changes.
 - **Browser → Next.js route handler → Supabase (secret key) / Google Places:** anything that needs a secret or decides an outcome. Creating sessions, dealing batches, tallying, computing winners. These live under `app/api/sessions/...` (see the server-routes table in the spec).
 
-RLS is what keeps vote tallies hidden, not the UI: members can only read their own `swipes` rows. The server reads all swipes with `SUPABASE_SECRET_KEY` when it tallies. Don't add client-side reads that would leak counts.
+RLS is what keeps vote tallies hidden, not the UI: members can only read their own `swipes`, `adds`, and `ballots` rows. The server reads all of them with `SUPABASE_SECRET_KEY` when it deals and tallies. Don't add client-side reads that would leak counts or who added what. The veto cap is a trigger on `swipes` that decrements `members.vetoes_left` and rejects the veto at zero, so the UI only needs to read `vetoes_left`.
 
 ### Session state machine
 
@@ -95,7 +95,7 @@ Next.js App Router, TypeScript, Tailwind, Supabase (Postgres, anonymous auth, Re
 - Places data is fetched per batch on the server and stored. Clients never call the Places API.
 - Until the batch-route phase, UI uses fake restaurants from lib/fixtures.ts.
 - Every new table enables RLS and gets its policies plus explicit grants in the same migration, matching the "Members can read / write" columns in docs/SPEC.md. Grant to `authenticated` only (anonymous sign-ins use that role); grant nothing to `anon`. Also `grant all` to `service_role` explicitly: this project uses Supabase's locked-down default privileges, so new tables and functions give the API roles nothing until granted. Apply migrations with the Supabase MCP `apply_migration` tool, save the same SQL under `supabase/migrations/<version>_<name>.sql` using the version the MCP records, then regenerate `lib/database.types.ts` with `generate_typescript_types`.
-- Client writes to `members`, `swipes`, and `rankings` are column-limited by grants. Never upsert from the browser (PostgREST sets every payload column, including the key); insert, then update the allowed columns on conflict. Policy helpers go in the `private` schema (not exposed by the Data API) as security-definer functions with `set search_path = ''`.
+- Client writes to `members` and `swipes` are column-limited by grants; `adds` and `ballots` are read-only for clients and written only by server routes. Never upsert from the browser (PostgREST sets every payload column, including the key); insert, then update the allowed columns on conflict. Policy helpers go in the `private` schema (not exposed by the Data API) as security-definer functions with `set search_path = ''`.
 - Voting logic lives in lib/voting.ts as pure functions with Vitest tests.
 - Mobile first. Check layouts at 390px wide.
 - Before calling a task done, run `npm run lint`, `npm run build`, and `npx vitest run --passWithNoTests`.

@@ -16,6 +16,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      adds: {
+        Row: {
+          created_at: string
+          place_id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          place_id: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          place_id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adds_session_id_place_id_fkey"
+            columns: ["session_id", "place_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["session_id", "place_id"]
+          },
+          {
+            foreignKeyName: "adds_session_id_user_id_fkey"
+            columns: ["session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["session_id", "user_id"]
+          },
+        ]
+      }
+      ballots: {
+        Row: {
+          created_at: string
+          payload: Json
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          payload: Json
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          payload?: Json
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ballots_session_id_user_id_fkey"
+            columns: ["session_id", "user_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["session_id", "user_id"]
+          },
+        ]
+      }
       members: {
         Row: {
           display_name: string
@@ -60,56 +125,30 @@ export type Database = {
           },
         ]
       }
-      rankings: {
-        Row: {
-          created_at: string
-          ordering: string[]
-          session_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          ordering: string[]
-          session_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          ordering?: string[]
-          session_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rankings_session_id_user_id_fkey"
-            columns: ["session_id", "user_id"]
-            isOneToOne: true
-            referencedRelation: "members"
-            referencedColumns: ["session_id", "user_id"]
-          },
-        ]
-      }
       restaurants: {
         Row: {
-          batch: number
+          batch: number | null
           created_at: string
           data: Json
           place_id: string
           session_id: string
+          source: Database["public"]["Enums"]["restaurant_source"]
         }
         Insert: {
-          batch: number
+          batch?: number | null
           created_at?: string
           data: Json
           place_id: string
           session_id: string
+          source: Database["public"]["Enums"]["restaurant_source"]
         }
         Update: {
-          batch?: number
+          batch?: number | null
           created_at?: string
           data?: Json
           place_id?: string
           session_id?: string
+          source?: Database["public"]["Enums"]["restaurant_source"]
         }
         Relationships: [
           {
@@ -169,6 +208,8 @@ export type Database = {
           page_token: string | null
           search_body: Json | null
           status: Database["public"]["Enums"]["session_status"]
+          suggestions_on: boolean
+          voting_method: Database["public"]["Enums"]["voting_method"]
         }
         Insert: {
           batch?: number
@@ -182,6 +223,8 @@ export type Database = {
           page_token?: string | null
           search_body?: Json | null
           status?: Database["public"]["Enums"]["session_status"]
+          suggestions_on?: boolean
+          voting_method?: Database["public"]["Enums"]["voting_method"]
         }
         Update: {
           batch?: number
@@ -195,6 +238,8 @@ export type Database = {
           page_token?: string | null
           search_body?: Json | null
           status?: Database["public"]["Enums"]["session_status"]
+          suggestions_on?: boolean
+          voting_method?: Database["public"]["Enums"]["voting_method"]
         }
         Relationships: []
       }
@@ -245,8 +290,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      restaurant_source: "member" | "suggested"
       session_status: "lobby" | "swiping" | "ranking" | "done"
       swipe_value: "yes" | "no" | "veto"
+      voting_method: "plurality" | "borda" | "quadratic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -374,8 +421,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      restaurant_source: ["member", "suggested"],
       session_status: ["lobby", "swiping", "ranking", "done"],
       swipe_value: ["yes", "no", "veto"],
+      voting_method: ["plurality", "borda", "quadratic"],
     },
   },
 } as const
