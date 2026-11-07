@@ -99,3 +99,4 @@ Next.js App Router, TypeScript, Tailwind, Supabase (Postgres, anonymous auth, Re
 - Voting logic lives in lib/voting.ts as pure functions with Vitest tests.
 - Mobile first. Check layouts at 390px wide.
 - Before calling a task done, run `npm run lint`, `npm run build`, and `npx vitest run --passWithNoTests`.
+- After any UI change, run the dev server, open the screen at 390×844 with the Playwright MCP, screenshot it, compare it to its image in docs/design/, and fix differences before calling the task done.

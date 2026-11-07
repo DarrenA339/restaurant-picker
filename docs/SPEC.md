@@ -4,7 +4,7 @@ Nov 4, 2026 · @Darren Ath-Ly
 
 ## Overview
 
-A mobile-first web app that takes a group of 2 to 8 friends from "where should we eat?" to a decision in about five minutes. The host sets filters, friends join from a link with no account, everyone swipes yes, no, or veto on nearby restaurants dealt in batches of 20, and a voting rule picks the winner from the places people approved.
+A mobile-first web app that takes a group of 2 to 8 friends from "where should we eat?" to a decision in about five minutes. The host sets filters, friends join from a link with no account, and everyone adds the spots they want. The group then swipes yes, no, or veto on those adds plus nearby suggestions, dealt in batches of 20, and a voting rule picks the winner from the places people approved.
 
 The app works anywhere Google Places has data. Testing and the first launch focus on Boston, Cambridge, and Somerville, and V2's curated menu highlights cover only that area. The look borrows Too Good To Go's photo cards and bottom sheets, and the longer-term idea borrows Beli's taste memory. The stack is Next.js, Supabase, and Vercel, built with Claude Code.
 
@@ -16,13 +16,16 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 
 - **Create a session.** Host picks a max price level (1 to 4 dollar signs), max distance from the group (1, 2, or 5 miles), open now, and vegetarian options, then gets a link and a 6-character code.
 - **Join with no account.** Friends open the link, type a display name, and share location. Anonymous sign-in happens behind the scenes.
-- **Live lobby.** Everyone sees who has joined in real time. Only the host can start.
+- **Lobby built around adding.** Everyone sees who has joined and every spot the group has added, in real time. Only the host can start.
+- **Add spots (no limit).** Adding is the main lobby activity. Anyone can add as many restaurants as they want by searching a place or a dish, or from the explore map. Adds skip the price and distance filters but still show both on the card. Adding a spot counts as a yes from whoever added it, and they skip their own adds while swiping. Duplicates are rejected, members can remove their own adds, and adds close when the host starts picking. A quiet cap of 40 adds per session applies, shown only when reached. Search runs through `GET /api/places/autocomplete` with session tokens; `POST /api/sessions/[id]/add` checks the cap and duplicates, fetches Place Details with the standard field mask and one photo, and inserts with `source = 'member'`.
+- **Explore map.** A full-screen Google Map reached from the lobby's add bar and map button. Members search by place name or dish (Text Search), filter with chips, and browse results as pins plus a bottom-sheet list. Panning shows "Search this area" instead of searching automatically. Spots already added show as checked pins.
+- **Deck order.** When picking starts, batch 1 is the group's adds first (deduped by place ID), then suggestions from Text Search that fit the filters, filling the batch to 20. The host can turn suggestions off so the deck is only the group's adds. If adds alone exceed 20, they fill batches first, dealt round-robin by member so no one's list crowds out the others. Cards look the same whether a spot was added or suggested, and who added a spot stays hidden from everyone else.
 - **Swipe deck.** Restaurant cards with photo, name, price level, rating, distance from you, and an "open until" badge. Tapping a card opens a bottom sheet with hours, website or menu link, dietary flags, and a Google Maps link.
 - **Yes, no, veto.** Swipe right, left, or up, with buttons as a fallback. Each person gets 2 vetoes.
-- **Fair deck order.** Each member sees the cards in a different shuffled order, so early cards don't get extra yeses.
+- **Fair deck order.** Adds always come before suggestions. Within each group, every member sees the cards in a different shuffled order, so early cards don't get extra yeses.
 - **Hidden tallies.** Nobody sees vote counts until everyone finishes, only how many people are still swiping.
 - **Instant match.** If every member says yes to the same place, skip ranking and show it.
-- **Ranking round.** The top 5 finalists go to a drag-to-reorder screen, and Borda picks the winner.
+- **Final round.** The host picks how the group decides in the lobby, and it locks when picking starts so the rule can't be chosen after the finalists are known. One vote each (plurality): everyone picks one finalist, most votes wins. Ranked points (Borda count, default): everyone ranks the finalists; with k finalists, first place earns k − 1 points. Quadratic votes: everyone spreads 9 credits, where v votes on one spot cost v² credits; votes are whole numbers of zero or more, and most total votes wins.
 - **Result screen.** Winner, runner-up, directions link, and a button to run it again.
 - **Host controls.** The host can end swiping early when someone stalls. Unswiped cards count as no.
 - **Batches with no cap.** Cards come 20 at a time, and everyone finishes a batch before the next one is dealt. After each batch, a unanimous yes ends it, 3 or more finalists let the host choose ranking or 20 more, and no finalists deals the next batch automatically.
@@ -32,7 +35,6 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 - **Accounts and saved groups.** Upgrade anonymous users to Google sign-in so recurring friend groups persist.
 - **Post-dinner ratings.** Beli-style ratings after the meal, used to suppress recent repeats and seed future decks.
 - **Menu highlights.** Popular dishes and price ranges for a curated set of about 150 Boston and Cambridge restaurants.
-- **Voting rule picker.** Let the host choose approval only, Borda, or Copeland.
 - **Wildcard card.** One highly rated place per deck that misses a soft preference.
 - **Install and notifications.** PWA install plus a push when everyone has finished swiping.
 
@@ -44,7 +46,7 @@ The app has three routes. The session page at `/s/[code]` swaps views based on t
 
 | Route | Screen | What it shows |
 | --- | --- | --- |
-| `/` | Home | Start a session button and a field to type a join code |
+| `/` | Home | Start a group button and a field to type a join code |
 | `/new` | Create session | Filter form (price, max distance, open now, vegetarian) and the host's display name |
 | `/s/[code]` | Session | One of the views below, picked by session status |
 
@@ -53,10 +55,11 @@ The app has three routes. The session page at `/s/[code]` swaps views based on t
 | View | When | What it shows |
 | --- | --- | --- |
 | Join | First visit to the link | Display name field and a location permission prompt |
-| Lobby | Status is lobby | Map with every member's dot and the search circle, live member list, copy-link button, and the host's Start button |
+| Lobby | Status is lobby | Add bar (search a place or dish, plus a map button), the group's added spots with remove on your own, the voting method (host can change it), the host's suggestions toggle, avatars, invite button, and the host's Start button |
+| Explore | Opened from the lobby's add bar | Full-screen map with search, filter chips, result pins, and a results sheet with Add buttons |
 | Swipe | Status is swiping | Map strip on the top 30% with the current pin and member dots, card deck below, vetoes left, and the details bottom sheet on tap |
 | Waiting | You finished the current batch | "3 of 5 done with this batch" with no vote counts and the host's End swiping button. When everyone finishes, the host picks Go to ranking or Deal 20 more |
-| Rank | Status is ranking | Top 5 finalists as cards you drag into order |
+| Final round | Status is ranking | The session's method: pick one finalist, drag the finalists into order, or spread 9 quadratic credits with steppers |
 | Result | Status is done | Map with the winner's pin, winner card, runner-up, directions link, and Run it again |
 
 ### Map strip
@@ -64,22 +67,27 @@ The app has three routes. The session page at `/s/[code]` swaps views based on t
 A Google Map sits above the card on the swipe screen and takes about 30% of the height. It re-centers on each new card's pin and shows every member's dot, so the group can see at a glance whether a place is fair for everyone.
 
 - **Google Map only.** Places results shown on a map must be on a Google Map, so Mapbox and MapLibre are out ([Places API policies](https://developers.google.com/places/web-service/policies)). A Google Map on the same screen also covers Google's attribution requirement, though photo author attributions still show on each card.
-- **No gestures.** `gestureHandling="none"` sends sideways drags to the card instead of the map. Tapping the strip opens a full-screen map.
+- **No gestures.** `gestureHandling="none"` sends sideways drags to the card instead of the map. Tapping the strip opens a full-screen map to look around; adding is closed once picking starts.
 - **One load per phone.** Create the map once per session and pan it. Dynamic Maps get 10,000 free loads a month, then $7 per 1,000, which covers about 2,000 five-person sessions.
 - **Second key.** The Maps JavaScript key runs in the browser, so restrict it by HTTP referrer to the Vercel domains. The Places key stays server-only.
 - **Library.** `@vis.gl/react-google-maps` with `AdvancedMarker` pins, which need a Map ID.
 
 ### Server routes
 
-These run on Vercel with the secret keys. Swipes and rankings write straight to Supabase, guarded by row-level security.
+These run on Vercel with the secret keys. Swipes write straight to Supabase, guarded by row-level security. Final-round ballots go through the ballot route so they can be validated.
 
 | Route | Does |
 | --- | --- |
 | `POST /api/sessions` | Creates the session and join code |
-| `POST /api/sessions/[id]/start` | Host only. Deals the first batch of 20 with one Text Search call, resolves its photos, moves status to swiping |
+| `PATCH /api/sessions/[id]` | Host only, lobby only. Changes `voting_method` and `suggestions_on` |
+| `GET /api/places/autocomplete` | Name and dish suggestions for the add bar, using session tokens, biased to the session's area |
+| `GET /api/places/search` | The explore map's search and "Search this area," one Text Search call per request |
+| `POST /api/sessions/[id]/add` | Lobby only. Adds a member's spot: checks the session cap and duplicates, fetches Place Details and one photo, inserts with `source = 'member'` and an `adds` row |
+| `DELETE /api/sessions/[id]/add/[placeId]` | Lobby only. Removes one of the caller's own adds |
+| `POST /api/sessions/[id]/start` | Host only. Builds batch 1 from the group's adds, then fills to 20 with one Text Search call if suggestions are on, resolves photos, records each adder's yes, moves status to swiping |
 | `POST /api/sessions/[id]/done-swiping` | Marks a member done with the batch. Once the whole group is, ends on a unanimous yes or counts finalists and offers the host ranking or another batch |
-| `POST /api/sessions/[id]/deal` | Host only. Fetches the next page of results, or splits the area into smaller circles past 60, filters by distance, and deals 20 more |
-| `POST /api/sessions/[id]/done-ranking` | Marks a member done. When everyone is done, computes the winner and moves status to done |
+| `POST /api/sessions/[id]/deal` | Host only. Deals the next 20: remaining adds first, then the next page of suggestions, or splits the area into smaller circles past 60, filtering by distance |
+| `POST /api/sessions/[id]/ballot` | Saves the member's final-round ballot after checking it matches the session's method (one valid pick, a full ordering, or whole-number votes costing at most 9 credits), marks them done, and once everyone has voted computes the winner and moves status to done |
 | `POST /api/sessions/[id]/end-swiping` | Host only. Ends swiping early and runs the same finalist step |
 
 ## Session lifecycle
@@ -97,47 +105,51 @@ stateDiagram-v2
     Result --> [*]
 ```
 
-The server tallies after every batch of 20, once everyone finishes it or the host ends swiping. A unanimous yes goes straight to the result. Otherwise the host either sends the finalists to ranking or deals 20 more, and a batch with no finalists deals the next one automatically.
+Everyone adds spots in the lobby, and adding closes when the host taps Start. The server tallies after every batch of 20, once everyone finishes it or the host ends swiping. A unanimous yes goes straight to the result. Otherwise the host either sends the finalists to ranking or deals 20 more, and a batch with no finalists deals the next one automatically.
 
 ## Voting design
 
-Swipes are approval ballots with a veto, and Borda over the top 5 finalists picks the winner. All of it lives in `lib/voting.ts` as pure functions with Vitest tests, and it runs on the server so no client can tamper with the result.
+Swipes are approval ballots with a veto, and the host's chosen method (plurality, Borda count, or quadratic voting) picks the winner from the top 5 finalists. All of it lives in `lib/voting.ts` as pure functions with Vitest tests, and it runs on the server so no client can tamper with the result.
 
-1. **Swipe.** Each member marks every card in the current batch of 20 yes, no, or veto, and the next batch is dealt only after everyone finishes. Vetoes are capped at 2 per person for the whole session. Cards left unswiped when the host ends swiping count as no.
+1. **Swipe.** Each member marks every card in the current batch of 20 yes, no, or veto, and the next batch is dealt only after everyone finishes. A member's own adds count as their yes automatically and are skipped in their deck. Vetoes are capped at 2 per person for the whole session. Cards left unswiped when the host ends swiping count as no.
 2. **Instant match.** A restaurant with a yes from every member wins outright. If several are unanimous, only those go to the ranking round.
 3. **Finalists.** Drop every vetoed restaurant. Keep places where at least half the members said yes, then take the top 5 by yes count. If fewer than 2 qualify, relax to at least one yes.
-4. **Rank.** Each member orders the finalists. With k finalists, first place earns k − 1 points and last place earns 0.
-5. **Tie-break.** Higher Borda score, then more yeses, then higher Google rating, then a coin flip seeded by the session id so it is reproducible.
+4. **Final round.** Each member submits one ballot in the session's method. Plurality: one pick, one point. Borda: a full ordering; with k finalists, first place earns k − 1 points and last place earns 0. Quadratic: whole-number votes per finalist whose squares sum to at most 9; a finalist's score is its total votes. The method is stored on the session and locked at Start.
+5. **Tie-break.** Higher final-round score, then more yeses, then higher Google rating, then a coin flip seeded by the session id so it is reproducible.
 
 ### Edge cases
 
 | Case | Rule |
 | --- | --- |
-| One member | Skip ranking if they said yes to exactly one place. Otherwise they rank their yeses. |
+| One member | Skip the final round if they said yes to exactly one place. Otherwise they vote on their yeses in the session's method. |
 | Zero finalists | Deal the next batch automatically. If the area runs out of places, offer to widen the max distance. |
-| Someone stalls | Host ends swiping. Their missing swipes count as no, and a missing ranking is left out of Borda. |
+| Someone stalls | Host ends swiping. Their missing swipes count as no, and a missing ballot is left out of the final round. |
 | Two members finish at once | The status change uses a conditional update (`where status = 'swiping'`), so it runs exactly once. |
 | Member joins after start | They can watch but don't vote this round. |
+| Adds exceed 20 | Adds fill batches first, round-robin by member. Suggestions come only after every add has been dealt. |
+| Two members add the same spot | One card, and it counts as a yes from both. |
 
-Tallies stay hidden during swiping to cut strategic voting, and per-member shuffles within each batch cancel the bias toward early cards. Because everyone sees every dealt card before the next batch, approval counts stay comparable even with no cap on the deck. Borda can be gamed by burying a rival, which is fine among friends. Copeland is the V2 option for anyone who wants the Condorcet winner whenever one exists.
+Tallies stay hidden during swiping to cut strategic voting. Adds deliberately come before suggestions, since they are what the group actually wants; within each, per-member shuffles cancel the bias toward early cards. Because everyone sees every dealt card before the next batch, approval counts stay comparable even with no cap on the deck. Adding many spots gives no extra influence, since each spot still needs yeses from half the group and no veto. Every finalist already passed the approval threshold, so plurality's usual flaw of electing something most people dislike is limited here. Borda can be gamed by burying a rival, which is fine among friends. With a single decision, quadratic voting mostly behaves like plurality, since anyone with a clear favorite puts all 9 credits into 3 votes for it; it differs only for people torn between two spots. The method locks at Start so the host can't pick a rule after seeing which one favors their spot.
 
 ## Data sources
 
-Each batch of 20 cards takes one Google Places search and 20 photo lookups, and the deck has no cap. Menus have no API, so the MVP links out.
+Each member add takes one Place Details call and one photo. Suggestions take one Google Places search per batch, and every dealt card needs one photo. Menus have no API, so the MVP links out.
 
 | Source | Used for | Calls | Version |
 | --- | --- | --- | --- |
-| Places API (New) Text Search | Batches 1 to 3, up to 60 places per area at 20 per page | 1 per batch | MVP |
-| Places API (New) Nearby Search | Batches past 60, by splitting the area into smaller circles and removing duplicates by place ID | 1 per smaller circle | MVP |
-| Places API (New) Place Photos | One photo per card | 20 per batch | MVP |
+| Places API (New) Autocomplete | Name and dish search in the add bar | Free when the search ends in a Place Details call | MVP |
+| Places API (New) Place Details | Each spot a member adds | 1 per add | MVP |
+| Places API (New) Text Search | Suggestions after the group's adds, up to 60 per area at 20 per page, plus explore map searches | 1 per batch of suggestions, 1 per explore search | MVP |
+| Places API (New) Nearby Search | Suggestions past 60, by splitting the area into smaller circles and removing duplicates by place ID | 1 per smaller circle | MVP |
+| Places API (New) Place Photos | One photo per card | 1 per add or suggestion | MVP |
 | Restaurant's own website | Menu link in the bottom sheet | 0 | MVP |
 | Curated menu summaries | Popular dishes for about 150 restaurants | 0 (built once) | V2 |
 
-Nearby Search returns at most 20 places with no next page, which is why batches start with Text Search. When paging, every request field except the page token must match the first request, so the session stores the original request body and the latest `nextPageToken`. Text Search treats the circle as a preference, not a hard limit, so each batch is filtered by distance before it is dealt.
+Nearby Search returns at most 20 places with no next page, which is why suggestions start with Text Search. When paging, every request field except the page token must match the first request, so the session stores the original request body and the latest `nextPageToken`. Text Search treats the circle as a preference, not a hard limit, so suggestions are filtered by distance before they are dealt.
 
 ### Search field mask
 
-Google bills a request at the highest tier among the fields you ask for ([source](https://developers.google.com/maps/billing-and-pricing/sku-details/places)). The deck needs fields from three tiers.
+Google bills a request at the highest tier among the fields you ask for ([source](https://developers.google.com/maps/billing-and-pricing/sku-details/places)). Cards need fields from three tiers, and Place Details for adds uses the same fields.
 
 | Tier | Fields |
 | --- | --- |
@@ -145,11 +157,11 @@ Google bills a request at the highest tier among the fields you ask for ([source
 | Enterprise | `places.rating`, `places.userRatingCount`, `places.priceLevel`, `places.currentOpeningHours`, `places.websiteUri` |
 | Enterprise + Atmosphere | `places.servesVegetarianFood` |
 
-The vegetarian flag pushes every search to the top tier. That costs nothing extra inside the free cap, since both Enterprise tiers get 1,000 free calls a month.
+The vegetarian flag pushes every search and every Place Details call to the top tier. That costs nothing extra inside the free caps, since the Enterprise tiers get 1,000 free calls a month per SKU.
 
 ### Photos
 
-The batch route resolves each photo once with `skipHttpRedirect=true` and stores the returned `photoUri` on the restaurant row. Every member's browser loads that URI directly, so photo charges stay at 20 per batch no matter how many people join. A proxy route would bill once per photo per phone instead.
+The server resolves each photo once with `skipHttpRedirect=true` when a spot is added or dealt, and stores the returned `photoUri` on the restaurant row. Every member's browser loads that URI directly, so each card costs one photo no matter how many people join. A proxy route would bill once per photo per phone instead.
 
 Store Places content only for the life of a session, and read Google's terms before keeping anything longer.
 
@@ -164,7 +176,7 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 | Framework | Next.js App Router, TypeScript | Pages plus server routes that hold secret keys |
 | Styling and motion | Tailwind, Motion | Mobile-first layout and swipe gestures |
 | Database and auth | Supabase Postgres, anonymous sign-in | Session data, row-level security, no-signup joins |
-| Live updates | Supabase Realtime | Lobby presence and status changes pushed to every phone |
+| Live updates | Supabase Realtime | Lobby presence, the growing add list, and status changes pushed to every phone |
 | Hosting | Vercel | HTTPS preview URL per push, needed for phone geolocation |
 | Tests | Vitest | Unit tests for `lib/voting.ts` |
 | Build tool | Claude Code with the Supabase MCP server | Writes code and applies migrations on the dev project |
@@ -173,16 +185,17 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 
 | Table | Key columns | Members can read | Members can write |
 | --- | --- | --- | --- |
-| `sessions` | `id`, `code`, `host_id`, `status`, `filters` (jsonb), `center_lat`, `center_lng`, `batch`, `search_body` (jsonb), `page_token` | Their own session | Nothing (server only) |
+| `sessions` | `id`, `code`, `host_id`, `status`, `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch`, `search_body` (jsonb), `page_token` | Their own session | Nothing (server only) |
 | `members` | `session_id`, `user_id`, `display_name`, `lat`, `lng`, `vetoes_left`, `done_swiping` (current batch), `done_ranking` | Everyone in their session | Their own row |
-| `restaurants` | `session_id`, `place_id`, `batch`, `data` (jsonb with name, price, rating, `photoUri`, hours, links, flags) | Their session's dealt cards | Nothing (server only) |
+| `restaurants` | `session_id`, `place_id`, `source` (member or suggested), `batch` (null until dealt), `data` (jsonb with name, price, rating, `photoUri`, hours, links, flags) | Their session's spots | Nothing (server only) |
+| `adds` | `session_id`, `user_id`, `place_id`, `created_at`; unique per user and place | Only their own | Nothing (server only) |
 | `swipes` | `session_id`, `user_id`, `place_id`, `value` (yes, no, veto); unique per user and place | Only their own | Only their own |
-| `rankings` | `session_id`, `user_id`, `ordering` (text array) | Only their own | Only their own |
+| `ballots` | `session_id`, `user_id`, `payload` (jsonb: `{pick}`, `{ordering}`, or `{votes}` by method); unique per user | Only their own | Nothing (server only, through the ballot route, which validates against the session's method) |
 | `results` | `session_id`, `finalists`, `scores` (jsonb), `winner_place_id`, `runner_up_place_id` | Their session's result | Nothing (server only) |
 
-Because members can only read their own swipes, tallies stay hidden by the database itself, not just the UI. The server reads all swipes with the secret key when it computes finalists.
+Because members can only read their own swipes, tallies stay hidden by the database itself, not just the UI. The same goes for adds: members can read only their own `adds` rows, which is how the lobby marks "You added this" without revealing who added anything else. The server reads all swipes and adds with the secret key when it builds batches and computes finalists, and it writes each adder's automatic yes into `swipes` when their spot is dealt.
 
-Grants follow the table above. `authenticated` (the role anonymous sign-ins use) gets select on everything a member can read, plus insert and update on `members`, `swipes`, and `rankings` limited to the columns a phone legitimately sets (`display_name`, `lat`, `lng` on members; `value` on swipes; `ordering` on rankings, plus the key columns on insert). `vetoes_left`, the done flags, and `created_at` stay server-owned. Because a PostgREST upsert sets every payload column, clients insert and then update instead of upserting. `anon` gets nothing, and `service_role` is granted everything explicitly because new Supabase projects give the API roles no table access by default. The membership check behind every "their session" policy is `private.is_session_member`, a security-definer function in a schema the Data API does not expose. Migrations live in `supabase/migrations/` and are applied to the dev project through the Supabase MCP server, `lib/database.types.ts` is regenerated after each one, and `npm run rls:check` proves the swipe isolation with two anonymous users.
+Grants follow the table above. `authenticated` (the role anonymous sign-ins use) gets select on everything a member can read, plus insert and update on `members` and `swipes` limited to the columns a phone legitimately sets (`display_name`, `lat`, `lng` on members; `value` on swipes, plus the key columns on insert). Ballots are written only by the ballot route, because a quadratic ballot's credit budget has to be checked on the server. `vetoes_left`, the done flags, and `created_at` stay server-owned. Because a PostgREST upsert sets every payload column, clients insert and then update instead of upserting. `anon` gets nothing, and `service_role` is granted everything explicitly because new Supabase projects give the API roles no table access by default. The membership check behind every "their session" policy is `private.is_session_member`, a security-definer function in a schema the Data API does not expose. Migrations live in `supabase/migrations/` and are applied to the dev project through the Supabase MCP server, `lib/database.types.ts` is regenerated after each one, and `npm run rls:check` proves the swipe isolation with two anonymous users.
 
 ### Environment variables
 
@@ -204,6 +217,7 @@ Running the MVP costs $0 a month up to about 50 batches of 20 cards across all g
 | Service | Plan | Free allowance that matters | Price past it | MVP cost |
 | --- | --- | --- | --- | --- |
 | Google Text Search (Enterprise + Atmosphere) | Pay as you go | 1,000 calls a month | $40 per 1,000 | $0 |
+| Google Place Details (Enterprise + Atmosphere) | Pay as you go | 1,000 calls a month | $25 per 1,000 | $0 |
 | Google Place Photos | Pay as you go | 1,000 photos a month | $7 per 1,000 | $0 up to 50 batches |
 | Supabase | Free | 500 MB database, 50,000 monthly active users, 200 concurrent Realtime connections, 2 million Realtime messages | Pro at $25 a month | $0 |
 | Vercel | Hobby | 1 million function invocations, 100 GB data transfer | Pro at $20 per user a month | $0 |
@@ -212,9 +226,9 @@ Running the MVP costs $0 a month up to about 50 batches of 20 cards across all g
 
 Google prices come from the [Google Maps Platform price list](https://developers.google.com/maps/billing-and-pricing/pricing), Supabase limits from [Supabase pricing](https://supabase.com/pricing), and Vercel limits from the [Vercel Hobby plan docs](https://vercel.com/docs/plans/hobby). The Claude price is approximate; confirm it at claude.com/pricing.
 
-### Per batch
+### Per batch and per add
 
-One batch is 1 Text Search call plus 20 photos. Photos run out first, at 1,000 ÷ 20 = 50 free batches a month. Past the free caps, a batch costs 1 × $0.040 + 20 × $0.007 = $0.18, so a group that swipes through 3 batches costs about $0.54.
+A batch of suggestions is 1 Text Search call plus 20 photos. Photos run out first, at 1,000 ÷ 20 = 50 free batches a month. Past the free caps, a batch costs 1 × $0.040 + 20 × $0.007 = $0.18. A member add is 1 Place Details call plus 1 photo, so past the free caps it costs 1 × $0.025 + 1 × $0.007 = about $0.03. Autocomplete keystrokes are free when the search ends in a Place Details call.
 
 ### By monthly volume (USD)
 
@@ -226,20 +240,23 @@ One batch is 1 Text Search call plus 20 photos. Photos run out first, at 1,000 �
 
 At 1,000 batches, Text Search is still inside its 1,000 free calls, and photos cost (20,000 − 1,000) × $7 ÷ 1,000 = $133. Supabase Pro becomes worth it for reliability, since free projects pause after a week of inactivity. Vercel Pro is required only if the app makes money, because Hobby is for non-commercial personal use.
 
-Set daily request quotas on both Places SKUs in Google Cloud, so a bug that loops on the batch route stops at the quota instead of running up a bill.
+Set daily request quotas on the Places SKUs in Google Cloud, so a bug that loops on the add or batch routes stops at the quota instead of running up a bill.
 
 ## Build plan
 
-Eight phases, each one Claude Code session that ends with something you can click through on your phone. Every phase follows the same loop of clear context, plan mode, review the plan, implement, verify, and commit.
+Eleven phases, each about one Claude Code session that ends with something you can click through on your phone. Every phase follows the same loop of clear context, plan mode, review the plan, implement, verify, and commit. Screens match the images in `docs/design/`.
 
-1. **Accounts and keys.** Google Cloud project with Places API (New), a restricted key, and daily quotas. Supabase dev project with anonymous sign-ins on. A curl test that returns 5 Harvard Square restaurants.
-2. **Scaffold and deploy.** Next.js app, CLAUDE.md with project rules, repo on GitHub, and Vercel previews on every push. Delivers an HTTPS URL that works on your phone.
-3. **Database and security.** Supabase MCP connected, migrations for all six tables, RLS policies, and a script proving one user can't read another's swipes.
-4. **Batch route.** One Text Search page per batch with the field mask above, a stored request body and page token, distance filtering, photos resolved per batch, and a check that re-requesting a batch doesn't hit Google again.
-5. **Session flow.** Create page, join link, anonymous sign-in, live lobby, and a Start button that moves every phone to the deck.
-6. **Swipe UI.** Cards, bottom sheet, swipe gestures with button fallbacks, vetoes, per-member shuffle, the waiting screen, and the host's Go to ranking or Deal 20 more choice.
-7. **Voting and results.** Vitest tests first, `lib/voting.ts` written by you, server-side finalist and winner steps with conditional updates, ranking screen, and result screen.
-8. **Real-group test.** One dinner with 4 to 6 friends. Track how long swiping takes, how many batches groups need, whether anyone vetoes, and the Places calls per session in Google Cloud.
+1. **Accounts and keys (done).** Google Cloud project with Places API (New) and Maps JavaScript API, two restricted keys, a Map ID, and a budget alert. Supabase dev project with anonymous sign-ins on.
+2. **Scaffold and deploy (done).** Next.js app, CLAUDE.md with project rules, repo on GitHub, and Vercel deploys on every push.
+3. **Database and security (done).** Supabase MCP connected, migrations for the first six tables, RLS policies and grants, and `rls:check` proving one user can't read another's swipes.
+4. **Schema catch-up.** One migration that adds the `adds` table, `restaurants.source` with a nullable `batch`, `sessions.suggestions_on` and `sessions.voting_method`, replaces `rankings` with `ballots`, and adds a trigger that rejects a third veto per member per session. `rls:check` proves members can't read each other's adds or ballots, can't write ballots directly, and can't insert a third veto.
+5. **Session flow.** Welcome, Create, Join (with `join_session`), and the add-first lobby: live members and live add list over Realtime, the host's suggestions toggle and voting-method sheet, and Start. Added spots come from `lib/fixtures.ts`.
+6. **Adding spots.** Autocomplete, Place Details, and explore search routes; add and remove with the cap and duplicate checks; the explore map with the Filters sheet and "Search this area"; the lobby list switches from fixtures to real adds.
+7. **Batch route.** Start builds batch 1 adds-first with each adder's automatic yes, fills with Text Search suggestions when they're on, resolves photos once, stores the request body and page token, and the deal route serves later batches without re-hitting Google.
+8. **Swipe UI.** Map strip, cards, details sheet, swipe gestures with button fallbacks, vetoes, per-member shuffle, the waiting screen, and the host's Go to ranking or Deal 20 more choice.
+9. **Voting and results.** Vitest tests first for finalists, plurality, Borda and quadratic voting (including over-budget and non-integer quadratic ballots), `lib/voting.ts` written by you, the ballot route, server-side finalist and winner steps with conditional updates, the three final-round screens, and the result screen.
+10. **Edge states and polish.** Every state on the edge-states board, the full-session screen, reconnecting, error retries, an accessibility pass (focus, labels, reduced motion), and the desktop layouts.
+11. **Real-group test.** One dinner with 4 to 6 friends. Track how many spots people add, how long swiping takes, how many batches groups need, whether anyone vetoes, which voting method the host picks, and the Places calls per session in Google Cloud.
 
 ## Risks and open decisions
 
@@ -250,7 +267,8 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 | A member denies location | Center the deck on the host's location; that member still votes |
 | One person stops swiping | Host taps End swiping; their missing cards count as no |
 | The area runs out of places | Offer to widen the max distance one step |
-| A bug loops on the batch route | Daily quotas on both Places SKUs stop it at the cap |
+| Someone adds dozens of spots | Round-robin dealing keeps one list from filling a batch, and the quiet cap of 40 limits swipe fatigue and Place Details cost |
+| A bug loops on the add or batch routes | Daily quotas on the Places SKUs stop it at the cap |
 | Supabase free project pauses after a week idle | Restore it from the dashboard before a demo, or move to Pro once real users arrive |
 | Google limits on storing Places content | Delete restaurant rows when a session ends, and check Google's Places policies for exact rules |
 | The app starts making money | Move Vercel to Pro first, since Hobby is non-commercial only |
@@ -261,7 +279,9 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 - [ ] Max distance options (1, 2, and 5 miles, or others)
 - [ ] Deck center at the host's location or the group's midpoint
 - [ ] Finalist count of 3 or 5
+- [ ] Quadratic voting credit budget (9, or more if finalists go to 5)
 - [ ] Veto limit of 1 or 2 per person
+- [ ] Session cap on adds (40, or another number)
 - [ ] Typed-neighborhood fallback for denied location (Geocoding gives 10,000 free requests a month, then $5 per 1,000)
 - [ ] Accounts in the MVP or deferred to V2
 - [ ] How a friend resolves a join code before they are a member, since `sessions` is readable only by its members and host: a security-definer `join_session(code, display_name, lat, lng)` function that inserts the member row and returns the session (keeps session rows private), or a `sessions` select policy open to any signed-in user
