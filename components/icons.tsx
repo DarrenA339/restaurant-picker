@@ -232,3 +232,55 @@ export function ClockIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** The veto button: a circle with a slash (stroke 2.4 in the design). */
+export function VetoIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.4} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M6 6l12 12" />
+    </Svg>
+  );
+}
+
+/** A filled rating star. */
+export function StarIcon({ size = 24, className = "", ...rest }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+      {...rest}
+    >
+      <path d="M12 2.8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.6l-5.8 3 1.1-6.4-4.7-4.6 6.5-.9z" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.4} {...props}>
+      <path d="M9 5l7 7-7 7" />
+    </Svg>
+  );
+}
+
+export function LockIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="5" y="11" width="14" height="10" rx="2.5" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </Svg>
+  );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.4} {...props}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </Svg>
+  );
+}

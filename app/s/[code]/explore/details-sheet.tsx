@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CameraIcon, CheckIcon, ClockIcon, CloseIcon, PlusIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -11,8 +11,11 @@ import type { AddState } from "./result-row";
 type DetailsSheetProps = {
   place: PlaceResult | null;
   origin: LatLng | null;
-  state: AddState;
-  onAdd: () => void;
+  /** Explore: the Add to the deck control's state. */
+  state?: AddState;
+  onAdd?: () => void;
+  /** The swipe screen's vote buttons take the footer instead of Add. */
+  footer?: ReactNode;
   onClose: () => void;
 };
 
@@ -24,21 +27,23 @@ const linkClass =
  * (a 960px two-pane dialog): photo, name, meta, hours, links, and Add to the
  * deck. Only what the field mask holds; reviews and summaries are V2.
  */
-export function DetailsSheet({ place, origin, state, onAdd, onClose }: DetailsSheetProps) {
+export function DetailsSheet({ place, origin, state = "idle", onAdd, footer, onClose }: DetailsSheetProps) {
   // Keep the last place while the close animation runs.
   const [shown, setShown] = useState(place);
   if (place && place !== shown) setShown(place);
 
   return (
     <Sheet open={place !== null} onClose={onClose} labelledBy="ex-details-title" size="wide" flush>
-      {shown ? <Details place={shown} origin={origin} state={state} onAdd={onAdd} onClose={onClose} /> : null}
+      {shown ? (
+        <Details place={shown} origin={origin} state={state} onAdd={onAdd} footer={footer} onClose={onClose} />
+      ) : null}
     </Sheet>
   );
 }
 
-type DetailsProps = Omit<DetailsSheetProps, "place"> & { place: PlaceResult };
+type DetailsProps = Omit<DetailsSheetProps, "place" | "state"> & { place: PlaceResult; state: AddState };
 
-function Details({ place, origin, state, onAdd, onClose }: DetailsProps) {
+function Details({ place, origin, state, onAdd, footer, onClose }: DetailsProps) {
   const { data } = place;
   const hours = hoursLine(data);
   const attribution = data.photoAttributions?.[0];
@@ -141,7 +146,9 @@ function Details({ place, origin, state, onAdd, onClose }: DetailsProps) {
       </div>
 
       <div className="shrink-0 px-4 pt-3 pb-[calc(22px+env(safe-area-inset-bottom,0px))] shadow-[0_-1px_0_var(--color-track)] lg:flex lg:justify-end lg:px-5 lg:py-3.5">
-        {state === "added" ? (
+        {footer ? (
+          <div className="w-full">{footer}</div>
+        ) : state === "added" ? (
           <div
             role="status"
             className="flex h-14 items-center justify-center gap-2 rounded-button bg-tint text-base font-extrabold text-[#3D4047] lg:w-[260px]"

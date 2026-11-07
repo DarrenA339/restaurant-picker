@@ -1,20 +1,13 @@
 "use client";
 
-import {
-  AdvancedMarker,
-  AdvancedMarkerAnchorPoint,
-  APIProvider,
-  Map,
-  useMap,
-} from "@vis.gl/react-google-maps";
+import { APIProvider, Map, useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useEffectEvent, useRef } from "react";
-import { CheckIcon, ForkKnifeIcon, RefreshIcon } from "@/components/icons";
-import { initialsFor, personBgClass, toPersonColor } from "@/lib/people";
+import { RefreshIcon } from "@/components/icons";
 import { areaFromBounds, type SearchArea } from "@/lib/places/place";
 import type { LatLng } from "@/lib/restaurants";
+import { MemberDot, RestaurantPin, type MapMember, type MapPin } from "../map-markers";
 
-export type MapPin = { placeId: string; name: string; location: LatLng; added: boolean };
-export type MapMember = { userId: string; name: string; color: number; location: LatLng };
+export type { MapMember, MapPin };
 /** A new key asks the map to frame these points. */
 export type FitRequest = { key: number; points: LatLng[] };
 
@@ -138,62 +131,5 @@ function SearchAreaButton({ searching, onSearch }: { searching: boolean; onSearc
       <RefreshIcon size={15} className={searching ? "animate-spin motion-reduce:animate-none" : ""} />
       {searching ? "Searching" : "Search this area"}
     </button>
-  );
-}
-
-function MemberDot({ member, isViewer }: { member: MapMember; isViewer: boolean }) {
-  const color = isViewer ? "bg-ink" : personBgClass[toPersonColor(member.color)];
-  return (
-    <AdvancedMarker
-      position={member.location}
-      anchorPoint={AdvancedMarkerAnchorPoint.CENTER}
-      clickable={false}
-      zIndex={1}
-      title={isViewer ? "You" : member.name}
-    >
-      <span
-        className={`flex size-[30px] items-center justify-center rounded-full border-[2.5px] border-white text-[11px] font-extrabold text-white shadow-[0_2px_6px_rgba(23,24,26,0.22)] ${color}`}
-        aria-hidden="true"
-      >
-        {isViewer ? "You" : initialsFor(member.name)}
-      </span>
-    </AdvancedMarker>
-  );
-}
-
-function RestaurantPin({ pin, selected, onSelect }: { pin: MapPin; selected: boolean; onSelect: () => void }) {
-  const size = selected ? "size-[38px]" : "size-[30px]";
-  const shadow = selected
-    ? "shadow-[0_0_0_6px_rgba(210,67,42,0.22),0_3px_8px_rgba(23,24,26,0.25)]"
-    : "shadow-[0_3px_8px_rgba(23,24,26,0.25)]";
-  return (
-    <AdvancedMarker
-      position={pin.location}
-      anchorPoint={AdvancedMarkerAnchorPoint.CENTER}
-      zIndex={selected ? 5 : 2}
-      title={`${pin.name}${pin.added ? ", added" : ""}${selected ? ", selected" : ""}`}
-      onClick={onSelect}
-    >
-      <span className="relative flex items-center justify-center">
-        {selected ? (
-          <span className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 flex -translate-x-1/2 flex-col items-center">
-            <span className="flex h-7 items-center rounded-[9px] bg-surface px-2.5 text-xs font-extrabold whitespace-nowrap text-ink shadow-[0_3px_10px_rgba(23,24,26,0.16)]">
-              {pin.name}
-            </span>
-            <span className="size-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-surface" />
-          </span>
-        ) : null}
-        <span
-          className={`relative flex items-center justify-center rounded-full border-[2.5px] border-white bg-accent text-white transition-[width,height] duration-150 ${size} ${shadow}`}
-        >
-          <ForkKnifeIcon size={14} strokeWidth={2.6} />
-          {pin.added ? (
-            <span className="absolute -top-1.5 -right-1.5 flex size-[17px] items-center justify-center rounded-full border-2 border-white bg-ink text-white">
-              <CheckIcon size={9} strokeWidth={4} />
-            </span>
-          ) : null}
-        </span>
-      </span>
-    </AdvancedMarker>
   );
 }

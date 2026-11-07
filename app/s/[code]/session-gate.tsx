@@ -15,6 +15,7 @@ import { Lobby } from "./lobby";
 import { loadLobbyData } from "./lobby-data";
 import { SessionPlaceholder } from "./session-placeholder";
 import { MEMBER_VIEW_COLUMNS, SESSION_VIEW_COLUMNS } from "./session-types";
+import { SwipeScreen } from "./swipe/swipe-screen";
 
 /**
  * Decides which view the visitor gets:
@@ -66,15 +67,23 @@ export async function SessionGate({
           />
         );
       }
-      const { restaurants } = await loadLobbyData(supabase, session.id);
-      return (
-        <SessionPlaceholder
-          session={session}
-          members={members ?? []}
-          restaurants={restaurants}
-          userId={user.id}
-        />
-      );
+      if (session.status === "swiping") {
+        const [lobby, { data: swipes }] = await Promise.all([
+          loadLobbyData(supabase, session.id),
+          supabase.from("swipes").select("place_id, value").eq("session_id", session.id),
+        ]);
+        return (
+          <SwipeScreen
+            initialSession={session}
+            initialMembers={members ?? []}
+            initialRestaurants={lobby.restaurants}
+            initialMyAddIds={lobby.myAddIds}
+            initialSwipes={swipes ?? []}
+            userId={user.id}
+          />
+        );
+      }
+      return <SessionPlaceholder session={session} members={members ?? []} />;
     }
   }
 

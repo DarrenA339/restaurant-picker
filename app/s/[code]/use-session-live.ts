@@ -150,6 +150,7 @@ export function useSessionLive({
     connected,
     applySession,
     refetchSession,
+    refetchMembers,
     refetchRestaurants,
   };
 }

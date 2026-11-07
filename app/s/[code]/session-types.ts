@@ -22,7 +22,7 @@ export const SESSION_VIEW_COLUMNS =
 /** The member columns everyone in the session may see. */
 export type MemberView = Pick<
   Tables<"members">,
-  "user_id" | "display_name" | "color" | "lat" | "lng"
+  "user_id" | "display_name" | "color" | "lat" | "lng" | "vetoes_left" | "done_swiping"
 >;
 
-export const MEMBER_VIEW_COLUMNS = "user_id, display_name, color, lat, lng";
+export const MEMBER_VIEW_COLUMNS = "user_id, display_name, color, lat, lng, vetoes_left, done_swiping";

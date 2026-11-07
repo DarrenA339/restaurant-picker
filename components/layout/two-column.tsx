@@ -22,7 +22,7 @@ export function WideScreen({ header, className = "", children }: WideScreenProps
   );
 }
 
-type TwoColumnVariant = "hero" | "panel";
+type TwoColumnVariant = "hero" | "panel" | "swipe";
 
 // On phones both columns dissolve (display: contents) so their children sit
 // in the screen's single column, in source order, sharing its gap. From
@@ -34,11 +34,17 @@ const variants: Record<TwoColumnVariant, { wrap: string; left: string; right: st
     left: "lg:flex-[1_1_420px]",
     right: "lg:flex-[1_1_400px]",
   },
-  // Lobby and Swipe: a wide main column and a 360px sticky side panel, 32px apart.
+  // Lobby: a wide main column and a 360px sticky side panel, 32px apart.
   panel: {
     wrap: "lg:items-start lg:gap-8",
     left: "lg:flex-[1_1_520px] lg:gap-[18px]",
     right: "lg:sticky lg:top-6 lg:min-w-[300px] lg:flex-[0_1_360px] lg:gap-3.5",
+  },
+  // Swipe: the map on the left, sticky, and a 440px column for the card, 28px apart.
+  swipe: {
+    wrap: "lg:items-start lg:gap-7",
+    left: "lg:sticky lg:top-6 lg:min-w-0 lg:flex-[1_1_440px]",
+    right: "lg:min-w-[340px] lg:flex-[0_1_440px] lg:gap-4",
   },
 };
 

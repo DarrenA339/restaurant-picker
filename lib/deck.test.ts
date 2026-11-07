@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   autoYes,
   BATCH_SIZE,
+  buildMemberDeck,
   deckSearchBody,
+  hashSeed,
   pickSuggestions,
   readSearchState,
   roundRobinAdds,
+  seededShuffle,
   subCircles,
   writeSearchBody,
   type AddRow,
@@ -141,5 +144,43 @@ describe("search state", () => {
     const stored = writeSearchBody({ body, pageToken: "tok", nearbyNext: 2 });
     expect(readSearchState(stored, "tok")).toEqual({ body, pageToken: "tok", nearbyNext: 2 });
     expect(writeSearchBody({ body: null, pageToken: null, nearbyNext: 0 })).toBeNull();
+  });
+});
+
+describe("buildMemberDeck", () => {
+  const cards = [
+    ...Array.from({ length: 4 }, (_, i) => ({ place_id: `add-${i + 1}`, source: "member" as const, batch: 1 })),
+    ...Array.from({ length: 6 }, (_, i) => ({ place_id: `sug-${i + 1}`, source: "suggested" as const, batch: 1 })),
+    { place_id: "later", source: "suggested" as const, batch: 2 },
+    { place_id: "undealt", source: "member" as const, batch: null },
+  ];
+  const mine = new Set(["add-2"]);
+
+  it("takes the batch minus the member's own adds, adds before suggestions", () => {
+    const deck = buildMemberDeck(cards, { userId: A, batch: 1, myAddIds: mine });
+    expect(deck).toHaveLength(9);
+    expect(deck.map((c) => c.place_id)).not.toContain("add-2");
+    expect(deck.map((c) => c.place_id)).not.toContain("later");
+    expect(deck.map((c) => c.place_id)).not.toContain("undealt");
+    expect(deck.slice(0, 3).every((c) => c.source === "member")).toBe(true);
+    expect(deck.slice(3).every((c) => c.source === "suggested")).toBe(true);
+  });
+
+  it("gives the same member the same order every time, whatever the input order", () => {
+    const once = buildMemberDeck(cards, { userId: A, batch: 1, myAddIds: mine });
+    const again = buildMemberDeck([...cards].reverse(), { userId: A, batch: 1, myAddIds: mine });
+    expect(again.map((c) => c.place_id)).toEqual(once.map((c) => c.place_id));
+  });
+
+  it("gives different members different orders", () => {
+    const a = buildMemberDeck(cards, { userId: A, batch: 1, myAddIds: new Set() }).map((c) => c.place_id);
+    const b = buildMemberDeck(cards, { userId: B, batch: 1, myAddIds: new Set() }).map((c) => c.place_id);
+    expect(a).not.toEqual(b);
+    expect([...a].sort()).toEqual([...b].sort());
+  });
+
+  it("shuffles deterministically from a seed", () => {
+    expect(seededShuffle([1, 2, 3, 4, 5], hashSeed("x"))).toEqual(seededShuffle([1, 2, 3, 4, 5], hashSeed("x")));
+    expect(seededShuffle([1, 2, 3, 4, 5], hashSeed("x"))).not.toEqual(seededShuffle([1, 2, 3, 4, 5], hashSeed("y")));
   });
 });
