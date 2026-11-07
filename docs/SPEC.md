@@ -42,6 +42,18 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 
 The app has three routes. The session page at `/s/[code]` swaps views based on the session's status, so Realtime updates move everyone forward without a page navigation.
 
+### Desktop layout
+
+Mobile is the primary design. At 1024px and wider, screens adapt instead of stretching.
+
+- **Flow screens** (Join, Create, Done, Final round, Voting method, Winner): a centered 480px column on the page background. Buttons pinned to the bottom on mobile become regular buttons at the end of the column.
+- **Welcome**: two columns, max 1040px. Photo on the left, headline and actions on the right.
+- **Lobby**: two columns, max 1040px. Left: the add bar and the added-spots list. Right: members, voting method, suggestions, and Start.
+- **Swipe**: two columns, max 1040px. Left: the map, sticky and full height. Right: the card and vote buttons. Keyboard: Left arrow for No, Right arrow for Yes, V for Veto, Enter for Details, ignored while typing in a field.
+- **Explore**: the map fills the window, with results in a 400px left panel instead of a bottom sheet.
+- **Sheets**: bottom sheets become centered dialogs at 1024px and wider, max 960px for details (as in docs/design/08-details-desktop.png) and 520px for filters and the voting method.
+- Check every screen at 390×844 and 1280×800.
+
 ### Routes
 
 | Route | Screen | What it shows |
