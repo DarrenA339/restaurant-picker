@@ -1,7 +1,7 @@
 import "server-only";
 import type { CallKind, CallLog } from "./calls";
 import { AUTOCOMPLETE_FIELD_MASK, DETAILS_FIELD_MASK, SEARCH_FIELD_MASK } from "./fields";
-import type { GooglePlace, PlacesPort } from "./place";
+import type { GooglePlace, PlacesPort, Prediction } from "./place";
 
 /**
  * The only module that talks to Google. Every request carries the key from
@@ -17,11 +17,12 @@ const PHOTO_NAME = /^places\/[A-Za-z0-9_-]+\/photos\/[A-Za-z0-9_-]+$/;
 
 type LatLngLiteral = { latitude: number; longitude: number };
 type Circle = { center: LatLngLiteral; radius: number };
+type Rectangle = { low: LatLngLiteral; high: LatLngLiteral };
 
 export type AutocompleteBody = {
   input: string;
   sessionToken: string;
-  locationBias?: { circle: Circle };
+  locationBias?: { circle: Circle } | { rectangle: Rectangle };
   origin?: LatLngLiteral;
   includedPrimaryTypes?: string[];
   includeQueryPredictions?: boolean;
@@ -56,10 +57,27 @@ export type SearchTextBody = {
 
 export type SearchTextResponse = { places?: GooglePlace[]; nextPageToken?: string };
 
-export type PlacesClient = PlacesPort & {
+export type PlacesClient = Omit<PlacesPort, "details"> & {
   autocomplete(body: AutocompleteBody): Promise<AutocompleteResponse>;
   searchText(body: SearchTextBody): Promise<SearchTextResponse>;
+  /** Place Details; a narrower mask than the card's picks a cheaper SKU. */
+  details(placeId: string, sessionToken?: string, fieldMask?: string): Promise<GooglePlace>;
 };
+
+/** The place predictions of an autocomplete response, as the client shows them. */
+export function placePredictions(result: AutocompleteResponse): Prediction[] {
+  const places: Prediction[] = [];
+  for (const suggestion of result.suggestions ?? []) {
+    const place = suggestion.placePrediction;
+    if (!place?.placeId) continue;
+    places.push({
+      placeId: place.placeId,
+      mainText: place.structuredFormat?.mainText?.text ?? place.text?.text ?? "",
+      secondaryText: place.structuredFormat?.secondaryText?.text ?? "",
+    });
+  }
+  return places;
+}
 
 export class PlacesError extends Error {
   constructor(
@@ -114,11 +132,11 @@ export function googlePlaces(calls: CallLog): PlacesClient {
         body,
       });
     },
-    details(placeId, sessionToken) {
+    details(placeId: string, sessionToken?: string, fieldMask: string = DETAILS_FIELD_MASK) {
       const token = sessionToken ? `?sessionToken=${encodeURIComponent(sessionToken)}` : "";
       return call<GooglePlace>("details", `/places/${encodeURIComponent(placeId)}${token}`, {
         method: "GET",
-        fieldMask: DETAILS_FIELD_MASK,
+        fieldMask,
       });
     },
     async photoUri(photoName) {

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { AlertIcon, CheckIcon, SendIcon } from "@/components/icons";
 import { FlowScreen } from "@/components/layout/flow-screen";
+import { AreaField } from "@/components/ui/area-field";
 import { Avatar, AvatarStack, type StackPerson } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLabel, inputClass } from "@/components/ui/field";
@@ -46,6 +47,8 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
   const [name, setName] = useState("");
   const [color, setColor] = useState<PersonColor>(swatches[0] ?? 1);
   const [location, setLocation] = useState<LatLng | null>(null);
+  /** Where the location came from: the device, or a typed and picked area. */
+  const [locationSource, setLocationSource] = useState<"device" | "area" | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [areaOpen, setAreaOpen] = useState(false);
@@ -73,6 +76,7 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
           lat: rough(position.coords.latitude),
           lng: rough(position.coords.longitude),
         });
+        setLocationSource("device");
         setLocationError(null);
         setLocating(false);
       },
@@ -243,7 +247,7 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
           </div>
         </div>
 
-        {location ? (
+        {location && locationSource === "device" ? (
           <div
             role="status"
             className="flex h-12 items-center justify-center gap-2 rounded-field bg-tint text-[15px] font-bold text-ink lg:h-11 lg:justify-self-end lg:px-4 lg:text-sm"
@@ -273,18 +277,31 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
         {areaOpen ? (
           <div className="flex flex-col gap-2 lg:col-span-2">
             <FieldLabel htmlFor="start-area">Where are you starting from?</FieldLabel>
-            <input
+            <AreaField
               id="start-area"
               value={area}
-              onChange={(event) => setArea(event.target.value)}
+              onChange={(text) => {
+                setArea(text);
+                if (locationSource === "area") {
+                  setLocation(null);
+                  setLocationSource(null);
+                }
+              }}
+              onPick={(picked) => {
+                setArea(picked.label);
+                setLocation({ lat: rough(picked.location.lat), lng: rough(picked.location.lng) });
+                setLocationSource("area");
+                setLocationError(null);
+              }}
+              onError={setLocationError}
               maxLength={80}
-              autoComplete="off"
-              placeholder="A neighborhood or landmark"
-              className={inputClass()}
+              describedBy="start-area-hint"
+              autoFocus
             />
-            <p className="text-[13px] font-medium text-quiet">
-              Typed areas get matched to the map once spot search is in. For
-              now you can join without a location.
+            <p id="start-area-hint" className="text-[13px] font-medium text-quiet">
+              {locationSource === "area"
+                ? "Distances will count from here. Friends see the area, not an address."
+                : "Pick a suggestion, or join without a location."}
             </p>
           </div>
         ) : (

@@ -7,10 +7,10 @@ import {
   AlertIcon,
   BackIcon,
   ChevronDownIcon,
-  PinIcon,
   SendIcon,
 } from "@/components/icons";
 import { FlowScreen } from "@/components/layout/flow-screen";
+import { AreaField } from "@/components/ui/area-field";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -48,9 +48,10 @@ function toggle<T>(list: T[], item: T): T[] {
 
 export function CreateForm() {
   const router = useRouter();
-  const [name, setName] = useState("Friday dinner");
+  const [name, setName] = useState("");
   const [hostName, setHostName] = useState("");
-  const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
+  // The area starts empty: it is typed (and picked from the predictions) or "Use mine".
+  const [filters, setFilters] = useState<SessionFilters>({ ...DEFAULT_FILTERS, areaLabel: "" });
   const [center, setCenter] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -97,11 +98,13 @@ export function CreateForm() {
 
     const next: Errors = {};
     if (!name.trim()) {
-      next.name = "Give it a name so friends know what they're joining.";
+      next.name = "Give it a name so friends know what they’re joining.";
     }
-    if (!hostName.trim()) next.hostName = "Friends need to know who's hosting.";
+    if (!hostName.trim()) next.hostName = "Friends need to know who’s hosting.";
     if (!filters.areaLabel.trim()) {
       next.area = "Tell us roughly where to search.";
+    } else if (!center) {
+      next.area = "Pick a suggestion so we know where that is, or use your location.";
     }
     if (Object.keys(next).length) {
       setErrors(next);
@@ -190,6 +193,7 @@ export function CreateForm() {
         onChange={(event) => setName(event.target.value)}
         maxLength={60}
         autoComplete="off"
+        placeholder="e.g. Friday dinner"
         error={errors.name}
       />
 
@@ -222,38 +226,35 @@ export function CreateForm() {
 
       <div className="flex flex-col gap-2">
         <FieldLabel htmlFor="start-area">Starting area</FieldLabel>
-        <div
-          className={`flex h-[52px] items-center gap-2.5 rounded-field bg-surface pr-1.5 pl-3.5 ${
-            errors.area
-              ? "border-2 border-[#B4232F]"
-              : "border-[1.5px] border-line focus-within:border-ink focus-within:shadow-[inset_0_0_0_0.5px_var(--color-ink)]"
-          }`}
-        >
-          <PinIcon size={18} className="shrink-0 text-quiet" />
-          <input
-            id="start-area"
-            value={filters.areaLabel}
-            onChange={(event) => {
-              patch({ areaLabel: event.target.value });
-              if (center) setCenter(null);
-            }}
-            maxLength={MAX_AREA_LABEL}
-            autoComplete="off"
-            placeholder="A neighborhood or landmark"
-            aria-invalid={errors.area ? true : undefined}
-            aria-describedby={errors.area ? "start-area-error" : "start-area-hint"}
-            className="h-11 min-w-0 flex-1 bg-transparent text-base font-semibold text-ink placeholder:text-quiet/60 focus-visible:outline-none"
-          />
-          <button
-            type="button"
-            onClick={useMyLocation}
-            aria-busy={locating || undefined}
-            className="flex h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-tint px-3 text-[13px] font-bold whitespace-nowrap text-ink"
-          >
-            <SendIcon size={14} strokeWidth={2.4} />
-            {locating ? "Finding…" : center ? "Using mine" : "Use mine"}
-          </button>
-        </div>
+        <AreaField
+          id="start-area"
+          value={filters.areaLabel}
+          onChange={(text) => {
+            patch({ areaLabel: text });
+            if (center) setCenter(null);
+            if (errors.area) setErrors((e) => ({ ...e, area: undefined }));
+          }}
+          onPick={(area) => {
+            patch({ areaLabel: area.label.slice(0, MAX_AREA_LABEL) });
+            setCenter(area.location);
+            setErrors((e) => ({ ...e, area: undefined }));
+          }}
+          onError={(message) => setErrors((e) => ({ ...e, area: message }))}
+          maxLength={MAX_AREA_LABEL}
+          invalid={Boolean(errors.area)}
+          describedBy={errors.area ? "start-area-error" : "start-area-hint"}
+          trailing={
+            <button
+              type="button"
+              onClick={useMyLocation}
+              aria-busy={locating || undefined}
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-tint px-3 text-[13px] font-bold whitespace-nowrap text-ink"
+            >
+              <SendIcon size={14} strokeWidth={2.4} />
+              {locating ? "Finding…" : filters.areaLabel === YOUR_LOCATION && center ? "Using mine" : "Use mine"}
+            </button>
+          }
+        />
         {errors.area ? (
           <p
             id="start-area-error"

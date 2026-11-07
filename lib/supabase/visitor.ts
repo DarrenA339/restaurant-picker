@@ -27,6 +27,15 @@ export async function visitorSession(sessionId: string) {
   return { supabase, user, session: session ?? null };
 }
 
+/** Just the signed-in visitor, for routes that need no session (the starting-area lookups). */
+export async function visitorUser() {
+  const supabase = await supabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
+
 /** The viewer's own rough location in this session, if they shared one. */
 export async function viewerLocation(
   supabase: SupabaseClient<Database>,

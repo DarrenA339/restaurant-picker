@@ -33,6 +33,12 @@ export const SEARCH_FIELD_MASK = [
   "nextPageToken",
 ].join(",");
 
+/**
+ * A typed starting area: only Essentials fields, so resolving one bills
+ * Place Details Essentials, not the card tier.
+ */
+export const AREA_FIELD_MASK = "location,formattedAddress";
+
 /** Autocomplete: the id and the two text lines of each prediction. */
 export const AUTOCOMPLETE_FIELD_MASK = [
   "suggestions.placePrediction.placeId",

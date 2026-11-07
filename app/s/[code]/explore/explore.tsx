@@ -5,26 +5,36 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import {
   AlertIcon,
   BackIcon,
-  CameraIcon,
   CheckIcon,
   CloseIcon,
   PinIcon,
   PlusIcon,
   SearchIcon,
+  SlidersIcon,
   SpinnerIcon,
 } from "@/components/icons";
 import { spotsLabel } from "@/lib/lobby-copy";
-import type { AutocompleteResult, PlaceResult } from "@/lib/places/place";
 import {
-  readRestaurantData,
-  searchMeta,
-  type LatLng,
-  type RestaurantData,
-  type RestaurantRow,
-} from "@/lib/restaurants";
+  BOSTON,
+  type AutocompleteResult,
+  type PlaceResult,
+  type SearchArea,
+} from "@/lib/places/place";
+import { readRestaurantData, type LatLng, type RestaurantRow } from "@/lib/restaurants";
+import {
+  activeFilterCount,
+  DEFAULT_FILTERS,
+  exploreFiltersFrom,
+  parseFilters,
+  type ExploreFilters,
+} from "@/lib/session-filters";
 import { addSpot, ApiError, autocompletePlaces, searchPlaces } from "../session-api";
 import type { MemberView, SessionView } from "../session-types";
 import { useSessionLive } from "../use-session-live";
+import { DetailsSheet } from "./details-sheet";
+import { ExploreMap, type FitRequest, type MapMember, type MapPin } from "./explore-map";
+import { FiltersSheet } from "./filters-sheet";
+import { ResultRow, rowId, type AddState } from "./result-row";
 
 type ExploreProps = {
   initialSession: SessionView;
@@ -35,6 +45,7 @@ type ExploreProps = {
 };
 
 type Toast = { kind: "ok" | "error"; text: string; retry?: () => void };
+type LastSearch = { text: string; area: SearchArea | null };
 
 const DEBOUNCE_MS = 250;
 const MIN_CHARS = 2;
@@ -46,12 +57,13 @@ function isAbort(error: unknown) {
 }
 
 /**
- * Explore and add spots (docs/design/06), without the map for now: Done,
- * the search field with autocomplete predictions, and the results list with
- * Add / Adding / Added. A place prediction adds that spot straight away,
- * which is the Place Details call that ends the autocomplete session; a
- * dish prediction or Enter runs one Text Search. "Added" means the spot is
- * in the session, whoever added it.
+ * Explore and add spots (docs/design/06): the map with result pins and the
+ * group's dots, Done, the search field with autocomplete predictions, the
+ * Filters button and sheet, the results list with Add / Adding / Added, and
+ * the details sheet. A place prediction adds that spot straight away, which
+ * is the Place Details call that ends the autocomplete session; a dish
+ * prediction, Enter, or "Search this area" runs one Text Search. "Added"
+ * means the spot is in the session, whoever added it.
  */
 export function Explore({
   initialSession,
@@ -63,19 +75,31 @@ export function Explore({
   const live = useSessionLive({ initialSession, initialMembers, initialRestaurants, initialMyAddIds });
   const { session, members } = live;
   const me = members.find((m) => m.user_id === userId);
+  const sessionCenter: LatLng | null =
+    session.center_lat != null && session.center_lng != null
+      ? { lat: session.center_lat, lng: session.center_lng }
+      : null;
   const origin: LatLng | null =
-    me?.lat != null && me.lng != null
-      ? { lat: me.lat, lng: me.lng }
-      : session.center_lat != null && session.center_lng != null
-        ? { lat: session.center_lat, lng: session.center_lng }
-        : null;
+    me?.lat != null && me.lng != null ? { lat: me.lat, lng: me.lng } : sessionCenter;
+  const mapCenter = sessionCenter ?? origin ?? BOSTON;
   const inSession = new Map(live.restaurants.map((row) => [row.place_id, row]));
 
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<AutocompleteResult | null>(null);
   const [results, setResults] = useState<PlaceResult[]>([]);
+  /** null until the first search; "" after an area browse with no words. */
   const [searched, setSearched] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
+  const [areaSearching, setAreaSearching] = useState(false);
+  const [lastSearch, setLastSearch] = useState<LastSearch | null>(null);
+  const [filters, setFilters] = useState<ExploreFilters>(() =>
+    exploreFiltersFrom(parseFilters(initialSession.filters) ?? DEFAULT_FILTERS),
+  );
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [moved, setMoved] = useState(false);
+  const [fit, setFit] = useState<FitRequest | null>(null);
   const [adding, setAdding] = useState<ReadonlySet<string>>(new Set());
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -86,6 +110,7 @@ export function Explore({
   const predictAbortRef = useRef<AbortController | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
   const toastTimerRef = useRef<number | undefined>(undefined);
+  const fitKeyRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(
@@ -97,6 +122,14 @@ export function Explore({
     },
     [],
   );
+
+  // A tapped pin brings its row into view.
+  useEffect(() => {
+    if (!selected) return;
+    const row = document.getElementById(rowId(selected));
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    row?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  }, [selected]);
 
   const showToast = useCallback((next: Toast) => {
     window.clearTimeout(toastTimerRef.current);
@@ -117,6 +150,12 @@ export function Explore({
     predictAbortRef.current?.abort();
     predictAbortRef.current = null;
     setPredictions(null);
+  }
+
+  function requestFit(points: LatLng[]) {
+    if (points.length === 0) return;
+    fitKeyRef.current += 1;
+    setFit({ key: fitKeyRef.current, points });
   }
 
   function onInput(value: string) {
@@ -142,9 +181,10 @@ export function Explore({
     }, DEBOUNCE_MS);
   }
 
-  async function search(text: string) {
+  /** One Text Search: for words, for an area, or both. Frames the results unless the area was the viewer's. */
+  async function search(text: string, area: SearchArea | null, withFilters = filters) {
     const q = text.trim();
-    if (!q || searching) return;
+    if (searching) return;
     stopPredicting();
     setQuery(q);
     inputRef.current?.blur();
@@ -154,21 +194,47 @@ export function Explore({
     const controller = new AbortController();
     searchAbortRef.current = controller;
     setSearching(true);
+    setAreaSearching(area !== null);
     try {
-      const found = await searchPlaces(session.id, q, controller.signal);
+      const found = await searchPlaces(
+        session.id,
+        {
+          q: q || undefined,
+          lat: area?.center.lat,
+          lng: area?.center.lng,
+          radius: area?.radiusM,
+          prices: withFilters.prices,
+          openNow: withFilters.openNow,
+          cuisines: withFilters.cuisines,
+        },
+        controller.signal,
+      );
       if (controller.signal.aborted) return;
       setResults(found.places);
       setSearched(q);
+      setLastSearch({ text: q, area });
+      setSelected(found.places[0]?.placeId ?? null);
+      setMoved(false);
+      if (!area) requestFit(found.places.flatMap((p) => (p.data.location ? [p.data.location] : [])));
     } catch (error) {
       if (isAbort(error)) return;
       showToast({
         kind: "error",
         text: error instanceof Error ? error.message : "Search isn’t working right now.",
-        retry: () => void search(q),
+        retry: () => void search(q, area, withFilters),
       });
     } finally {
-      if (!controller.signal.aborted) setSearching(false);
+      if (!controller.signal.aborted) {
+        setSearching(false);
+        setAreaSearching(false);
+      }
     }
+  }
+
+  function applyFilters(next: ExploreFilters) {
+    setFilters(next);
+    setFiltersOpen(false);
+    if (lastSearch) void search(lastSearch.text, lastSearch.area, next);
   }
 
   async function add(placeId: string, name: string) {
@@ -180,11 +246,13 @@ export function Explore({
     try {
       const { restaurant } = await addSpot(session.id, { placeId, sessionToken });
       await live.refetchRestaurants();
-      setResults((current) =>
-        current.some((r) => r.placeId === placeId)
-          ? current
-          : [...current, { placeId, data: readRestaurantData(restaurant.data) ?? { name } }],
-      );
+      const data = readRestaurantData(restaurant.data) ?? { name };
+      const inResults = results.some((r) => r.placeId === placeId);
+      if (!inResults) {
+        setResults((current) => [...current, { placeId, data }]);
+        if (data.location) requestFit([data.location]);
+      }
+      setSelected(placeId);
       showToast({ kind: "ok", text: `Added ${name}` });
     } catch (error) {
       if (error instanceof ApiError && error.code === "duplicate") {
@@ -210,7 +278,7 @@ export function Explore({
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    void search(query);
+    void search(query, null);
   }
 
   function clear() {
@@ -219,24 +287,84 @@ export function Explore({
     inputRef.current?.focus();
   }
 
+  /** A pin: select its row, or open details for an added spot that isn't in the list. */
+  function selectPin(placeId: string) {
+    setSelected(placeId);
+    if (!results.some((r) => r.placeId === placeId)) setDetailsId(placeId);
+  }
+
+  function stateOf(placeId: string): AddState {
+    return adding.has(placeId) ? "adding" : inSession.has(placeId) ? "added" : "idle";
+  }
+
+  /** The list's data for a place, preferring the session's row (it has the photo). */
+  function placeFor(placeId: string): PlaceResult | null {
+    const row = inSession.get(placeId);
+    const rowData = row ? readRestaurantData(row.data) : null;
+    if (rowData) return { placeId, data: rowData };
+    return results.find((r) => r.placeId === placeId) ?? null;
+  }
+
+  const pins: MapPin[] = [];
+  const pinned = new Set<string>();
+  for (const result of results) {
+    const place = placeFor(result.placeId);
+    if (!place?.data.location) continue;
+    pins.push({ placeId: result.placeId, name: place.data.name, location: place.data.location, added: inSession.has(result.placeId) });
+    pinned.add(result.placeId);
+  }
+  for (const row of live.restaurants) {
+    if (pinned.has(row.place_id)) continue;
+    const data = readRestaurantData(row.data);
+    if (!data?.location) continue;
+    pins.push({ placeId: row.place_id, name: data.name, location: data.location, added: true });
+  }
+  const mapMembers: MapMember[] = members.flatMap((m) =>
+    m.lat != null && m.lng != null
+      ? [{ userId: m.user_id, name: m.display_name, color: m.color, location: { lat: m.lat, lng: m.lng } }]
+      : [],
+  );
+
+  const activeFilters = activeFilterCount(filters);
+  const details = detailsId ? placeFor(detailsId) : null;
   const hasPredictions = Boolean(
     predictions && (predictions.places.length > 0 || predictions.queries.length > 0),
   );
   const label = searching
     ? "Searching…"
-    : searched !== null
-      ? `${spotsLabel(results.length)} for “${searched}”`
-      : results.length > 0
+    : searched === null
+      ? results.length > 0
         ? "Added just now"
-        : "Add a place or a dish";
+        : "Add a place or a dish"
+      : searched === ""
+        ? `${spotsLabel(results.length)} nearby`
+        : `${spotsLabel(results.length)} for “${searched}”`;
 
   return (
-    <div className="flex h-dvh flex-col bg-page lg:flex-row lg:bg-[#EEF0EB]">
-      <aside className="relative z-10 flex min-h-0 flex-1 flex-col lg:w-[400px] lg:flex-none lg:bg-surface lg:shadow-[4px_0_24px_rgba(23,24,26,0.08)]">
+    <div className="relative h-dvh overflow-hidden bg-[#EEF0EB] lg:flex">
+      {/* The map: above the results sheet on phones, beside the panel on desktop. */}
+      <div className="absolute inset-x-0 top-0 bottom-[344px] lg:static lg:order-2 lg:h-full lg:min-w-0 lg:flex-1">
+        <ExploreMap
+          center={mapCenter}
+          pins={pins}
+          selected={selected}
+          members={mapMembers}
+          viewerId={userId}
+          fit={fit}
+          moved={moved}
+          searching={areaSearching}
+          onMoved={() => setMoved(true)}
+          onSelect={selectPin}
+          onSearchArea={(area) => void search(query, area)}
+        />
+      </div>
+
+      {/* On phones the panel floats over the map: the bar on top, the sheet at the bottom, taps between them reach the map. */}
+      <aside className="pointer-events-none absolute inset-0 z-10 flex flex-col lg:pointer-events-auto lg:static lg:order-1 lg:h-full lg:w-[400px] lg:flex-none lg:bg-surface lg:shadow-[4px_0_24px_rgba(23,24,26,0.08)]">
         {!live.connected ? (
           <div
             role="status"
-            className="mx-4 mt-3 flex min-h-9 items-center gap-2 rounded-xl bg-ink px-3 py-1.5 text-[13px] font-bold text-white lg:mx-5 lg:mt-4"
+            className="pointer-events-auto mx-4 mt-3 flex min-h-9 items-center gap-2 rounded-xl bg-ink px-3 py-1.5 text-[13px] font-bold text-white lg:mx-5 lg:mt-4"
           >
             Reconnecting. Added spots update again when you’re back online.
           </div>
@@ -245,7 +373,7 @@ export function Explore({
         <form
           role="search"
           onSubmit={onSubmit}
-          className="flex shrink-0 items-center gap-2 px-4 pt-4 pb-3 lg:px-5 lg:pt-5 lg:pb-3.5"
+          className="pointer-events-auto relative z-20 flex shrink-0 items-center gap-2 px-4 pt-4 lg:px-5 lg:pt-5 lg:pb-3.5"
         >
           <Link
             href={`/s/${session.code}`}
@@ -296,7 +424,7 @@ export function Explore({
                   <li key={`q-${q.text}`}>
                     <button
                       type="button"
-                      onClick={() => void search(q.text)}
+                      onClick={() => void search(q.text, null)}
                       className="flex h-12 w-full items-center gap-3 rounded-xl bg-transparent px-3 text-left text-ink"
                     >
                       <SearchIcon size={16} className="shrink-0 text-quiet" />
@@ -305,11 +433,7 @@ export function Explore({
                   </li>
                 ))}
                 {predictions.places.map((p) => {
-                  const state = adding.has(p.placeId)
-                    ? "adding"
-                    : inSession.has(p.placeId)
-                      ? "added"
-                      : "idle";
+                  const state = stateOf(p.placeId);
                   return (
                     <li key={p.placeId}>
                       <button
@@ -347,11 +471,31 @@ export function Explore({
               </ul>
             ) : null}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            aria-label={activeFilters > 0 ? `Filters, ${activeFilters} active` : "Filters"}
+            className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface text-ink shadow-[0_2px_8px_rgba(23,24,26,0.12)] lg:size-11 lg:rounded-[14px] lg:border-[1.5px] lg:border-line lg:shadow-none"
+          >
+            <SlidersIcon size={20} className="lg:size-[19px]" />
+            {activeFilters > 0 ? (
+              <span
+                aria-hidden="true"
+                className="absolute -top-[5px] -right-[5px] flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-accent px-[5px] text-[11px] font-extrabold text-white lg:-top-1.5 lg:-right-1.5"
+              >
+                {activeFilters}
+              </span>
+            ) : null}
+          </button>
         </form>
+
+        {/* Taps here reach the map. */}
+        <div className="min-h-0 flex-1 lg:hidden" aria-hidden="true" />
 
         <section
           aria-labelledby="explore-title"
-          className="flex min-h-0 flex-1 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(23,24,26,0.10)] lg:rounded-none lg:shadow-none"
+          className="pointer-events-auto flex h-[344px] shrink-0 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(23,24,26,0.10)] lg:h-auto lg:min-h-0 lg:flex-1 lg:rounded-none lg:shadow-none"
         >
           <div className="flex h-[22px] shrink-0 items-center justify-center lg:hidden">
             <span className="h-[5px] w-10 rounded-full bg-[#D9D6CF]" aria-hidden="true" />
@@ -365,26 +509,41 @@ export function Explore({
 
           <ul className="min-h-0 flex-1 overflow-y-auto px-3 pt-1 pb-[calc(28px+env(safe-area-inset-bottom,0px))] lg:pb-6">
             {results.map((result) => {
-              const row = inSession.get(result.placeId);
-              const data: RestaurantData =
-                (row ? readRestaurantData(row.data) : null) ?? result.data;
-              const state = adding.has(result.placeId) ? "adding" : row ? "added" : "idle";
+              const place = placeFor(result.placeId) ?? result;
               return (
                 <ResultRow
                   key={result.placeId}
-                  data={data}
+                  placeId={result.placeId}
+                  data={place.data}
                   origin={origin}
-                  state={state}
-                  onAdd={() => void add(result.placeId, data.name)}
+                  state={stateOf(result.placeId)}
+                  selected={result.placeId === selected}
+                  onOpen={() => {
+                    setSelected(result.placeId);
+                    setDetailsId(result.placeId);
+                  }}
+                  onAdd={() => void add(result.placeId, place.data.name)}
                 />
               );
             })}
             {searched !== null && !searching && results.length === 0 ? (
-              <li className="flex flex-col items-start gap-1.5 px-2 py-5">
-                <span className="text-base font-extrabold">Nothing matches</span>
-                <span className="text-sm font-medium text-quiet">
-                  Try another dish, or a place by name.
+              <li className="flex flex-col items-start gap-2 px-2 py-5">
+                <span className="text-base font-extrabold">
+                  {activeFilters > 0 ? "Nothing matches these filters" : "Nothing matches"}
                 </span>
+                {activeFilters > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setFiltersOpen(true)}
+                    className="h-11 rounded-field border-[1.5px] border-line bg-surface px-4 text-sm font-bold text-ink"
+                  >
+                    Change filters
+                  </button>
+                ) : (
+                  <span className="text-sm font-medium text-quiet">
+                    Try another dish, or a place by name.
+                  </span>
+                )}
               </li>
             ) : null}
             {searched === null && results.length === 0 ? (
@@ -397,14 +556,28 @@ export function Explore({
         </section>
       </aside>
 
-      {/* Where the map goes in part 2. */}
-      <div aria-hidden="true" className="hidden min-w-0 flex-1 lg:block" />
+      <FiltersSheet
+        open={filtersOpen}
+        filters={filters}
+        onClose={() => setFiltersOpen(false)}
+        onApply={applyFilters}
+      />
+
+      <DetailsSheet
+        place={details}
+        origin={origin}
+        state={details ? stateOf(details.placeId) : "idle"}
+        onAdd={() => {
+          if (details) void add(details.placeId, details.data.name);
+        }}
+        onClose={() => setDetailsId(null)}
+      />
 
       {toast ? (
         toast.kind === "ok" ? (
           <div
             role="status"
-            className="fixed bottom-[calc(24px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex h-11 -translate-x-1/2 items-center gap-2 rounded-field bg-ink px-4 text-sm font-bold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(23,24,26,0.2)] lg:left-[200px]"
+            className="fixed bottom-[360px] left-1/2 z-30 flex h-11 -translate-x-1/2 items-center gap-2 rounded-field bg-ink px-4 text-sm font-bold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(23,24,26,0.2)] lg:bottom-6 lg:left-[200px]"
           >
             <CheckIcon size={16} strokeWidth={3} />
             {toast.text}
@@ -412,7 +585,7 @@ export function Explore({
         ) : (
           <div
             role="alert"
-            className="fixed right-4 bottom-[calc(24px+env(safe-area-inset-bottom,0px))] left-4 z-30 flex min-h-12 items-center gap-2.5 rounded-field border-[1.5px] border-[#EBCFCA] bg-surface py-1 pr-1.5 pl-3.5 text-sm font-bold text-ink shadow-[0_8px_20px_rgba(23,24,26,0.12)] lg:right-auto lg:left-5 lg:w-[360px]"
+            className="fixed right-4 bottom-[360px] left-4 z-30 flex min-h-12 items-center gap-2.5 rounded-field border-[1.5px] border-[#EBCFCA] bg-surface py-1 pr-1.5 pl-3.5 text-sm font-bold text-ink shadow-[0_8px_20px_rgba(23,24,26,0.12)] lg:right-auto lg:bottom-6 lg:left-5 lg:w-[360px]"
           >
             <AlertIcon size={16} className="shrink-0 text-[#A3271B]" />
             <span className="flex-1">{toast.text}</span>
@@ -429,69 +602,5 @@ export function Explore({
         )
       ) : null}
     </div>
-  );
-}
-
-type ResultRowProps = {
-  data: RestaurantData;
-  origin: LatLng | null;
-  state: "idle" | "adding" | "added";
-  onAdd: () => void;
-};
-
-/** One result from docs/design/06: photo tile, name, meta, and the Add / Adding / Added slot. */
-function ResultRow({ data, origin, state, onAdd }: ResultRowProps) {
-  const meta = searchMeta(data, origin);
-  const slot = "flex h-11 w-[100px] items-center justify-center gap-1.5 text-sm lg:h-10 lg:w-24";
-  return (
-    <li className="flex items-center gap-2.5 rounded-2xl py-1 pr-2 pl-2.5">
-      <div className="flex min-h-[66px] min-w-0 flex-1 items-center gap-3 lg:min-h-[70px]">
-        <span
-          className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#EDE3D3] text-[#5E5A52] lg:size-[54px]"
-          aria-hidden="true"
-        >
-          {data.photoUri ? (
-            // Google photo URIs come from the server; next/image would need a remote pattern per host.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.photoUri} alt="" className="block size-full object-cover" />
-          ) : (
-            <CameraIcon size={18} />
-          )}
-        </span>
-        <span className="flex min-w-0 flex-col gap-[3px]">
-          <span className="text-base leading-[1.25] font-extrabold">{data.name}</span>
-          {meta ? <span className="text-[13px] font-semibold text-quiet">{meta}</span> : null}
-        </span>
-      </div>
-      <span className="flex w-[100px] shrink-0 justify-end lg:w-24">
-        {state === "added" ? (
-          <span className={`${slot} font-bold text-[#3D4047]`}>
-            <CheckIcon size={15} strokeWidth={3} />
-            Added
-          </span>
-        ) : state === "adding" ? (
-          <button
-            type="button"
-            disabled
-            aria-busy="true"
-            aria-label={`Adding ${data.name}`}
-            className={`${slot} rounded-full border-[1.5px] border-[#F1CFC7] bg-surface font-extrabold text-accent-text`}
-          >
-            <SpinnerIcon size={14} />
-            Adding
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onAdd}
-            aria-label={`Add ${data.name} to the deck`}
-            className={`${slot} rounded-full border-[1.5px] border-[#F1CFC7] bg-accent-soft font-extrabold text-accent-text`}
-          >
-            <PlusIcon size={14} />
-            Add
-          </button>
-        )}
-      </span>
-    </li>
   );
 }

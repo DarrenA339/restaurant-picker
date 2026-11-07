@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { bad, UUID } from "@/lib/api";
 import { CallLog } from "@/lib/places/calls";
-import { googlePlaces } from "@/lib/places/google";
-import { searchArea, type AutocompleteResult, type Prediction } from "@/lib/places/place";
+import { googlePlaces, placePredictions } from "@/lib/places/google";
+import { searchArea, type AutocompleteResult } from "@/lib/places/place";
 import { parseFilters } from "@/lib/session-filters";
 import { viewerLocation, visitorSession } from "@/lib/supabase/visitor";
 
@@ -53,18 +53,9 @@ export async function GET(request: NextRequest) {
       regionCode: "us",
     });
 
-    const places: Prediction[] = [];
+    const places = placePredictions(result);
     const queries: { text: string }[] = [];
     for (const suggestion of result.suggestions ?? []) {
-      const place = suggestion.placePrediction;
-      if (place?.placeId) {
-        places.push({
-          placeId: place.placeId,
-          mainText: place.structuredFormat?.mainText?.text ?? place.text?.text ?? "",
-          secondaryText: place.structuredFormat?.secondaryText?.text ?? "",
-        });
-        continue;
-      }
       const text = suggestion.queryPrediction?.text?.text?.trim();
       if (text) queries.push({ text });
     }

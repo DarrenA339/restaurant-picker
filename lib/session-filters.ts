@@ -44,6 +44,26 @@ export const DEFAULT_FILTERS: SessionFilters = {
 
 export const MAX_AREA_LABEL = 80;
 
+/** The explore map's filters: the session's until a member changes them for their own search. */
+export type ExploreFilters = Pick<SessionFilters, "openNow" | "prices" | "cuisines">;
+
+export function exploreFiltersFrom(filters: SessionFilters): ExploreFilters {
+  return { openNow: filters.openNow, prices: [...filters.prices], cuisines: [...filters.cuisines] };
+}
+
+/** How many filters are on, for the Filters button's badge. */
+export function activeFilterCount(filters: ExploreFilters): number {
+  return (filters.openNow ? 1 : 0) + filters.prices.length + filters.cuisines.length;
+}
+
+/** "Korean,Thai" → ["Korean", "Thai"]; null when a name isn't one of CUISINES. */
+export function parseCuisineList(value: string): Cuisine[] | null {
+  if (value === "") return [];
+  const names = value.split(",");
+  if (!names.every((name) => isOneOf(CUISINES, name))) return null;
+  return [...new Set(names as Cuisine[])];
+}
+
 function isOneOf<T extends readonly unknown[]>(
   list: T,
   value: unknown,

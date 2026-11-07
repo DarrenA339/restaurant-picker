@@ -20,6 +20,8 @@ type SheetProps = {
   labelledBy: string;
   /** The dialog width from 1024px up. */
   size?: SheetSize;
+  /** Drop the dialog's top padding (a photo pane that runs to the edge). */
+  flush?: boolean;
   children: ReactNode;
 };
 
@@ -29,7 +31,14 @@ type SheetProps = {
  * handle all dismiss it. From 1024px up the same content opens as a centered
  * dialog with no handle. Focus moves in on open and returns to the opener.
  */
-export function Sheet({ open, onClose, labelledBy, size = "narrow", children }: SheetProps) {
+export function Sheet({
+  open,
+  onClose,
+  labelledBy,
+  size = "narrow",
+  flush = false,
+  children,
+}: SheetProps) {
   const desktop = useIsDesktop();
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -76,7 +85,7 @@ export function Sheet({ open, onClose, labelledBy, size = "narrow", children }: 
               aria-modal="true"
               aria-labelledby={labelledBy}
               tabIndex={-1}
-              className={`fixed top-1/2 left-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[28px] bg-surface pt-5 shadow-[0_24px_60px_rgba(23,24,26,0.25)] focus-visible:outline-none ${dialogSizes[size]}`}
+              className={`fixed top-1/2 left-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[28px] bg-surface shadow-[0_24px_60px_rgba(23,24,26,0.25)] focus-visible:outline-none ${flush ? "" : "pt-5"} ${dialogSizes[size]}`}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}

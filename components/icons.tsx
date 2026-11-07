@@ -201,3 +201,34 @@ export function PlusIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** The Filters button: two slider rows. */
+export function SlidersIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+      <circle cx="16" cy="7" r="2.2" />
+      <circle cx="10" cy="17" r="2.2" />
+    </Svg>
+  );
+}
+
+/** "Search this area" (stroke 2.6 in the design). */
+export function RefreshIcon(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.6} {...props}>
+      <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+      <path d="M20 4v4h-4" />
+    </Svg>
+  );
+}
+
+/** Opening hours. */
+export function ClockIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </Svg>
+  );
+}

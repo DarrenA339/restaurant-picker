@@ -76,9 +76,30 @@ export async function autocompletePlaces(
   return (await response.json()) as AutocompleteResult;
 }
 
+export type SearchOptions = {
+  /** Empty browses for restaurants. */
+  q?: string;
+  /** "Search this area": the map's center and radius in meters. */
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  prices?: readonly number[];
+  openNow?: boolean;
+  cuisines?: readonly string[];
+};
+
 /** One Text Search for the explore list. */
-export async function searchPlaces(sessionId: string, q: string, signal?: AbortSignal) {
-  const params = new URLSearchParams({ session: sessionId, q });
+export async function searchPlaces(sessionId: string, options: SearchOptions, signal?: AbortSignal) {
+  const params = new URLSearchParams({ session: sessionId });
+  if (options.q) params.set("q", options.q);
+  if (options.lat !== undefined && options.lng !== undefined) {
+    params.set("lat", String(options.lat));
+    params.set("lng", String(options.lng));
+  }
+  if (options.radius !== undefined) params.set("radius", String(Math.round(options.radius)));
+  if (options.prices) params.set("prices", options.prices.join(","));
+  if (options.openNow !== undefined) params.set("openNow", String(options.openNow));
+  if (options.cuisines) params.set("cuisines", options.cuisines.join(","));
   const response = await fetch(`/api/places/search?${params}`, { signal });
   if (!response.ok) return fail(response, "Search isn’t working right now.");
   return (await response.json()) as SearchResult;

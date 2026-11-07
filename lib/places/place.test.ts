@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { AUTOCOMPLETE_FIELD_MASK, DETAILS_FIELD_MASK, PLACE_FIELDS, SEARCH_FIELD_MASK } from "./fields";
 import {
+  areaFromBounds,
   BOSTON,
   BOSTON_RADIUS_M,
   cuisineFrom,
   formatLocalTime,
+  hoursLine,
+  MAX_RADIUS_M,
   searchArea,
   toRestaurantData,
   type GooglePlace,
@@ -117,6 +120,10 @@ describe("toRestaurantData", () => {
     expect(data).toEqual({ name: "Night Owl", photoUri: null, openNow: false });
   });
 
+  it("credits a photo only when one is shown", () => {
+    expect(toRestaurantData(full, null)).not.toHaveProperty("photoAttributions");
+  });
+
   it("names a place with no display name", () => {
     expect(toRestaurantData({}, null).name).toBe("Unnamed spot");
   });
@@ -151,5 +158,31 @@ describe("searchArea", () => {
       center: BOSTON,
       radiusM: BOSTON_RADIUS_M,
     });
+  });
+});
+
+describe("areaFromBounds", () => {
+  it("centers on the viewport with half the diagonal as radius", () => {
+    const area = areaFromBounds({ north: 42.38, south: 42.36, east: -71.1, west: -71.14 });
+    expect(area.center.lat).toBeCloseTo(42.37, 6);
+    expect(area.center.lng).toBeCloseTo(-71.12, 6);
+    // About 1.1 mi from the center to the corner.
+    expect(area.radiusM).toBeGreaterThan(1900);
+    expect(area.radiusM).toBeLessThan(2100);
+  });
+
+  it("stays inside Google's limits", () => {
+    expect(areaFromBounds({ north: 60, south: 20, east: -60, west: -120 }).radiusM).toBe(MAX_RADIUS_M);
+    const tiny = areaFromBounds({ north: 42.37001, south: 42.37, east: -71.12, west: -71.12001 });
+    expect(tiny.radiusM).toBe(100);
+  });
+});
+
+describe("hoursLine", () => {
+  it("reads the open state and closing time", () => {
+    expect(hoursLine({ openNow: true, closesAt: "11 PM" })).toBe("Open until 11 PM");
+    expect(hoursLine({ openNow: true })).toBe("Open now");
+    expect(hoursLine({ openNow: false, closesAt: "11 PM" })).toBe("Closed now");
+    expect(hoursLine({})).toBeUndefined();
   });
 });

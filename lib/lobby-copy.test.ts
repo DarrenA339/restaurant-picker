@@ -8,7 +8,7 @@ import {
   votingMethodLabel,
 } from "./lobby-copy";
 import { distanceMi, formatMiles, restaurantMeta } from "./restaurants";
-import { DEFAULT_FILTERS } from "./session-filters";
+import { activeFilterCount, DEFAULT_FILTERS, exploreFiltersFrom, parseCuisineList } from "./session-filters";
 
 describe("lobby copy", () => {
   it("labels the voting method like the design", () => {
@@ -73,5 +73,21 @@ describe("restaurant meta", () => {
       "Korean · $$ · 0 mi",
     );
     expect(restaurantMeta({ name: "Mystery" }, null)).toBe("");
+  });
+});
+
+describe("explore filters", () => {
+  it("start as the session's filters and count what's on", () => {
+    const filters = exploreFiltersFrom(DEFAULT_FILTERS);
+    expect(filters).toEqual({ openNow: true, prices: [1, 2], cuisines: [] });
+    expect(activeFilterCount(filters)).toBe(3);
+    expect(activeFilterCount({ openNow: false, prices: [], cuisines: [] })).toBe(0);
+    expect(activeFilterCount({ openNow: false, prices: [3], cuisines: ["Thai", "Korean"] })).toBe(3);
+  });
+
+  it("parse a cuisine list from a query string", () => {
+    expect(parseCuisineList("")).toEqual([]);
+    expect(parseCuisineList("Korean,Thai,Korean")).toEqual(["Korean", "Thai"]);
+    expect(parseCuisineList("Korean,Martian")).toBeNull();
   });
 });

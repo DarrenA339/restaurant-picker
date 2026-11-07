@@ -14,8 +14,8 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 
 ### MVP
 
-- **Create a session.** Host names it, picks a starting area (typed, or their own location), how far they'll go (0.5, 1, 2, or 5 miles), which price levels work ($ to $$, any mix), optional cuisines, open now, and vegetarian options, then gets a link and a 6-character code. The host's member row is created with the session.
-- **Join with no account.** Friends open the link, type a display name, pick an avatar color nobody in the group has yet, and share location. Anonymous sign-in happens behind the scenes, and locations are stored rounded to about 100 m.
+- **Create a session.** Host names it, picks a starting area (typed with autocomplete and resolved to a point, or their own location), how far they'll go (0.5, 1, 2, or 5 miles), which price levels work ($ to $$, any mix), optional cuisines, open now, and vegetarian options, then gets a link and a 6-character code. The host's member row is created with the session.
+- **Join with no account.** Friends open the link, type a display name, pick an avatar color nobody in the group has yet, and share their location or type a starting area. Anonymous sign-in happens behind the scenes, and locations are stored rounded to about 100 m.
 - **Lobby built around adding.** Everyone sees who has joined and every spot the group has added, in real time. Only the host can start.
 - **Add spots (no limit).** Adding is the main lobby activity. Anyone can add as many restaurants as they want by searching a place or a dish, or from the explore map. Adds skip the price and distance filters but still show both on the card. Adding a spot counts as a yes from whoever added it, and they skip their own adds while swiping. Duplicates are rejected, members can remove their own adds, and adds close when the host starts picking. A quiet cap of 40 adds per session applies, shown only when reached. Search runs through `GET /api/places/autocomplete` with session tokens; `POST /api/sessions/[id]/add` checks the cap and duplicates, fetches Place Details with the standard field mask and one photo, and inserts with `source = 'member'`.
 - **Explore map.** A full-screen Google Map reached from the lobby's add bar and map button. Members search by place name or dish (Text Search), filter with chips, and browse results as pins plus a bottom-sheet list. Panning shows "Search this area" instead of searching automatically. Spots already added show as checked pins.
@@ -94,6 +94,8 @@ These run on Vercel with the secret keys. Swipes write straight to Supabase, gua
 | `POST /api/sessions` | Creates the session, its join code, and the host's member row |
 | `PATCH /api/sessions/[id]` | Host only, lobby only. Changes `voting_method` and `suggestions_on` |
 | `GET /api/places/autocomplete` | Name and dish suggestions for the add bar, using session tokens, biased to the session's area |
+| `GET /api/places/area` | Starting-area predictions for Create and Join (a neighborhood, landmark, or address), with a session token, biased to the US. Needs no session |
+| `GET /api/places/area/[placeId]` | Resolves a picked area with a Place Details call for only `location` and `formattedAddress`, on the same token, which becomes the session's center or the member's location |
 | `GET /api/places/search` | The explore map's search and "Search this area," one Text Search call per request |
 | `POST /api/sessions/[id]/add` | Lobby only. Adds a member's spot: checks the session cap and duplicates, fetches Place Details and one photo, inserts with `source = 'member'` and an `adds` row |
 | `DELETE /api/sessions/[id]/add/[placeId]` | Lobby only. Removes one of the caller's own adds |
@@ -152,6 +154,7 @@ Each member add takes one Place Details call and one photo. Suggestions take one
 | --- | --- | --- | --- |
 | Places API (New) Autocomplete | Name and dish search in the add bar | Free when the search ends in a Place Details call | MVP |
 | Places API (New) Place Details | Each spot a member adds | 1 per add | MVP |
+| Places API (New) Autocomplete + Place Details (Essentials) | A typed starting area on Create or Join | 1 session + 1 location-only details call per typed area | MVP |
 | Places API (New) Text Search | Suggestions after the group's adds, up to 60 per area at 20 per page, plus explore map searches | 1 per batch of suggestions, 1 per explore search | MVP |
 | Places API (New) Nearby Search | Suggestions past 60, by splitting the area into smaller circles and removing duplicates by place ID | 1 per smaller circle | MVP |
 | Places API (New) Place Photos | One photo per card | 1 per add or suggestion | MVP |
@@ -241,7 +244,7 @@ Google prices come from the [Google Maps Platform price list](https://developers
 
 ### Per batch and per add
 
-A batch of suggestions is 1 Text Search call plus 20 photos. Photos run out first, at 1,000 ÷ 20 = 50 free batches a month. Past the free caps, a batch costs 1 × $0.040 + 20 × $0.007 = $0.18. A member add is 1 Place Details call plus 1 photo, so past the free caps it costs 1 × $0.025 + 1 × $0.007 = about $0.03. Autocomplete keystrokes are free when the search ends in a Place Details call.
+A batch of suggestions is 1 Text Search call plus 20 photos. Photos run out first, at 1,000 ÷ 20 = 50 free batches a month. Past the free caps, a batch costs 1 × $0.040 + 20 × $0.007 = $0.18. A member add is 1 Place Details call plus 1 photo, so past the free caps it costs 1 × $0.025 + 1 × $0.007 = about $0.03. Autocomplete keystrokes are free when the search ends in a Place Details call. In the lobby that means an autocomplete session that ends in an add is free (only its Place Details call bills), while a dish search ends in a Text Search instead, so Google bills each of that session's autocomplete requests individually.
 
 ### By monthly volume (USD)
 
@@ -277,7 +280,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 
 | Risk | Fallback |
 | --- | --- |
-| A member denies location | Center the deck on the host's location; that member still votes |
+| A member denies location | They can type a starting area instead; otherwise distances count from the host's location, and that member still votes |
 | One person stops swiping | Host taps End swiping; their missing cards count as no |
 | The area runs out of places | Offer to widen the max distance one step |
 | Someone adds dozens of spots | Round-robin dealing keeps one list from filling a batch, and the quiet cap of 40 limits swipe fatigue and Place Details cost |
@@ -295,7 +298,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 - [ ] Quadratic voting credit budget (9, or more if finalists go to 5)
 - [ ] Veto limit of 1 or 2 per person
 - [ ] Session cap on adds (40, or another number). Counted as member-added cards, not adds rows, so joining a spot someone else added is always allowed; checked in the add route, so two adds landing at 39 can make 41
-- [ ] Typed-neighborhood fallback for denied location (Geocoding gives 10,000 free requests a month, then $5 per 1,000)
+- [x] Typed starting areas (Create, and Join when location is denied or skipped): Places Autocomplete (New) with a session token, biased to the US, then a Place Details call for only the Essentials fields `location` and `formattedAddress` on the same token. The point is saved as the session's center or the member's location. Not the Geocoding API.
 - [ ] Accounts in the MVP or deferred to V2
 - [x] How a friend resolves a join code before they are a member: `join_session(code, display_name, color, lat, lng)`, a security-definer function that inserts the member row with a free person color and returns only the session id and status, so `sessions` rows stay private. The Join screen's preview (name, host, who is in, filters) is rendered on the server with the secret key.
 

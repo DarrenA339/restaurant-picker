@@ -1,4 +1,4 @@
-import type { LatLng, PhotoAttribution, RestaurantData } from "@/lib/restaurants";
+import { distanceMi, type LatLng, type PhotoAttribution, type RestaurantData } from "@/lib/restaurants";
 import type { PriceLevel, SessionFilters } from "@/lib/session-filters";
 
 /** The subset of Google's Place resource the field mask asks for. */
@@ -12,6 +12,7 @@ export type GooglePhoto = {
 export type GooglePlace = {
   id?: string;
   displayName?: LocalizedText;
+  formattedAddress?: string;
   primaryTypeDisplayName?: LocalizedText;
   location?: { latitude?: number; longitude?: number };
   photos?: GooglePhoto[];
@@ -130,13 +131,14 @@ export function toRestaurantData(place: GooglePlace, photoUri: string | null): R
   const lng = place.location?.longitude;
   if (finite(lat) && finite(lng)) data.location = { lat, lng };
 
-  const attributions = (place.photos?.[0]?.authorAttributions ?? []).flatMap(
-    (a): PhotoAttribution[] => {
-      const name = a.displayName?.trim();
-      if (!name) return [];
-      return [a.uri ? { name, uri: a.uri } : { name }];
-    },
-  );
+  // Attribution belongs with the photo it credits, so none without a photo.
+  const attributions = photoUri
+    ? (place.photos?.[0]?.authorAttributions ?? []).flatMap((a): PhotoAttribution[] => {
+        const name = a.displayName?.trim();
+        if (!name) return [];
+        return [a.uri ? { name, uri: a.uri } : { name }];
+      })
+    : [];
   if (attributions.length) data.photoAttributions = attributions;
 
   if (place.googleMapsUri) data.googleMapsUri = place.googleMapsUri;
@@ -190,6 +192,33 @@ export function searchArea(
   return { center: BOSTON, radiusM: BOSTON_RADIUS_M };
 }
 
+export type BoundsLiteral = { north: number; south: number; east: number; west: number };
+
+/** Google's largest bias circle. */
+export const MAX_RADIUS_M = 50_000;
+const MIN_VIEWPORT_RADIUS_M = 100;
+
+/**
+ * "Search this area": the circle a map viewport stands for, centered on it
+ * with half its diagonal as the radius, inside Google's limits.
+ */
+export function areaFromBounds(bounds: BoundsLiteral): SearchArea {
+  const center = { lat: (bounds.north + bounds.south) / 2, lng: (bounds.east + bounds.west) / 2 };
+  const corner = { lat: bounds.north, lng: bounds.east };
+  const radiusM = Math.min(
+    MAX_RADIUS_M,
+    Math.max(MIN_VIEWPORT_RADIUS_M, distanceMi(center, corner) * METERS_PER_MILE),
+  );
+  return { center, radiusM };
+}
+
+/** The details sheet's hours line: "Open until 11 PM", "Open now", "Closed now", or nothing. */
+export function hoursLine(data: Pick<RestaurantData, "openNow" | "closesAt">): string | undefined {
+  if (data.openNow === true) return data.closesAt ? `Open until ${data.closesAt}` : "Open now";
+  if (data.openNow === false) return "Closed now";
+  return undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Route payloads shared with the client
 // ---------------------------------------------------------------------------
@@ -200,3 +229,12 @@ export type Prediction = { placeId: string; mainText: string; secondaryText: str
 export type AutocompleteResult = { places: Prediction[]; queries: { text: string }[] };
 
 export type SearchResult = { places: PlaceResult[] };
+
+/** A resolved starting area: Google's address line for it, and where it is. */
+export type AreaResult = { placeId: string; address: string; location: LatLng };
+
+/** The lower-48 states, as the bias for starting-area predictions. */
+export const US_BOUNDS = {
+  low: { latitude: 24.396, longitude: -125.0 },
+  high: { latitude: 49.384, longitude: -66.934 },
+};
