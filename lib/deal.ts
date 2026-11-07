@@ -109,7 +109,8 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
  *      everything filtered by distance and deduped against the session;
  *   3. one photo per new card, each adder's automatic yes on their dealt
  *      adds, the batch number stamped on, done flags reset, and the session
- *      moved on with a conditional update so two taps deal once.
+ *      moved to swiping with a conditional update so two taps deal once.
+ *      Batch 1 comes from the lobby; later batches from deciding.
  *
  * Google is called before the claim, so a lost race costs at most one
  * search's worth of calls and never writes a second batch.
@@ -118,7 +119,8 @@ export async function dealBatch(deps: DealDeps, input: DealInput): Promise<DealR
   const { store, places } = deps;
   const { session, hostLocation, start } = input;
   if (start && session.status !== "lobby") return { ok: false, code: "not_lobby" };
-  if (!start && session.status !== "swiping") return { ok: false, code: "not_swiping" };
+  // Later batches come from deciding: the host's "Deal 20 more", or the tally finding no finalists.
+  if (!start && session.status !== "deciding") return { ok: false, code: "not_swiping" };
   const batch = session.batch + 1;
 
   const [adds, restaurants] = await Promise.all([

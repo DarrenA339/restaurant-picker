@@ -127,6 +127,11 @@ function google(pages: { places?: GooglePlace[]; nextPageToken?: string }[] = []
 
 const input = (db: Memory, start = true) => ({ session: db.session, hostLocation: null, start });
 
+/** What the tally does between batches: swiping → deciding. */
+const decide = (db: Memory) => {
+  db.session = { ...db.session, status: "deciding" };
+};
+
 describe("dealBatch: start", () => {
   it("deals the adds first, then fills to 20 with one Text Search, one photo each", async () => {
     const { db, store } = memory({ adds: [add(A, "a1", 1), add(B, "b1", 2), add(A, "a2", 3)] });
@@ -225,6 +230,7 @@ describe("dealBatch: later batches", () => {
     const g = google([{ places: places("s", 20) }]);
 
     const first = await dealBatch({ store, places: g }, input(db));
+    decide(db);
     expect(first).toMatchObject({ ok: true, batch: 1, suggestions: [] });
     if (!first.ok) throw new Error("failed");
     expect(first.adds).toEqual([
@@ -249,6 +255,7 @@ describe("dealBatch: later batches", () => {
     ]);
 
     await dealBatch({ store, places: g }, input(db));
+    decide(db);
     const second = await dealBatch({ store, places: g }, input(db, false));
 
     expect(second).toMatchObject({ ok: true, batch: 2 });
@@ -266,6 +273,7 @@ describe("dealBatch: later batches", () => {
 
     await dealBatch({ store, places: g }, input(db));
     expect(db.session.page_token).toBeNull();
+    decide(db);
 
     const second = await dealBatch({ store, places: g }, input(db, false));
 
@@ -279,7 +287,7 @@ describe("dealBatch: later batches", () => {
   });
 
   it("reports an exhausted area once every circle is used and nothing new turns up", async () => {
-    const { db, store } = memory({ session: { status: "swiping", batch: 3, search_body: { body: { textQuery: "restaurants" }, nearbyNext: 7 }, page_token: null } });
+    const { db, store } = memory({ session: { status: "deciding", batch: 3, search_body: { body: { textQuery: "restaurants" }, nearbyNext: 7 }, page_token: null } });
     const g = google();
 
     expect(await dealBatch({ store, places: g }, input(db, false))).toEqual({ ok: false, code: "nothing_to_deal" });
@@ -287,8 +295,8 @@ describe("dealBatch: later batches", () => {
     expect(g.searchNearby).not.toHaveBeenCalled();
   });
 
-  it("refuses to deal unless the session is swiping", async () => {
-    const { db, store } = memory();
+  it("refuses to deal a later batch unless the session is deciding", async () => {
+    const { db, store } = memory({ session: { status: "swiping", batch: 1 } });
     expect(await dealBatch({ store, places: google() }, input(db, false))).toEqual({ ok: false, code: "not_swiping" });
   });
 });

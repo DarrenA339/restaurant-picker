@@ -57,7 +57,28 @@ export async function endSwiping(id: string) {
   return (await response.json()) as { batch: number; everyoneDone: true };
 }
 
-/** Host only, while swiping: deal the next batch. */
+/** Host only, from deciding: the finalists go to the final round. */
+export async function goToFinalRound(id: string) {
+  const response = await fetch(`/api/sessions/${id}/final-round`, { method: "POST" });
+  if (!response.ok) return fail(response, "Couldn’t start the final round.");
+  return (await response.json()) as { status: "ranking"; finalists: string[] };
+}
+
+/** Host only, from deciding with one finalist: it wins. */
+export async function goWithIt(id: string) {
+  const response = await fetch(`/api/sessions/${id}/go-with-it`, { method: "POST" });
+  if (!response.ok) return fail(response, "Couldn’t finish.");
+  return (await response.json()) as { status: "done"; winner: string };
+}
+
+/** Host only, from deciding with nothing left nearby: widen the distance one step and deal. */
+export async function widenDistance(id: string) {
+  const response = await fetch(`/api/sessions/${id}/widen`, { method: "POST" });
+  if (!response.ok) return fail(response, "Couldn’t widen the search.");
+  return (await response.json()) as { distanceMi: number; batch: number; cards: number };
+}
+
+/** Host only, from deciding: deal the next batch instead of ranking. */
 export async function dealNextBatch(id: string) {
   const response = await fetch(`/api/sessions/${id}/deal`, { method: "POST" });
   if (!response.ok) return fail(response, "Couldn’t deal the next batch.");

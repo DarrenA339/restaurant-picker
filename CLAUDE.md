@@ -68,7 +68,7 @@ Phone-only and desktop-only elements (the lobby's avatar stack vs. its "Who's he
 
 ### Session state machine
 
-`sessions.status` drives everything: `lobby → swiping → (tally)`. After each tally, a unanimous yes goes straight to `done`; otherwise the host picks `ranking` or deals another batch (back to `swiping`), and a tally with no finalists deals the next batch automatically. `ranking → done` once everyone has ranked.
+`sessions.status` drives everything: `lobby → swiping → deciding → ranking → done`. When everyone finishes a batch (`done-swiping`'s everyone-done branch, or the host's `end-swiping`), `lib/finish-batch.ts` claims `swiping → deciding` with a conditional update and tallies every dealt card with `lib/voting.ts`: one unanimous yes writes `results` and goes to `done`, several go to `ranking`, finalists stay in `deciding` for the host (`final-round`, `go-with-it`, or `deal` back to `swiping`), and none deals the next batch automatically (an exhausted area stays in `deciding` with no finalists, where `widen` is the way out). `ranking → done` once everyone has ranked.
 
 ### Batch dealing (Google Places)
 

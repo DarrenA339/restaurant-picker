@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { bad, UUID } from "@/lib/api";
+import { CallLog } from "@/lib/places/calls";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { finishWithGoogle } from "@/lib/supabase/finish-store";
 import { visitorUser } from "@/lib/supabase/visitor";
 
 /**
  * POST /api/sessions/[id]/end-swiping: the host ends the batch for everyone
- * while someone stalls. Every member is marked done; the cards they never
- * swiped count as no when the tally treats missing swipes as no (voting
- * phase), so nothing is written for them here.
+ * while someone stalls. Every member is marked done and the batch is tallied
+ * (lib/finish-batch.ts); the cards they never swiped count as no because
+ * the tally treats missing swipes as no, so nothing is written for them.
  */
 export async function POST(_request: Request, ctx: RouteContext<"/api/sessions/[id]/end-swiping">) {
   const { id } = await ctx.params;
@@ -16,7 +18,7 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/sessions/[
   if (!user) return bad("Sign in first.", 401);
 
   const admin = supabaseAdmin();
-  const { data: session } = await admin.from("sessions").select("host_id, status, batch").eq("id", id).maybeSingle();
+  const { data: session } = await admin.from("sessions").select("*").eq("id", id).maybeSingle();
   if (!session) return bad("No such session.", 404);
   if (session.host_id !== user.id) return bad("Only the host can end picking.", 403);
   if (session.status !== "swiping") return bad("Picking isn’t running.", 409);
@@ -30,5 +32,19 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/sessions/[
     console.error("end-swiping failed", error);
     return bad("Couldn’t end picking. Try again.", 500);
   }
-  return NextResponse.json({ batch: session.batch, everyoneDone: true });
+
+  const calls = new CallLog();
+  try {
+    const finished = await finishWithGoogle(admin, calls, session);
+    return NextResponse.json({
+      batch: session.batch,
+      everyoneDone: true,
+      ...(finished.ok ? { step: finished.step, status: finished.status } : {}),
+    });
+  } catch (err) {
+    console.error("finish batch failed", err);
+    return bad("Couldn’t tally the batch. Try again.", 500);
+  } finally {
+    calls.log(`POST /api/sessions/${id}/end-swiping`);
+  }
 }

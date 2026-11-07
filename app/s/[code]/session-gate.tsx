@@ -15,6 +15,7 @@ import { Lobby } from "./lobby";
 import { loadLobbyData } from "./lobby-data";
 import { SessionPlaceholder } from "./session-placeholder";
 import { MEMBER_VIEW_COLUMNS, SESSION_VIEW_COLUMNS } from "./session-types";
+import { DecidingView } from "./deciding/deciding-view";
 import { SwipeScreen } from "./swipe/swipe-screen";
 
 /**
@@ -79,6 +80,22 @@ export async function SessionGate({
             initialRestaurants={lobby.restaurants}
             initialMyAddIds={lobby.myAddIds}
             initialSwipes={swipes ?? []}
+            userId={user.id}
+          />
+        );
+      }
+      if (session.status === "deciding") {
+        const [lobby, { data: result }] = await Promise.all([
+          loadLobbyData(supabase, session.id),
+          supabase.from("results").select("finalists").eq("session_id", session.id).maybeSingle(),
+        ]);
+        return (
+          <DecidingView
+            initialSession={session}
+            initialMembers={members ?? []}
+            initialRestaurants={lobby.restaurants}
+            initialMyAddIds={lobby.myAddIds}
+            finalists={result?.finalists ?? []}
             userId={user.id}
           />
         );

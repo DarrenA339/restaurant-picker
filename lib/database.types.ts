@@ -309,7 +309,7 @@ export type Database = {
     }
     Enums: {
       restaurant_source: "member" | "suggested"
-      session_status: "lobby" | "swiping" | "ranking" | "done"
+      session_status: "lobby" | "swiping" | "deciding" | "ranking" | "done"
       swipe_value: "yes" | "no" | "veto"
       voting_method: "plurality" | "borda" | "quadratic"
     }
@@ -440,7 +440,7 @@ export const Constants = {
   public: {
     Enums: {
       restaurant_source: ["member", "suggested"],
-      session_status: ["lobby", "swiping", "ranking", "done"],
+      session_status: ["lobby", "swiping", "deciding", "ranking", "done"],
       swipe_value: ["yes", "no", "veto"],
       voting_method: ["plurality", "borda", "quadratic"],
     },

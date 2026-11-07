@@ -30,7 +30,8 @@ function pendingNote(names: string[]): string {
  * Done and waiting (docs/design/09-done): this member finished the batch,
  * the group's progress updates live (done or still picking, never votes),
  * and the host can end picking for everyone. Once everyone is done the
- * tally is next; it arrives with the voting phase.
+ * server tallies and the status moves on; "Everyone's done" shows for the
+ * moment in between.
  */
 export function DoneView({ session, members, userId, total, onEndSwiping }: DoneViewProps) {
   const isHost = session.host_id === userId;
@@ -102,8 +103,7 @@ export function DoneView({ session, members, userId, total, onEndSwiping }: Done
           <>
             <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">Everyone’s done</h1>
             <p className="text-base leading-[1.45] font-medium text-quiet">
-              Tallying next: the spots the group liked become the finalists. That step lands with the voting
-              phase, so this is as far as it goes for now.
+              Tallying the group’s picks…
             </p>
           </>
         ) : (
