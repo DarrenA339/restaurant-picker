@@ -3,7 +3,8 @@
  * by the Create form, the sessions route (validation), and the Join screen.
  */
 
-export const DISTANCES_MI = [0.5, 1, 2, 5] as const;
+/** The distance slider's snap points. */
+export const DISTANCES_MI = [0.25, 0.5, 1, 2, 3, 5, 10] as const;
 export type DistanceMi = (typeof DISTANCES_MI)[number];
 
 /** Google price levels: 1 = $ … 4 = $$$$. */
@@ -117,6 +118,23 @@ export function formatDistance(mi: DistanceMi): string {
 
 export function priceLabel(level: PriceLevel): string {
   return "$".repeat(level);
+}
+
+/** The price slider's handles: the lowest and highest level that work; an empty list means every level. */
+export function priceRange(prices: readonly PriceLevel[]): [PriceLevel, PriceLevel] {
+  if (prices.length === 0) return [1, 4];
+  return [Math.min(...prices) as PriceLevel, Math.max(...prices) as PriceLevel];
+}
+
+/** Every level from `lo` to `hi`, which is what the filters store. */
+export function pricesBetween(lo: PriceLevel, hi: PriceLevel): PriceLevel[] {
+  return PRICE_LEVELS.filter((level) => level >= lo && level <= hi);
+}
+
+/** The price slider's pill: "$ to $$", or "$$ only" when both handles sit on one level. */
+export function pricePillText(prices: readonly PriceLevel[]): string {
+  const [lo, hi] = priceRange(prices);
+  return lo === hi ? `${priceLabel(lo)} only` : `${priceLabel(lo)} to ${priceLabel(hi)}`;
 }
 
 export const priceName: Record<PriceLevel, string> = {

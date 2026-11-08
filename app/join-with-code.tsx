@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-} from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FieldError, inputClass } from "@/components/ui/field";
@@ -33,7 +27,9 @@ export function JoinWithCode() {
   const open = opened || hashWantsJoin;
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [going, setGoing] = useState(false);
+  // The navigation to the session: busy until it shows, then clear again, so
+  // a cached copy of the home page isn't stuck mid-join when you come back.
+  const [going, startGoing] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,8 +57,7 @@ export function JoinWithCode() {
       return;
     }
     setError(null);
-    setGoing(true);
-    router.push(`/s/${normalized}`);
+    startGoing(() => router.push(`/s/${normalized}`));
   }
 
   return (

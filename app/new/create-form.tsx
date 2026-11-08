@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import {
   AlertIcon,
   BackIcon,
@@ -15,6 +15,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Field, FieldLabel, inputClass } from "@/components/ui/field";
+import { Slider } from "@/components/ui/slider";
 import {
   CUISINES,
   DEFAULT_FILTERS,
@@ -24,12 +25,16 @@ import {
   formatDistance,
   moreSummary,
   priceLabel,
-  priceName,
+  pricePillText,
+  priceRange,
+  pricesBetween,
   type Cuisine,
+  type DistanceMi,
   type PriceLevel,
   type SessionFilters,
 } from "@/lib/session-filters";
 import { ensureSignedIn } from "@/lib/supabase/browser";
+import { useResetOnReturn } from "../use-reset-on-return";
 
 type LatLng = { lat: number; lng: number };
 
@@ -57,8 +62,22 @@ export function CreateForm() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  // The navigation after a create: the button stays busy until the lobby
+  // shows, and clears on its own, so a cached copy of this page is never
+  // stuck on "Creating…".
+  const [navigating, startNavigation] = useTransition();
   // State alone can't stop a second tap that lands before React re-renders.
   const inFlight = useRef(false);
+
+  // Coming back here after a create starts a fresh form.
+  useResetOnReturn(() => {
+    setName("");
+    setHostName("");
+    setFilters({ ...DEFAULT_FILTERS, areaLabel: "" });
+    setCenter(null);
+    setMoreOpen(false);
+    setErrors({});
+  });
 
   function patch(changes: Partial<SessionFilters>) {
     setFilters((current) => ({ ...current, ...changes }));
@@ -141,7 +160,7 @@ export function CreateForm() {
       if (!response.ok || !json?.code) {
         throw new Error(json?.error ?? "Couldn't create the session.");
       }
-      router.push(`/s/${json.code}`);
+      startNavigation(() => router.push(`/s/${json.code}`));
     } catch (error) {
       setErrors({
         form:
@@ -149,6 +168,7 @@ export function CreateForm() {
             ? error.message
             : "Something went wrong. Try again.",
       });
+    } finally {
       setSubmitting(false);
       inFlight.current = false;
     }
@@ -162,7 +182,7 @@ export function CreateForm() {
       footer={
         <Button
           type="submit"
-          loading={submitting}
+          loading={submitting || navigating}
           loadingLabel="Creating…"
           className="w-full"
         >
@@ -179,10 +199,10 @@ export function CreateForm() {
           <BackIcon size={22} />
         </Link>
         <h1 className="text-[30px] leading-[1.1] font-extrabold tracking-[-0.02em]">
-          Set up dinner
+          Set up a meal
         </h1>
         <p className="text-[15px] font-medium text-quiet">
-          Takes about 20 seconds. You can tweak it in the lobby.
+          Choose an area and your preferences, then invite your friends
         </p>
       </div>
 
@@ -225,7 +245,7 @@ export function CreateForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <FieldLabel htmlFor="start-area">Starting area</FieldLabel>
+        <FieldLabel htmlFor="start-area">Where are you starting from?</FieldLabel>
         <AreaField
           id="start-area"
           value={filters.areaLabel}
@@ -241,6 +261,7 @@ export function CreateForm() {
           }}
           onError={(message) => setErrors((e) => ({ ...e, area: message }))}
           maxLength={MAX_AREA_LABEL}
+          placeholder="Search a place"
           invalid={Boolean(errors.area)}
           describedBy={errors.area ? "start-area-error" : "start-area-hint"}
           trailing={
@@ -248,10 +269,14 @@ export function CreateForm() {
               type="button"
               onClick={useMyLocation}
               aria-busy={locating || undefined}
-              className="flex h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-tint px-3 text-[13px] font-bold whitespace-nowrap text-ink"
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-tint px-2.5 text-[13px] font-bold whitespace-nowrap text-ink"
             >
               <SendIcon size={14} strokeWidth={2.4} />
-              {locating ? "Finding…" : filters.areaLabel === YOUR_LOCATION && center ? "Using mine" : "Use mine"}
+              {locating
+                ? "Finding…"
+                : filters.areaLabel === YOUR_LOCATION && center
+                  ? "Using my location"
+                  : "Use my location"}
             </button>
           }
         />
@@ -265,58 +290,32 @@ export function CreateForm() {
           </p>
         ) : (
           <p id="start-area-hint" className="text-[13px] font-medium text-quiet">
-            We search around here until friends join.
+            We’ll find spots around here.
           </p>
         )}
       </div>
 
-      <div
-        role="radiogroup"
-        aria-labelledby="distance-label"
-        className="flex flex-col gap-2.5"
-      >
-        <span id="distance-label" className="text-sm font-bold">
-          How far will you go?
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {DISTANCES_MI.map((mi) => (
-            <Chip
-              key={mi}
-              radio
-              on={filters.distanceMi === mi}
-              onClick={() => patch({ distanceMi: mi })}
-            >
-              {formatDistance(mi)}
-            </Chip>
-          ))}
-        </div>
-      </div>
+      <Slider<DistanceMi>
+        label="How far will you go?"
+        pill={`Within ${formatDistance(filters.distanceMi)}`}
+        steps={DISTANCES_MI}
+        value={[filters.distanceMi]}
+        onChange={([mi]) => patch({ distanceMi: mi })}
+        handleLabels={["How far will you go"]}
+        valueText={formatDistance}
+        stopText={(mi) => String(mi)}
+      />
 
-      <div className="flex flex-col gap-2.5">
-        <span className="text-sm font-bold">
-          Price{" "}
-          <span className="font-medium text-quiet">Pick all that work</span>
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {PRICE_LEVELS.map((level) => (
-            <Chip
-              key={level}
-              on={filters.prices.includes(level)}
-              aria-label={priceName[level]}
-              className="min-w-16"
-              onClick={() =>
-                patch({
-                  prices: toggle<PriceLevel>(filters.prices, level).sort(
-                    (a, b) => a - b,
-                  ),
-                })
-              }
-            >
-              {priceLabel(level)}
-            </Chip>
-          ))}
-        </div>
-      </div>
+      <Slider<PriceLevel>
+        label="Price"
+        pill={pricePillText(filters.prices)}
+        steps={PRICE_LEVELS}
+        value={priceRange(filters.prices)}
+        onChange={([lo, hi]) => patch({ prices: pricesBetween(lo, hi) })}
+        handleLabels={["Lowest price", "Highest price"]}
+        valueText={priceLabel}
+        stopText={priceLabel}
+      />
 
       <div className="overflow-hidden rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(23,24,26,0.07)]">
         <button

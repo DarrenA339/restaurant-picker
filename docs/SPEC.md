@@ -14,7 +14,7 @@ The MVP is the full loop for one group in one sitting. Everything that needs acc
 
 ### MVP
 
-- **Create a session.** Host names it, picks a starting area (typed with autocomplete and resolved to a point, or their own location), how far they'll go (0.5, 1, 2, or 5 miles), which price levels work ($ to $$, any mix), optional cuisines, open now, and vegetarian options, then gets a link and a 6-character code. The host's member row is created with the session.
+- **Create a session.** Host names it, picks a starting area (typed with autocomplete and resolved to a point, or their own location), how far they'll go (a slider from 0.25 to 10 miles that snaps to 0.25, 0.5, 1, 2, 3, 5, and 10), which price levels work (a two-handle range from $ to $$$$), optional cuisines, open now, and vegetarian options, then gets a link and a 6-character code. The host's member row is created with the session.
 - **Join with no account.** Friends open the link, type a display name, pick an avatar color nobody in the group has yet, and share their location or type a starting area. Anonymous sign-in happens behind the scenes, and locations are stored rounded to about 100 m.
 - **Lobby built around adding.** Everyone sees who has joined and every spot the group has added, in real time. Only the host can start.
 - **Add spots (no limit).** Adding is the main lobby activity. Anyone can add as many restaurants as they want by searching a place or a dish, or from the explore map. Adds skip the price and distance filters but still show both on the card. Adding a spot counts as a yes from whoever added it, and they skip their own adds while swiping. Duplicates are rejected, members can remove their own adds, and adds close when the host starts picking. A quiet cap of 40 adds per session applies, shown only when reached. Search runs through `GET /api/places/autocomplete` with session tokens; `POST /api/sessions/[id]/add` checks the cap and duplicates, fetches Place Details with the standard field mask and one photo, and inserts with `source = 'member'`.
@@ -301,7 +301,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 ### Open decisions
 
 - [ ] App name
-- [x] Max distance options: 0.5, 1, 2, and 5 miles, as in the Create design
+- [x] Max distance: a slider from 0.25 to 10 miles snapping to 0.25, 0.5, 1, 2, 3, 5, and 10 (the Create design's chips were 0.5, 1, 2, and 5)
 - [ ] Deck center at the host's location or the group's midpoint
 - [ ] Finalist count of 3 or 5
 - [ ] Quadratic voting credit budget (9, or more if finalists go to 5)

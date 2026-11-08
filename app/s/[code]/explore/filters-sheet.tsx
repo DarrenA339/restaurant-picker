@@ -5,12 +5,15 @@ import { CloseIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Sheet } from "@/components/ui/sheet";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
   CUISINES,
   PRICE_LEVELS,
   priceLabel,
-  priceName,
+  pricePillText,
+  priceRange,
+  pricesBetween,
   type Cuisine,
   type ExploreFilters,
   type PriceLevel,
@@ -72,26 +75,16 @@ export function FiltersSheet({ open, filters, onClose, onApply }: FiltersSheetPr
           />
         </div>
 
-        <div role="group" aria-labelledby="price-label" className="flex flex-col gap-2.5">
-          <span id="price-label" className="text-base font-extrabold">
-            Price
-          </span>
-          <div className="grid grid-cols-4 gap-2">
-            {PRICE_LEVELS.map((level: PriceLevel) => (
-              <Chip
-                key={level}
-                on={draft.prices.includes(level)}
-                aria-label={priceName[level]}
-                onClick={() =>
-                  setDraft({ ...draft, prices: toggled(draft.prices, level).sort((a, b) => a - b) })
-                }
-                className="w-full px-0 font-extrabold"
-              >
-                {priceLabel(level)}
-              </Chip>
-            ))}
-          </div>
-        </div>
+        <Slider<PriceLevel>
+          label="Price"
+          pill={pricePillText(draft.prices)}
+          steps={PRICE_LEVELS}
+          value={priceRange(draft.prices)}
+          onChange={([lo, hi]) => setDraft({ ...draft, prices: pricesBetween(lo, hi) })}
+          handleLabels={["Lowest price", "Highest price"]}
+          valueText={priceLabel}
+          stopText={priceLabel}
+        />
 
         <div role="group" aria-labelledby="cuisine-label" className="flex flex-col gap-2.5">
           <span id="cuisine-label" className="text-base font-extrabold">

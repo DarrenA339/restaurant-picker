@@ -9,7 +9,15 @@ import {
   votingMethodLabel,
 } from "./lobby-copy";
 import { distanceMi, formatMiles, restaurantMeta } from "./restaurants";
-import { activeFilterCount, DEFAULT_FILTERS, exploreFiltersFrom, parseCuisineList } from "./session-filters";
+import {
+  activeFilterCount,
+  DEFAULT_FILTERS,
+  exploreFiltersFrom,
+  parseCuisineList,
+  pricePillText,
+  priceRange,
+  pricesBetween,
+} from "./session-filters";
 
 describe("lobby copy", () => {
   it("labels the voting method like the design", () => {
@@ -91,6 +99,17 @@ describe("explore filters", () => {
     expect(activeFilterCount(filters)).toBe(3);
     expect(activeFilterCount({ openNow: false, prices: [], cuisines: [] })).toBe(0);
     expect(activeFilterCount({ openNow: false, prices: [3], cuisines: ["Thai", "Korean"] })).toBe(3);
+  });
+
+  it("map the price slider's handles to and from the stored levels", () => {
+    expect(priceRange([1, 2])).toEqual([1, 2]);
+    expect(priceRange([3])).toEqual([3, 3]);
+    expect(priceRange([])).toEqual([1, 4]);
+    expect(pricesBetween(2, 4)).toEqual([2, 3, 4]);
+    expect(pricesBetween(1, 4)).toEqual([1, 2, 3, 4]);
+    expect(pricePillText([1, 2])).toBe("$ to $$");
+    expect(pricePillText([2])).toBe("$$ only");
+    expect(pricePillText([])).toBe("$ to $$$$");
   });
 
   it("parse a cuisine list from a query string", () => {

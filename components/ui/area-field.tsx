@@ -56,7 +56,7 @@ export function AreaField({
   onError,
   invalid = false,
   describedBy,
-  placeholder = "A neighborhood or landmark",
+  placeholder = "Search a place",
   maxLength,
   autoFocus,
   trailing,
