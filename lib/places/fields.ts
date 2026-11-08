@@ -20,8 +20,31 @@ export const PLACE_FIELDS = [
   "priceLevel",
   "currentOpeningHours",
   "websiteUri",
-  // Enterprise + Atmosphere
+  // Essentials (types) and Pro (primaryType, accessibility)
+  "types",
+  "primaryType",
+  "accessibilityOptions",
+  // Enterprise + Atmosphere: the filter attributes
   "servesVegetarianFood",
+  "servesBreakfast",
+  "servesBrunch",
+  "servesLunch",
+  "servesDinner",
+  "servesDessert",
+  "servesCoffee",
+  "servesBeer",
+  "servesWine",
+  "servesCocktails",
+  "goodForChildren",
+  "goodForGroups",
+  "goodForWatchingSports",
+  "reservable",
+  "outdoorSeating",
+  "dineIn",
+  "takeout",
+  "delivery",
+  "allowsDogs",
+  "liveMusic",
 ] as const;
 
 /** Place Details: plain field names. */

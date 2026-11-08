@@ -1,7 +1,9 @@
 import type { Json } from "@/lib/database.types";
+import { rankByAttributes } from "@/lib/places/attributes";
+import { cuisineLabel } from "@/lib/places/cuisines";
 import { PRICE_LEVEL_ENUM, toRestaurantData, type GooglePlace, type SearchArea } from "@/lib/places/place";
 import { distanceMi, type LatLng, type RestaurantData } from "@/lib/restaurants";
-import type { PriceLevel, SessionFilters } from "@/lib/session-filters";
+import { PRICE_LEVELS, type SearchFilters } from "@/lib/session-filters";
 
 /**
  * Deck building, as pure functions (docs/SPEC.md "Deck order", "Data
@@ -49,31 +51,33 @@ export type SuggestionRules = {
   maxMi: number;
   /** Places already in the session (and this batch's adds): never dealt twice. */
   exclude: ReadonlySet<string>;
-  /** Nearby Search has no price or open-now filters, so those are applied here. */
-  prices?: readonly PriceLevel[];
-  openNow?: boolean;
+  /**
+   * The session's filters, judged here (lib/places/attributes.ts): Text
+   * Search applies only some of them and Nearby Search none. A place is
+   * dropped only when it is confirmed not to match, and confirmed matches
+   * are dealt before unknown ones.
+   */
+  filters?: SearchFilters;
   limit: number;
 };
 
 export type Suggestion = { placeId: string; place: GooglePlace; data: RestaurantData };
 
-/** The search results that can be dealt: in range, not already in, deduped, at most `limit`. */
+/** The search results that can be dealt: in range, not already in, deduped, filtered, at most `limit`. */
 export function pickSuggestions(places: readonly GooglePlace[], rules: SuggestionRules): Suggestion[] {
-  const picked: Suggestion[] = [];
   const seen = new Set(rules.exclude);
+  const inRange: (GooglePlace & { id: string })[] = [];
   for (const place of places) {
-    if (picked.length >= rules.limit) break;
     const placeId = place.id;
     if (!placeId || seen.has(placeId)) continue;
-    const data = toRestaurantData(place, null);
-    if (!data.location) continue;
-    if (distanceMi(rules.center, data.location) > rules.maxMi) continue;
-    if (rules.prices?.length && (!data.priceLevel || !rules.prices.includes(data.priceLevel))) continue;
-    if (rules.openNow && data.openNow === false) continue;
+    const { latitude: lat, longitude: lng } = place.location ?? {};
+    if (lat === undefined || lng === undefined) continue;
+    if (distanceMi(rules.center, { lat, lng }) > rules.maxMi) continue;
     seen.add(placeId);
-    picked.push({ placeId, place, data });
+    inRange.push({ ...place, id: placeId });
   }
-  return picked;
+  const ranked = rules.filters ? rankByAttributes(inRange, rules.filters) : inRange;
+  return ranked.slice(0, rules.limit).map((place) => ({ placeId: place.id, place, data: toRestaurantData(place, null) }));
 }
 
 /** Each adder's automatic yes on their own adds in this batch (one per member and place). */
@@ -123,19 +127,32 @@ type Circle = { center: { latitude: number; longitude: number }; radius: number 
 /** The deck's Text Search body. Paged requests must repeat it exactly, so it is stored on the session. */
 export type DeckSearchBody = {
   textQuery: string;
-  includedType: "restaurant";
+  /** "restaurant", or the one cuisine type picked (Google's own cuisine filter). */
+  includedType: string;
   pageSize: number;
   locationBias: { circle: Circle };
   openNow?: true;
   priceLevels?: string[];
+  minRating?: number;
   languageCode: "en";
   regionCode: "us";
 };
 
-export function deckSearchBody(filters: SessionFilters, area: SearchArea): DeckSearchBody {
+/** "Korean or Thai restaurants", or "Korean or Thai dumplings": the cuisines lead the words. */
+export function cuisineQuery(cuisines: SearchFilters["cuisines"], words = "restaurants"): string {
+  return [cuisines.map(cuisineLabel).join(" or "), words].filter(Boolean).join(" ");
+}
+
+/**
+ * A Text Search body with the filters Google applies itself: one cuisine as
+ * `includedType` (several lead the words instead), price levels when the
+ * range is narrowed, the rating floor, and open now. Everything else is
+ * judged after the search (lib/places/attributes.ts).
+ */
+export function textSearchBody(filters: SearchFilters, area: SearchArea, words = "restaurants"): DeckSearchBody {
   const body: DeckSearchBody = {
-    textQuery: [filters.cuisines.join(" or "), "restaurants"].filter(Boolean).join(" "),
-    includedType: "restaurant",
+    textQuery: cuisineQuery(filters.cuisines, words),
+    includedType: filters.cuisines.length === 1 ? filters.cuisines[0] : "restaurant",
     pageSize: BATCH_SIZE,
     locationBias: {
       circle: { center: { latitude: area.center.lat, longitude: area.center.lng }, radius: area.radiusM },
@@ -144,8 +161,15 @@ export function deckSearchBody(filters: SessionFilters, area: SearchArea): DeckS
     regionCode: "us",
   };
   if (filters.openNow) body.openNow = true;
-  if (filters.prices.length) body.priceLevels = filters.prices.map((level) => PRICE_LEVEL_ENUM[level]);
+  if (filters.prices.length && filters.prices.length < PRICE_LEVELS.length) {
+    body.priceLevels = filters.prices.map((level) => PRICE_LEVEL_ENUM[level]);
+  }
+  if (filters.minRating > 0) body.minRating = filters.minRating;
   return body;
+}
+
+export function deckSearchBody(filters: SearchFilters, area: SearchArea): DeckSearchBody {
+  return textSearchBody(filters, area);
 }
 
 export type NearbyBody = {

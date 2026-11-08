@@ -10,6 +10,7 @@ import {
   roundRobinAdds,
   seededShuffle,
   subCircles,
+  textSearchBody,
   writeSearchBody,
   type AddRow,
 } from "./deck";
@@ -77,16 +78,21 @@ describe("pickSuggestions", () => {
     expect(pickSuggestions(places, { ...rules, limit: 2 }).map((p) => p.placeId)).toEqual(["p1", "p2"]);
   });
 
-  it("applies price and open-now when asked (Nearby Search has no such filters)", () => {
+  it("judges the filters: confirmed misses go, confirmed matches come first, unknowns keep their place", () => {
     const places = [
-      place("cheap", 0.1, { priceLevel: "PRICE_LEVEL_INEXPENSIVE" }),
+      place("unknown-price", 0.3),
       place("pricey", 0.2, { priceLevel: "PRICE_LEVEL_VERY_EXPENSIVE" }),
-      place("unknown-price", 0.3, { priceLevel: undefined }),
       place("closed", 0.4, { currentOpeningHours: { openNow: false } }),
-      place("open", 0.5, { currentOpeningHours: { openNow: true } }),
+      place("cheap-open", 0.1, { priceLevel: "PRICE_LEVEL_INEXPENSIVE", currentOpeningHours: { openNow: true } }),
+      place("no-wine", 0.5, { priceLevel: "PRICE_LEVEL_INEXPENSIVE", currentOpeningHours: { openNow: true }, servesWine: false }),
     ];
-    const picked = pickSuggestions(places, { ...rules, prices: [1, 2], openNow: true });
-    expect(picked.map((p) => p.placeId)).toEqual(["cheap", "open"]);
+    const filters = { ...DEFAULT_FILTERS, prices: [1 as const, 2 as const], openNow: true, drinks: ["wine" as const] };
+    const picked = pickSuggestions(places, { ...rules, filters });
+    expect(picked.map((p) => p.placeId)).toEqual(["unknown-price", "cheap-open"]);
+    const sure = pickSuggestions([...places, place("sure", 0.6, { priceLevel: "PRICE_LEVEL_MODERATE", currentOpeningHours: { openNow: true }, servesWine: true })], { ...rules, filters });
+    expect(sure.map((p) => p.placeId)).toEqual(["sure", "unknown-price", "cheap-open"]);
+    // The limit applies after ranking, so a sure match is never cut for an unknown one.
+    expect(pickSuggestions([...places, place("sure", 0.6, { priceLevel: "PRICE_LEVEL_MODERATE", currentOpeningHours: { openNow: true }, servesWine: true })], { ...rules, filters, limit: 1 }).map((p) => p.placeId)).toEqual(["sure"]);
   });
 });
 
@@ -128,12 +134,24 @@ describe("deckSearchBody", () => {
       regionCode: "us",
     });
     const cuisines = deckSearchBody(
-      { ...DEFAULT_FILTERS, cuisines: ["Korean", "Thai"], openNow: false, prices: [] },
+      { ...DEFAULT_FILTERS, cuisines: ["korean_restaurant", "thai_restaurant"], openNow: false, prices: [] },
       { center: harvard, radiusM: 2000 },
     );
     expect(cuisines.textQuery).toBe("Korean or Thai restaurants");
+    expect(cuisines.includedType).toBe("restaurant");
     expect(cuisines).not.toHaveProperty("openNow");
     expect(cuisines).not.toHaveProperty("priceLevels");
+    expect(cuisines).not.toHaveProperty("minRating");
+  });
+
+  it("uses Google's own filters where they exist: one cuisine as includedType, the rating floor, no price filter for the full range", () => {
+    const one = deckSearchBody(
+      { ...DEFAULT_FILTERS, cuisines: ["korean_restaurant"], minRating: 4.5, prices: [1, 2, 3, 4] },
+      { center: harvard, radiusM: 2000 },
+    );
+    expect(one).toMatchObject({ textQuery: "Korean restaurants", includedType: "korean_restaurant", minRating: 4.5 });
+    expect(one).not.toHaveProperty("priceLevels");
+    expect(textSearchBody({ ...DEFAULT_FILTERS, cuisines: ["thai_restaurant"] }, { center: harvard, radiusM: 2000 }, "dumplings").textQuery).toBe("Thai dumplings");
   });
 });
 

@@ -265,6 +265,36 @@ describe("dealBatch: later batches", () => {
     expect(db.session.page_token).toBe("page3");
   });
 
+  it("fetches one extra page when the filters leave the batch short, never a third", async () => {
+    const { db, store } = memory({ session: { filters: { ...DEFAULT_FILTERS, drinks: ["wine"] } } });
+    const noWine = places("x", 12).map((p) => ({ ...p, servesWine: false }));
+    const g = google([
+      { places: [...places("p", 8), ...noWine], nextPageToken: "page2" },
+      { places: [...places("q", 6), ...noWine], nextPageToken: "page3" },
+      { places: places("r", 20), nextPageToken: "page4" },
+    ]);
+
+    const result = await dealBatch({ store, places: g }, input(db));
+
+    expect(result).toMatchObject({ ok: true, batch: 1, exhausted: false });
+    if (!result.ok) throw new Error("failed");
+    expect(g.searchText).toHaveBeenCalledTimes(2);
+    expect(g.searchText.mock.calls[1][0]).toMatchObject({ pageToken: "page2" });
+    expect(result.suggestions).toEqual([...places("p", 8), ...places("q", 6)].map((p) => p.id));
+    expect(db.session.page_token).toBe("page3");
+    expect(g.searchNearby).not.toHaveBeenCalled();
+  });
+
+  it("deals confirmed matches before unknown ones", async () => {
+    const { db, store } = memory({ session: { filters: { ...DEFAULT_FILTERS, openNow: false, prices: [], amenities: ["outdoor"] } } });
+    const g = google([{ places: [place("maybe"), place("patio", 0.5, { outdoorSeating: true }), place("inside", 0.5, { outdoorSeating: false })] }]);
+
+    const result = await dealBatch({ store, places: g }, input(db));
+
+    if (!result.ok) throw new Error("failed");
+    expect(result.suggestions).toEqual(["patio", "maybe"]);
+  });
+
   it("switches to Nearby Search over smaller circles once the pages run out, filtering price and open-now", async () => {
     const { db, store } = memory();
     const nearby1 = [...places("n", 10), place("pricey", 0.3, { priceLevel: "PRICE_LEVEL_VERY_EXPENSIVE" }), place("closed", 0.3, { currentOpeningHours: { openNow: false } })];

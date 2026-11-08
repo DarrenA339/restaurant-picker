@@ -9,15 +9,14 @@ import {
   ChevronDownIcon,
   SendIcon,
 } from "@/components/icons";
+import { FiltersForm } from "@/components/filters/filters-form";
 import { FlowScreen } from "@/components/layout/flow-screen";
 import { AreaField } from "@/components/ui/area-field";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { Field, FieldLabel, inputClass } from "@/components/ui/field";
 import { Slider } from "@/components/ui/slider";
 import {
-  CUISINES,
   DEFAULT_FILTERS,
   DISTANCES_MI,
   MAX_AREA_LABEL,
@@ -28,7 +27,6 @@ import {
   pricePillText,
   priceRange,
   pricesBetween,
-  type Cuisine,
   type DistanceMi,
   type PriceLevel,
   type SessionFilters,
@@ -46,10 +44,8 @@ type Errors = {
 };
 
 const YOUR_LOCATION = "Your location";
-
-function toggle<T>(list: T[], item: T): T[] {
-  return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
-}
+/** Price and distance have their own sliders above "More preferences". */
+const ON_THE_FORM = ["price", "distance"] as const;
 
 export function CreateForm() {
   const router = useRouter();
@@ -341,45 +337,8 @@ export function CreateForm() {
           />
         </button>
         {moreOpen ? (
-          <div id="more-prefs" className="flex flex-col gap-4 px-4 pt-1 pb-[18px]">
-            <div className="flex flex-col gap-2.5">
-              <span className="text-sm font-bold">
-                Cuisine <span className="font-medium text-quiet">Optional</span>
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {CUISINES.map((cuisine) => (
-                  <Chip
-                    key={cuisine}
-                    size="sm"
-                    on={filters.cuisines.includes(cuisine)}
-                    onClick={() =>
-                      patch({ cuisines: toggle<Cuisine>(filters.cuisines, cuisine) })
-                    }
-                  >
-                    {cuisine}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <span className="text-sm font-bold">Must have</span>
-              <div className="flex flex-wrap gap-2">
-                <Chip
-                  size="sm"
-                  on={filters.openNow}
-                  onClick={() => patch({ openNow: !filters.openNow })}
-                >
-                  Open now
-                </Chip>
-                <Chip
-                  size="sm"
-                  on={filters.vegetarian}
-                  onClick={() => patch({ vegetarian: !filters.vegetarian })}
-                >
-                  Vegetarian options
-                </Chip>
-              </div>
-            </div>
+          <div id="more-prefs" className="px-4 pt-1 pb-[18px]">
+            <FiltersForm value={filters} onChange={patch} omit={ON_THE_FORM} />
           </div>
         ) : null}
       </div>

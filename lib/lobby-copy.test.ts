@@ -11,12 +11,16 @@ import {
 import { distanceMi, formatMiles, restaurantMeta } from "./restaurants";
 import {
   activeFilterCount,
+  clearedFilters,
   DEFAULT_FILTERS,
   exploreFiltersFrom,
   parseCuisineList,
+  parseFilters,
   pricePillText,
   priceRange,
   pricesBetween,
+  searchFiltersFromParams,
+  searchFiltersToParams,
 } from "./session-filters";
 
 describe("lobby copy", () => {
@@ -95,10 +99,32 @@ describe("restaurant meta", () => {
 describe("explore filters", () => {
   it("start as the session's filters and count what's on", () => {
     const filters = exploreFiltersFrom(DEFAULT_FILTERS);
-    expect(filters).toEqual({ openNow: true, prices: [1, 2], cuisines: [] });
-    expect(activeFilterCount(filters)).toBe(3);
-    expect(activeFilterCount({ openNow: false, prices: [], cuisines: [] })).toBe(0);
-    expect(activeFilterCount({ openNow: false, prices: [3], cuisines: ["Thai", "Korean"] })).toBe(3);
+    expect(filters).toMatchObject({ openNow: true, prices: [1, 2], cuisines: [], meals: [], minRating: 0 });
+    expect(filters).not.toHaveProperty("areaLabel");
+    // Open now and a narrowed price range.
+    expect(activeFilterCount(filters)).toBe(2);
+    expect(activeFilterCount(clearedFilters(filters))).toBe(0);
+    expect(
+      activeFilterCount({
+        ...clearedFilters(filters),
+        prices: [1, 2, 3, 4],
+        cuisines: ["thai_restaurant", "korean_restaurant"],
+        meals: ["brunch"],
+        minRating: 4.5,
+        vegetarian: true,
+        amenities: ["outdoor"],
+      }),
+    ).toBe(6);
+  });
+
+  it("parse stored filters, mapping the first sessions' cuisine names onto Google types", () => {
+    const legacy = { ...DEFAULT_FILTERS, cuisines: ["Korean", "Pizza"] };
+    expect(parseFilters(legacy)?.cuisines).toEqual(["korean_restaurant", "pizza_restaurant"]);
+    expect(parseFilters({ ...DEFAULT_FILTERS, cuisines: ["Martian"] })).toBeNull();
+    const { meals: _m, goodFor: _g, amenities: _a, drinks: _d, minRating: _r, ...older } = DEFAULT_FILTERS;
+    void [_m, _g, _a, _d, _r];
+    expect(parseFilters(older)).toMatchObject({ meals: [], goodFor: [], amenities: [], drinks: [], minRating: 0 });
+    expect(parseFilters({ ...DEFAULT_FILTERS, minRating: 3 })).toBeNull();
   });
 
   it("map the price slider's handles to and from the stored levels", () => {
@@ -112,9 +138,25 @@ describe("explore filters", () => {
     expect(pricePillText([])).toBe("$ to $$$$");
   });
 
+  it("round-trip search filters through a query string, over the session's", () => {
+    const base = exploreFiltersFrom(DEFAULT_FILTERS);
+    const changed = { ...base, prices: [3 as const, 4 as const], meals: ["brunch" as const], minRating: 4 as const, drinks: ["wine" as const], openNow: false };
+    const params = new URLSearchParams(searchFiltersToParams(changed));
+    expect(searchFiltersFromParams(base, (key) => params.get(key))).toEqual(changed);
+    // A missing key keeps the session's value; a bad one rejects the request.
+    expect(searchFiltersFromParams(base, () => null)).toEqual(base);
+    expect(searchFiltersFromParams(base, (key) => (key === "openNow" ? "false" : null))).toEqual({ ...base, openNow: false });
+    expect(searchFiltersFromParams(base, (key) => (key === "minRating" ? "3" : null))).toBeNull();
+    expect(searchFiltersFromParams(base, (key) => (key === "meals" ? "tea" : null))).toBeNull();
+    expect(searchFiltersFromParams(base, (key) => (key === "prices" ? "" : null))).toEqual({ ...base, prices: [] });
+  });
+
   it("parse a cuisine list from a query string", () => {
     expect(parseCuisineList("")).toEqual([]);
-    expect(parseCuisineList("Korean,Thai,Korean")).toEqual(["Korean", "Thai"]);
-    expect(parseCuisineList("Korean,Martian")).toBeNull();
+    expect(parseCuisineList("korean_restaurant,thai_restaurant,korean_restaurant")).toEqual([
+      "korean_restaurant",
+      "thai_restaurant",
+    ]);
+    expect(parseCuisineList("korean_restaurant,martian_restaurant")).toBeNull();
   });
 });

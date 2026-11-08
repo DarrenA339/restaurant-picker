@@ -83,6 +83,8 @@ export type DealResult =
   | { ok: false; code: "not_lobby" | "not_swiping" | "nothing_to_deal" | "conflict" };
 
 const PHOTO_CONCURRENCY = 5;
+/** Extra Text Search pages per deal when the server-side filters leave a batch short. */
+const EXTRA_PAGES = 1;
 
 /** Runs `fn` over `items`, at most `limit` at a time, keeping order. */
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -143,37 +145,35 @@ export async function dealBatch(deps: DealDeps, input: DealInput): Promise<DealR
 
   if (need > 0 && session.suggestions_on && addsLeft === 0) {
     const exclude = new Set([...known, ...batchAdds]);
-    const rules = { center: area.center, maxMi: filters.distanceMi, exclude, limit: need };
+    // Every filter is judged on the results: Google applies only some of them
+    // in a Text Search and none in a Nearby Search (lib/places/attributes.ts).
+    const rules = { center: area.center, maxMi: filters.distanceMi, exclude, filters };
+    const take = (found: GooglePlace[]) => {
+      for (const picked of pickSuggestions(found, { ...rules, limit: need - suggestions.length })) {
+        suggestions.push(picked);
+        exclude.add(picked.placeId);
+      }
+    };
 
-    // Text Search: the first page, or the next one while Google has more.
-    if (!state.body || state.pageToken) {
-      const body = state.body ?? deckSearchBody(filters, area);
+    // Text Search: the first page, or the next one while Google has more. When
+    // the filters leave the batch short, one extra page (never a third per deal).
+    const body = state.body ?? deckSearchBody(filters, area);
+    for (let page = 0; page < 1 + EXTRA_PAGES; page += 1) {
+      if (!(page === 0 ? !state.body || state.pageToken : suggestions.length < need && state.pageToken)) break;
       const result = await places.searchText(
         state.pageToken ? { ...body, pageToken: state.pageToken } : body,
       );
       state = { body, pageToken: result.nextPageToken ?? null, nearbyNext: state.nearbyNext };
-      for (const picked of pickSuggestions(result.places ?? [], rules)) {
-        suggestions.push(picked);
-        exclude.add(picked.placeId);
-      }
+      take(result.places ?? []);
     }
 
-    // Past the pages: smaller circles, filtered here since Nearby has no price or open-now filters.
+    // Past the pages: smaller circles, every filter judged here since Nearby has none.
     const circles = subCircles(area);
     while (suggestions.length < need && !state.pageToken && state.nearbyNext < circles.length) {
       const circle = circles[state.nearbyNext];
       state = { ...state, nearbyNext: state.nearbyNext + 1 };
       const result = await places.searchNearby(nearbyBody(circle));
-      const picked = pickSuggestions(result.places ?? [], {
-        ...rules,
-        prices: filters.prices,
-        openNow: filters.openNow,
-        limit: need - suggestions.length,
-      });
-      for (const suggestion of picked) {
-        suggestions.push(suggestion);
-        exclude.add(suggestion.placeId);
-      }
+      take(result.places ?? []);
     }
 
     exhausted = suggestions.length === 0 && !state.pageToken && state.nearbyNext >= circles.length;

@@ -28,7 +28,29 @@ export type GooglePlace = {
     weekdayDescriptions?: string[];
   };
   utcOffsetMinutes?: number;
+  types?: string[];
+  primaryType?: string;
+  accessibilityOptions?: { wheelchairAccessibleEntrance?: boolean };
   servesVegetarianFood?: boolean;
+  servesBreakfast?: boolean;
+  servesBrunch?: boolean;
+  servesLunch?: boolean;
+  servesDinner?: boolean;
+  servesDessert?: boolean;
+  servesCoffee?: boolean;
+  servesBeer?: boolean;
+  servesWine?: boolean;
+  servesCocktails?: boolean;
+  goodForChildren?: boolean;
+  goodForGroups?: boolean;
+  goodForWatchingSports?: boolean;
+  reservable?: boolean;
+  outdoorSeating?: boolean;
+  dineIn?: boolean;
+  takeout?: boolean;
+  delivery?: boolean;
+  allowsDogs?: boolean;
+  liveMusic?: boolean;
 };
 
 /**

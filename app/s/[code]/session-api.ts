@@ -1,6 +1,7 @@
 import type { VotingMethod } from "@/lib/lobby-copy";
 import type { AutocompleteResult, SearchResult } from "@/lib/places/place";
 import type { RestaurantRow } from "@/lib/restaurants";
+import { searchFiltersToParams, type SearchFilters } from "@/lib/session-filters";
 
 type SessionPatch = { voting_method?: VotingMethod; suggestions_on?: boolean };
 
@@ -147,9 +148,8 @@ export type SearchOptions = {
   lat?: number;
   lng?: number;
   radius?: number;
-  prices?: readonly number[];
-  openNow?: boolean;
-  cuisines?: readonly string[];
+  /** The explore map's filters; absent means the session's. */
+  filters?: SearchFilters;
 };
 
 /** One Text Search for the explore list. */
@@ -161,9 +161,9 @@ export async function searchPlaces(sessionId: string, options: SearchOptions, si
     params.set("lng", String(options.lng));
   }
   if (options.radius !== undefined) params.set("radius", String(Math.round(options.radius)));
-  if (options.prices) params.set("prices", options.prices.join(","));
-  if (options.openNow !== undefined) params.set("openNow", String(options.openNow));
-  if (options.cuisines) params.set("cuisines", options.cuisines.join(","));
+  if (options.filters) {
+    for (const [key, value] of Object.entries(searchFiltersToParams(options.filters))) params.set(key, value);
+  }
   const response = await fetch(`/api/places/search?${params}`, { signal });
   if (!response.ok) return fail(response, "Search isn’t working right now.");
   return (await response.json()) as SearchResult;

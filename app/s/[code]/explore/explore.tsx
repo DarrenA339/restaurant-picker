@@ -203,9 +203,7 @@ export function Explore({
           lat: area?.center.lat,
           lng: area?.center.lng,
           radius: area?.radiusM,
-          prices: withFilters.prices,
-          openNow: withFilters.openNow,
-          cuisines: withFilters.cuisines,
+          filters: withFilters,
         },
         controller.signal,
       );
