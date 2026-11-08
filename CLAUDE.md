@@ -64,7 +64,9 @@ Mobile is the design; from 1024px (Tailwind's `lg`) every screen takes the deskt
 - `Brand` / `BrandHeader`: the "[APP NAME]" mark at its two sizes.
 - `components/ui/sheet.tsx`: a bottom sheet on phones, a centered dialog from `lg` (`size="narrow"` 520px for filters and the voting method, `"wide"` 960px for details). `useIsDesktop()` in `components/layout/use-desktop.ts` is the matching media query for client logic.
 
-Phone-only and desktop-only elements (the lobby's avatar stack vs. its "Who's here" list, "Invite" vs. "Copy invite link") are rendered once with `lg:hidden` / `hidden lg:flex`, not duplicated components.
+Phone-only and desktop-only elements (the lobby's avatar stack vs. its "Who's here" list, "Invite" vs. "Invite friends") are rendered once with `lg:hidden` / `hidden lg:flex`, not duplicated components.
+
+Toasts come from `useToast()` in `components/ui/toast.tsx` (one portal layer mounted in `app/layout.tsx`), never from a screen's own `fixed` element: the layer sits above the tallest pinned bottom bar, which `ScreenFooter` reports on its own and other pinned bars report with `useBottomBar` / `BottomBar` from `components/layout/bottom-bar.tsx`.
 
 ### Session state machine
 

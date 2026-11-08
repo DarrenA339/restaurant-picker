@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
-  AlertIcon,
   BackIcon,
   CheckIcon,
   CloseIcon,
@@ -13,6 +12,9 @@ import {
   SlidersIcon,
   SpinnerIcon,
 } from "@/components/icons";
+import { useBottomBar } from "@/components/layout/bottom-bar";
+import { useIsDesktop } from "@/components/layout/use-desktop";
+import { useToast } from "@/components/ui/toast";
 import { spotsLabel } from "@/lib/lobby-copy";
 import {
   BOSTON,
@@ -44,13 +46,10 @@ type ExploreProps = {
   userId: string;
 };
 
-type Toast = { kind: "ok" | "error"; text: string; retry?: () => void };
 type LastSearch = { text: string; area: SearchArea | null };
 
 const DEBOUNCE_MS = 250;
 const MIN_CHARS = 2;
-const TOAST_OK_MS = 2200;
-const TOAST_ERROR_MS = 6000;
 
 function isAbort(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
@@ -101,7 +100,9 @@ export function Explore({
   const [moved, setMoved] = useState(false);
   const [fit, setFit] = useState<FitRequest | null>(null);
   const [adding, setAdding] = useState<ReadonlySet<string>>(new Set());
-  const [toast, setToast] = useState<Toast | null>(null);
+  const { show: showToast } = useToast();
+  const desktop = useIsDesktop();
+  const panelRef = useBottomBar(!desktop);
 
   // One autocomplete session token per typing session; it ends with the add
   // (Place Details) or is dropped after a Text Search.
@@ -109,14 +110,12 @@ export function Explore({
   const debounceRef = useRef<number | undefined>(undefined);
   const predictAbortRef = useRef<AbortController | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
-  const toastTimerRef = useRef<number | undefined>(undefined);
   const fitKeyRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(
     () => () => {
       window.clearTimeout(debounceRef.current);
-      window.clearTimeout(toastTimerRef.current);
       predictAbortRef.current?.abort();
       searchAbortRef.current?.abort();
     },
@@ -130,15 +129,6 @@ export function Explore({
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     row?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
   }, [selected]);
-
-  const showToast = useCallback((next: Toast) => {
-    window.clearTimeout(toastTimerRef.current);
-    setToast(next);
-    toastTimerRef.current = window.setTimeout(
-      () => setToast(null),
-      next.kind === "ok" ? TOAST_OK_MS : TOAST_ERROR_MS,
-    );
-  }, []);
 
   function token(): string {
     tokenRef.current ??= crypto.randomUUID();
@@ -492,6 +482,7 @@ export function Explore({
         <div className="min-h-0 flex-1 lg:hidden" aria-hidden="true" />
 
         <section
+          ref={panelRef}
           aria-labelledby="explore-title"
           className="pointer-events-auto flex h-[344px] shrink-0 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(23,24,26,0.10)] lg:h-auto lg:min-h-0 lg:flex-1 lg:rounded-none lg:shadow-none"
         >
@@ -571,34 +562,6 @@ export function Explore({
         onClose={() => setDetailsId(null)}
       />
 
-      {toast ? (
-        toast.kind === "ok" ? (
-          <div
-            role="status"
-            className="fixed bottom-[360px] left-1/2 z-30 flex h-11 -translate-x-1/2 items-center gap-2 rounded-field bg-ink px-4 text-sm font-bold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(23,24,26,0.2)] lg:bottom-6 lg:left-[200px]"
-          >
-            <CheckIcon size={16} strokeWidth={3} />
-            {toast.text}
-          </div>
-        ) : (
-          <div
-            role="alert"
-            className="fixed right-4 bottom-[360px] left-4 z-30 flex min-h-12 items-center gap-2.5 rounded-field border-[1.5px] border-[#EBCFCA] bg-surface py-1 pr-1.5 pl-3.5 text-sm font-bold text-ink shadow-[0_8px_20px_rgba(23,24,26,0.12)] lg:right-auto lg:bottom-6 lg:left-5 lg:w-[360px]"
-          >
-            <AlertIcon size={16} className="shrink-0 text-[#A3271B]" />
-            <span className="flex-1">{toast.text}</span>
-            {toast.retry ? (
-              <button
-                type="button"
-                onClick={toast.retry}
-                className="h-[38px] shrink-0 rounded-[10px] bg-ink px-3 text-[13px] font-extrabold text-white"
-              >
-                Try again
-              </button>
-            ) : null}
-          </div>
-        )
-      ) : null}
     </div>
   );
 }

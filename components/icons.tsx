@@ -315,6 +315,34 @@ export function ChevronUpIcon(props: IconProps) {
   );
 }
 
+/** The share arrow: up and out of a tray. */
+export function ShareIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 14V3" />
+      <path d="M8 7l4-4 4 4" />
+      <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    </Svg>
+  );
+}
+
+export function ChatIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z" />
+    </Svg>
+  );
+}
+
+export function MailIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="M3 8l9 6 9-6" />
+    </Svg>
+  );
+}
+
 export function MinusIcon(props: IconProps) {
   return (
     <Svg strokeWidth={2.6} {...props}>

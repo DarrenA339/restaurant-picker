@@ -1,9 +1,11 @@
 "use client";
 
 import { useReducedMotion } from "motion/react";
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
-import { AlertIcon, RefreshIcon } from "@/components/icons";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { RefreshIcon } from "@/components/icons";
+import { BottomBar } from "@/components/layout/bottom-bar";
 import { TwoColumn, WideScreen } from "@/components/layout/two-column";
+import { useToast } from "@/components/ui/toast";
 import { AvatarStack } from "@/components/ui/avatar";
 import { buildMemberDeck } from "@/lib/deck";
 import { toPersonColor } from "@/lib/people";
@@ -34,7 +36,6 @@ type SwipeScreenProps = {
 type Leaving = { placeId: string; value: SwipeValue };
 type Toast = { text: string; retry?: () => void };
 
-const TOAST_MS = 6000;
 const TYPING_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 function isTyping(target: EventTarget | null) {
@@ -82,8 +83,7 @@ export function SwipeScreen({
   const [detailsOpen, setDetailsOpen] = useState(false);
   // Vetoes left: the member row's count, or an optimistic value until the server catches up.
   const [vetoOverride, setVetoOverride] = useState<{ base: number; value: number } | null>(null);
-  const [toast, setToast] = useState<Toast | null>(null);
-  const toastTimer = useRef<number | undefined>(undefined);
+  const toast = useToast();
 
   const serverVetoes = me?.vetoes_left ?? 0;
   const vetoesLeft =
@@ -100,19 +100,15 @@ export function SwipeScreen({
 
   const currentData = current ? readRestaurantData(current.data) : null;
 
-  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
-
   function showToast(next: Toast) {
-    window.clearTimeout(toastTimer.current);
-    setToast(next);
-    toastTimer.current = window.setTimeout(() => setToast(null), TOAST_MS);
+    toast.show({ kind: "error", ...next });
   }
 
   async function vote(value: SwipeValue, card: RestaurantRow | null = current) {
     if (!card || leaving) return;
     if (value === "veto" && vetoesLeft <= 0) return;
     setDetailsOpen(false);
-    setToast(null);
+    toast.dismiss();
     setSwiped((map) => new Map(map).set(card.place_id, value));
     setLeaving({ placeId: card.place_id, value });
     if (value === "veto") setVetoOverride({ base: serverVetoes, value: vetoesLeft - 1 });
@@ -314,9 +310,9 @@ export function SwipeScreen({
               ) : null}
             </div>
 
-            <div className="shrink-0 pt-4 lg:pt-0">
+            <BottomBar className="shrink-0 pt-4 lg:pt-0">
               <VoteButtons vetoesLeft={vetoesLeft} disabled={!current} onVote={(value) => void vote(value)} />
-            </div>
+            </BottomBar>
 
             <p className="hidden flex-wrap justify-center gap-x-4 gap-y-1.5 text-[13px] font-semibold text-quiet lg:flex">
               <Key label="No">←</Key>
@@ -342,24 +338,6 @@ export function SwipeScreen({
         }
       />
 
-      {toast ? (
-        <div
-          role="alert"
-          className="fixed right-5 bottom-[106px] left-5 z-30 mx-auto flex min-h-12 max-w-[390px] items-center gap-2.5 rounded-field border-[1.5px] border-[#EBCFCA] bg-surface py-1 pr-1.5 pl-3.5 text-sm font-bold text-ink shadow-[0_8px_20px_rgba(23,24,26,0.12)] lg:bottom-8"
-        >
-          <AlertIcon size={16} className="shrink-0 text-[#A3271B]" />
-          <span className="flex-1">{toast.text}</span>
-          {toast.retry ? (
-            <button
-              type="button"
-              onClick={toast.retry}
-              className="h-[38px] shrink-0 rounded-[10px] bg-ink px-3 text-[13px] font-extrabold text-white"
-            >
-              Try again
-            </button>
-          ) : null}
-        </div>
-      ) : null}
     </WideScreen>
   );
 }

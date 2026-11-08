@@ -180,7 +180,7 @@ export function Lobby({
             label={hereLabel(names)}
           />
         </div>
-        <InviteButton code={session.code} />
+        <InviteButton code={session.code} name={session.name} />
       </div>
     </header>
   );

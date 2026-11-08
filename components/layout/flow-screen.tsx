@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import { BottomBar } from "./bottom-bar";
 import { BrandHeader } from "./brand";
 
 type FlowScreenProps = HTMLAttributes<HTMLElement> & {
@@ -47,14 +48,15 @@ type ScreenFooterProps = {
 /**
  * The bottom bar that holds a screen's main action: sticky over the content
  * on phones (full-bleed inside a column with 20px side padding), inline at
- * the end of the column on desktop.
+ * the end of the column on desktop. On phones it reports its height so
+ * toasts sit above it (components/layout/bottom-bar.tsx).
  */
 export function ScreenFooter({ className = "", children }: ScreenFooterProps) {
   return (
-    <div
+    <BottomBar
       className={`sticky bottom-0 -mx-5 shrink-0 bg-page px-5 pt-3 pb-[calc(24px+env(safe-area-inset-bottom,0px))] shadow-[0_-1px_0_var(--color-track)] lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:pb-0 lg:shadow-none ${className}`}
     >
       {children}
-    </div>
+    </BottomBar>
   );
 }
