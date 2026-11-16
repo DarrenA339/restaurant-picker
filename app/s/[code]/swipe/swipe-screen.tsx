@@ -68,8 +68,7 @@ export function SwipeScreen({
     session.center_lat != null && session.center_lng != null
       ? { lat: session.center_lat, lng: session.center_lng }
       : null;
-  const origin: LatLng | null =
-    me?.lat != null && me.lng != null ? { lat: me.lat, lng: me.lng } : sessionCenter;
+  const viewer: LatLng | null = me?.lat != null && me.lng != null ? { lat: me.lat, lng: me.lng } : null;
 
   const deck = useMemo(
     () => buildMemberDeck(live.restaurants, { userId, batch: session.batch, myAddIds: live.myAddIds }),
@@ -259,7 +258,7 @@ export function SwipeScreen({
           <div className="relative mt-3.5 h-[188px] shrink-0 overflow-hidden rounded-card shadow-[0_1px_3px_rgba(23,24,26,0.08)] lg:mt-0 lg:h-[620px]">
             <MapStrip
               pin={pin}
-              fallback={sessionCenter ?? origin ?? BOSTON}
+              fallback={sessionCenter ?? viewer ?? BOSTON}
               members={mapMembers}
               viewerId={userId}
               reducedMotion={reducedMotion}
@@ -286,7 +285,8 @@ export function SwipeScreen({
                 <SwipeCard
                   key={current.place_id}
                   data={currentData}
-                  origin={origin}
+                  viewer={viewer}
+                  meetingArea={sessionCenter}
                   interactive={!leaving}
                   leaving={null}
                   reducedMotion={reducedMotion}
@@ -299,7 +299,8 @@ export function SwipeScreen({
                 <SwipeCard
                   key={`leaving-${leaving.placeId}`}
                   data={leavingData}
-                  origin={origin}
+                  viewer={viewer}
+                  meetingArea={sessionCenter}
                   interactive
                   leaving={leaving.value}
                   reducedMotion={reducedMotion}
@@ -325,8 +326,10 @@ export function SwipeScreen({
       />
 
       <DetailsSheet
+        sessionId={session.id}
         place={details}
-        origin={origin}
+        viewer={viewer}
+        meetingArea={sessionCenter}
         onClose={() => setDetailsOpen(false)}
         footer={
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-end">

@@ -7,8 +7,7 @@ import { BrandHeader } from "@/components/layout/brand";
 import { Button } from "@/components/ui/button";
 import { hoursLine } from "@/lib/places/place";
 import {
-  distanceMi,
-  formatMiles,
+  distanceLabel,
   readRestaurantData,
   restaurantMeta,
   type LatLng,
@@ -45,12 +44,13 @@ function directionsUrl(name: string, placeId: string): string {
 /** Dinner decided (docs/design/11-winner): the winner, directions, details, the runners-up in order. */
 export function WinnerView({ session, members, restaurants, order, winnerId, userId }: WinnerViewProps) {
   const me = members.find((m) => m.user_id === userId);
-  const origin: LatLng | null =
-    me?.lat != null && me.lng != null
-      ? { lat: me.lat, lng: me.lng }
-      : session.center_lat != null && session.center_lng != null
-        ? { lat: session.center_lat, lng: session.center_lng }
-        : null;
+  const viewer: LatLng | null = me?.lat != null && me.lng != null ? { lat: me.lat, lng: me.lng } : null;
+  const meetingArea: LatLng | null =
+    session.center_lat != null && session.center_lng != null
+      ? { lat: session.center_lat, lng: session.center_lng }
+      : null;
+  /** Where the runners-up's unlabelled distances are measured from. */
+  const origin: LatLng | null = viewer ?? meetingArea;
   const byPlace = new Map(restaurants.map((row) => [row.place_id, row]));
   const dataFor = (placeId: string | null): RestaurantData | null => {
     const row = placeId ? byPlace.get(placeId) : null;
@@ -77,7 +77,7 @@ export function WinnerView({ session, members, restaurants, order, winnerId, use
     );
   }
 
-  const distance = origin && winner.location ? `${formatMiles(distanceMi(origin, winner.location))} from you` : null;
+  const distance = distanceLabel(viewer, meetingArea, winner.location);
   const hours = hoursLine(winner);
 
   return (
@@ -197,8 +197,10 @@ export function WinnerView({ session, members, restaurants, order, winnerId, use
       </main>
 
       <DetailsSheet
+        sessionId={session.id}
         place={detailsOpen ? { placeId: winnerId, data: winner } : null}
-        origin={origin}
+        viewer={viewer}
+        meetingArea={meetingArea}
         onClose={() => setDetailsOpen(false)}
         footer={
           <Button variant="secondary" onClick={() => setDetailsOpen(false)} className="w-full lg:w-[180px]">

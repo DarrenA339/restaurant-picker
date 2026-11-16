@@ -71,7 +71,7 @@ Mobile is the primary design. At 1024px and wider, screens adapt instead of stre
 | Join | First visit to the link | Who's in, the host's invite, a display name and avatar color, and a location prompt |
 | Lobby | Status is lobby | Add bar (search a place or dish, plus a map button), the group's added spots with remove on your own, the voting method (host can change it), the host's suggestions toggle, avatars, the Invite button, and the host's Start button. Invite opens a sheet (a dialog on desktop) with the session name and join code in large type, a QR code of the link for friends at the same table, Share invite (the Web Share API with the title, "Help pick where we eat", and the link, shown only where `navigator.share` exists), Copy link (clipboard plus the "Invite link copied" toast), and on desktop Messages (`sms:`), WhatsApp (`wa.me`), and Email (`mailto:`) links |
 | Explore | Opened from the lobby's add bar or map button | Full-screen map with search, filter chips, result pins, and a results sheet with Add buttons. Typing shows autocomplete predictions: a place prediction adds that spot straight away (its Place Details call ends the autocomplete session), a dish prediction or Enter runs one Text Search. Phase 6 part 1 ships the search and the list; the map, pins, "Search this area," filters, and the details sheet follow in part 2 |
-| Swipe | Status is swiping | Map strip on the top 30% with the current pin and member dots, card deck below, vetoes left, and the details bottom sheet on tap. A vote is a deliberate horizontal swipe or a button; a tap opens details. Votes are written optimistically (insert, then update on conflict), rolled back with a retry toast if the write fails, including the database refusing a third veto. The member resumes at their first unswiped card after a reload |
+| Swipe | Status is swiping | Map strip on the top 30% with the current pin and member dots, card deck below, vetoes left, and the details bottom sheet on tap (gallery, address, the week's hours, chips, Google's summary, reviews, and Menu or Website, Directions and Call). A vote is a deliberate horizontal swipe or a button; a tap opens details. Votes are written optimistically (insert, then update on conflict), rolled back with a retry toast if the write fails, including the database refusing a third veto. The member resumes at their first unswiped card after a reload |
 | Waiting | You finished the current batch | "3 of 5 done with this batch" with no vote counts and the host's End swiping button. When everyone finishes, the host picks Go to ranking or Deal 20 more |
 | Deciding | Status is deciding | The finalists as compact rows with no vote counts. The host picks Go to final round (Go with it for one finalist) or Deal 20 more; guests see "Waiting for Sam to decide." With no finalists at all the area ran out of places: the "Nothing matches these filters" edge state, with Widen for the host |
 | Final round | Status is ranking | The session's method: pick one finalist, drag the finalists into order, or spread 9 quadratic credits with steppers |
@@ -100,6 +100,7 @@ These run on Vercel with the secret keys. Swipes write straight to Supabase, gua
 | `GET /api/places/area/[placeId]` | Resolves a picked area with a Place Details call for only `location` and `formattedAddress`, on the same token, which becomes the session's center or the member's location |
 | `GET /api/places/search` | The explore map's search and "Search this area," one Text Search call per request |
 | `POST /api/sessions/[id]/add` | Lobby only. Adds a member's spot: checks the session cap and duplicates, fetches Place Details and one photo, inserts with `source = 'member'` and an `adds` row |
+| `POST /api/sessions/[id]/photos` | Members only, any status. The details sheet's gallery for one place (`lib/gallery.ts`): returns the photos kept in `place_photos`, or on the first open resolves up to three more photos for a card (four for an explore result, lobby only) and keeps them for the session |
 | `DELETE /api/sessions/[id]/add/[placeId]` | Lobby only. Removes one of the caller's own adds |
 | `POST /api/sessions/[id]/start` | Host only, lobby only. Builds batch 1 from the group's adds, then fills to 20 with one Text Search call if suggestions are on, resolves photos, records each adder's yes, moves status to swiping |
 | `POST /api/sessions/[id]/done-swiping` | Marks a member done with the batch (a conditional flip, so a repeat changes nothing). Once the whole group is, the tally runs over every dealt card so far (`lib/finish-batch.ts`): the transition is claimed with `update sessions set status = 'deciding' where status = 'swiping' and batch = N`, so it runs once; then a single unanimous yes writes the result and ends the session, several go straight to ranking, finalists wait for the host in deciding, and none deals the next batch (or leaves deciding empty when the area is out of places) |
@@ -168,7 +169,8 @@ Each member add takes one Place Details call and one photo. Suggestions take one
 | Places API (New) Autocomplete + Place Details (Essentials) | A typed starting area on Create or Join | 1 session + 1 location-only details call per typed area | MVP |
 | Places API (New) Text Search | Suggestions after the group's adds, up to 60 per area at 20 per page, plus explore map searches | 1 per batch of suggestions, 1 per explore search | MVP |
 | Places API (New) Nearby Search | Suggestions past 60: the area becomes seven smaller circles (the center and six around it at 0.6 r, each r/2), one call per circle until the batch fills, duplicates removed by place ID, and every filter applied in code since Nearby has none | 1 per smaller circle | MVP |
-| Places API (New) Place Photos | One photo per card | 1 per add or suggestion | MVP |
+| Places API (New) Place Photos | One photo per card, and the details sheet's gallery | 1 per add or suggestion, plus up to 3 more the first time a card's details sheet is opened in a session (up to 4 for an explore result that isn't added yet) | MVP |
+| Places API (New) Place Details (IDs Only) | Photo names for a gallery when the place has none stored (an explore result, or a card dealt before names were stored) | 1 per such gallery, free | MVP |
 | Restaurant's own website | Menu link in the bottom sheet | 0 | MVP |
 | Curated menu summaries | Popular dishes for about 150 restaurants | 0 (built once) | V2 |
 
@@ -195,14 +197,14 @@ Google often has no value for these attributes, so the code (`lib/places/attribu
 
 ### Search field mask
 
-Google bills a request at the highest tier among the fields you ask for ([source](https://developers.google.com/maps/billing-and-pricing/sku-details/places)). Cards need fields from three tiers, and Place Details for adds uses the same fields.
+Google bills a request at the highest tier among the fields you ask for ([source](https://developers.google.com/maps/billing-and-pricing/sku-details/places)). Cards need fields from three tiers, and Place Details for adds uses the same fields. The details sheet's fields are in the same mask, so a card's details cost no extra call; only its gallery does (see Photos).
 
 | Tier | Fields |
 | --- | --- |
 | Essentials | `places.types` (the cuisine filter) |
-| Pro | `places.id`, `places.displayName`, `places.location`, `places.photos`, `places.googleMapsUri`, `places.primaryTypeDisplayName` (the cuisine line), `places.primaryType`, `places.utcOffsetMinutes` (to print "open until 11 PM" in the place's own time), `places.accessibilityOptions` |
-| Enterprise | `places.rating`, `places.userRatingCount`, `places.priceLevel`, `places.currentOpeningHours`, `places.websiteUri` |
-| Enterprise + Atmosphere | `places.servesVegetarianFood`, `places.servesBreakfast`, `places.servesBrunch`, `places.servesLunch`, `places.servesDinner`, `places.servesDessert`, `places.servesCoffee`, `places.servesBeer`, `places.servesWine`, `places.servesCocktails`, `places.goodForChildren`, `places.goodForGroups`, `places.goodForWatchingSports`, `places.reservable`, `places.outdoorSeating`, `places.dineIn`, `places.takeout`, `places.delivery`, `places.allowsDogs`, `places.liveMusic` (the filter attributes) |
+| Pro | `places.id`, `places.displayName`, `places.location`, `places.photos`, `places.googleMapsUri`, `places.primaryTypeDisplayName` (the cuisine line), `places.primaryType`, `places.utcOffsetMinutes` (to print "open until 11 PM" in the place's own time, and to find today in the week's hours), `places.accessibilityOptions`, `places.shortFormattedAddress` (the sheet's address line) |
+| Enterprise | `places.rating`, `places.userRatingCount`, `places.priceLevel`, `places.currentOpeningHours` (the open state and the week's `weekdayDescriptions`), `places.websiteUri`, `places.priceRange` ("$20–30 per person"), `places.internationalPhoneNumber` (the Call button) |
+| Enterprise + Atmosphere | `places.servesVegetarianFood`, `places.servesBreakfast`, `places.servesBrunch`, `places.servesLunch`, `places.servesDinner`, `places.servesDessert`, `places.servesCoffee`, `places.servesBeer`, `places.servesWine`, `places.servesCocktails`, `places.goodForChildren`, `places.goodForGroups`, `places.goodForWatchingSports`, `places.reservable`, `places.outdoorSeating`, `places.dineIn`, `places.takeout`, `places.delivery`, `places.allowsDogs`, `places.liveMusic` (the filter attributes, and the sheet's chips); `places.editorialSummary`, `places.generativeSummary`, `places.reviewSummary`, `places.reviews`, `places.paymentOptions` (the details sheet) |
 
 The vegetarian flag pushes every search and every Place Details call to the top tier, so the other attribute fields cost nothing extra: a request is billed at its highest tier, not per field. That stays inside the free caps, since the Enterprise tiers get 1,000 free calls a month per SKU.
 
@@ -210,7 +212,23 @@ The vegetarian flag pushes every search and every Place Details call to the top 
 
 The server resolves each photo once with `skipHttpRedirect=true` when a spot is added or dealt, and stores the returned `photoUri` on the restaurant row. Every member's browser loads that URI directly, so each card costs one photo no matter how many people join. A proxy route would bill once per photo per phone instead.
 
-Store Places content only for the life of a session, and read Google's terms before keeping anything longer.
+The details sheet shows up to four photos. The names and author credits of a place's first four photos are stored with the card (`details.photos`), and nothing more is resolved until someone opens that card's sheet. The first open in a session calls `POST /api/sessions/[id]/photos`, which resolves photos 2 to 4 (the card's own photo is the first), stores the URIs in `place_photos`, and returns them; every later open, by any member, reads that row and costs nothing. An explore result that isn't in the session has no photo yet, so its first open resolves all four, and only while the session is in the lobby. Its photo names come from a Place Details call for `id,photos` alone, which Google bills at the free IDs Only tier; the browser never supplies photo names. A photo that fails is left out and the gallery isn't stored, so the next open tries again.
+
+### Details sheet content
+
+The sheet shows only what Google sent, each part hidden when it is missing:
+
+- **Summary.** `editorialSummary` if there is one, else `generativeSummary.overview`, else `reviewSummary.text`, shown word for word. The editorial one is labeled "Summary from Google". The two AI ones are kept only with Google's `disclosureText`, which is shown unchanged right under the summary with a Report link (`overviewFlagContentUri` or `flagContentUri`); a review summary also gets the heading "Review summary" and a "See reviews" link (`reviewsUri`), as Google's policies require.
+- **Price.** `priceRange` in dollars next to the price level: "$$ · $20–30 per person" ("$100+" when Google gives no upper end).
+- **Hours.** The open state, and the week from `currentOpeningHours.weekdayDescriptions` with today in bold. Today is matched by day name in the place's own time zone, since Google's week start depends on the locale.
+- **Address and Call.** `shortFormattedAddress` before the distance, and a Call button (`tel:`) from `internationalPhoneNumber`.
+- **Chips.** Vegetarian options, plus every one of these Google confirms as true: good for groups, takes reservations, outdoor seating, beer, wine, cocktails, dessert, kid-friendly, dogs allowed, wheelchair accessible, dine-in, takeout, delivery, credit cards, debit cards, cash only, contactless pay. Unknown and false both show nothing.
+- **Reviews.** The first three of Google's reviews, in Google's order and labeled "Most relevant", each with the author's photo, name (linked to their profile), rating, relative date (linked to the review on Google Maps), and text folded behind More when long. A review without an author name is skipped. "All reviews on Google Maps" opens the place.
+- **Links.** The website button says "Menu" only when `websiteUri` itself is a menu page (a "menu" or "menus" word in its host, path, or fragment), otherwise "Website"; then Directions and Call.
+
+Distances on the card and the sheet say where they are measured from: "0.7 mi from you" when the viewer shared a location or typed their own starting area on Join, otherwise "0.7 mi from the meeting area" (the session's center). A host who typed the session's area on Create has no location of their own, so they see the meeting-area wording; a host who used their device's location is at the center and sees "from you".
+
+Store Places content only for the life of a session, and read Google's terms before keeping anything longer. That now includes review text and summaries in `restaurants.data`, which Google's policies say not to keep long term; nothing deletes old sessions yet.
 
 ## Tech stack and data model
 
@@ -233,7 +251,8 @@ Browsers talk to Supabase directly for auth, reads, swipes, and live updates. An
 | Table | Key columns | Members can read | Members can write |
 | --- | --- | --- | --- |
 | `sessions` | `id`, `code`, `host_id`, `name`, `status` (lobby, swiping, deciding, ranking, done), `filters` (jsonb), `suggestions_on`, `voting_method` (plurality, borda, quadratic), `center_lat`, `center_lng`, `batch` (batches dealt so far), `search_body` (jsonb: the Text Search body plus the nearby-circle count), `page_token` | Their own session | Nothing (server only) || `members` | `session_id`, `user_id`, `display_name`, `color` (1 to 8, unique per session), `lat`, `lng`, `vetoes_left`, `done_swiping` (current batch), `done_ranking` | Everyone in their session | Their own `display_name`, `lat`, `lng`; joining goes through `join_session` |
-| `restaurants` | `session_id`, `place_id`, `source` (member or suggested), `batch` (null until dealt), `data` (jsonb with name, price, rating, `photoUri`, hours, links, flags) | Their session's spots | Nothing (server only) |
+| `restaurants` | `session_id`, `place_id`, `source` (member or suggested), `batch` (null until dealt), `data` (jsonb with name, price, rating, `photoUri`, hours, links, flags, and `details`: summary, price range, week hours, address, phone, attributes, up to 3 reviews, up to 4 photo names) | Their session's spots | Nothing (server only) |
+| `place_photos` | `session_id`, `place_id`, `photos` (jsonb: up to 4 resolved photo URIs with their credits); unique per session and place | Nothing (the photos route returns them after checking membership) | Nothing (server only) |
 | `adds` | `session_id`, `user_id`, `place_id`, `created_at`; unique per user and place | Only their own | Nothing (server only) |
 | `swipes` | `session_id`, `user_id`, `place_id`, `value` (yes, no, veto); unique per user and place | Only their own | Only their own |
 | `ballots` | `session_id`, `user_id`, `payload` (jsonb: `{pick}`, `{ordering}`, or `{votes}` by method); unique per user | Only their own | Nothing (server only, through the ballot route, which validates against the session's method) |
@@ -256,7 +275,7 @@ Grants follow the table above. `authenticated` (the role anonymous sign-ins use)
 
 ## Costs
 
-Running the MVP costs $0 a month up to about 50 batches of 20 cards across all groups. Past that, each batch costs about $0.18 in Google fees, and the only fixed cost is a Claude plan for Claude Code if you don't already have one.
+Running the MVP costs $0 a month up to about 50 batches of 20 cards across all groups, fewer when people open details sheets (each first open spends up to 3 more photos). Past that, each batch costs about $0.18 in Google fees, and the only fixed cost is a Claude plan for Claude Code if you don't already have one.
 
 ### By service (USD)
 
@@ -264,7 +283,7 @@ Running the MVP costs $0 a month up to about 50 batches of 20 cards across all g
 | --- | --- | --- | --- | --- |
 | Google Text Search (Enterprise + Atmosphere) | Pay as you go | 1,000 calls a month | $40 per 1,000 | $0 |
 | Google Place Details (Enterprise + Atmosphere) | Pay as you go | 1,000 calls a month | $25 per 1,000 | $0 |
-| Google Place Photos | Pay as you go | 1,000 photos a month | $7 per 1,000 | $0 up to 50 batches |
+| Google Place Photos | Pay as you go | 1,000 photos a month | $7 per 1,000 | $0 up to 50 batches, less with gallery opens |
 | Supabase | Free | 500 MB database, 50,000 monthly active users, 200 concurrent Realtime connections, 2 million Realtime messages | Pro at $25 a month | $0 |
 | Vercel | Hobby | 1 million function invocations, 100 GB data transfer | Pro at $20 per user a month | $0 |
 | Claude Code | Claude Pro | Included in paid Claude plans | About $20 a month (approximate) | $0 if already subscribed |
@@ -274,7 +293,7 @@ Google prices come from the [Google Maps Platform price list](https://developers
 
 ### Per batch and per add
 
-A batch of suggestions is 1 Text Search call plus 20 photos. Photos run out first, at 1,000 ÷ 20 = 50 free batches a month. Past the free caps, a batch costs 1 × $0.040 + 20 × $0.007 = $0.18. A member add is 1 Place Details call plus 1 photo, so past the free caps it costs 1 × $0.025 + 1 × $0.007 = about $0.03. Autocomplete keystrokes are free when the search ends in a Place Details call. In the lobby that means an autocomplete session that ends in an add is free (only its Place Details call bills), while a dish search ends in a Text Search instead, so Google bills each of that session's autocomplete requests individually.
+A batch of suggestions is 1 Text Search call plus 20 photos. Photos run out first, at 1,000 ÷ 20 = 50 free batches a month. Past the free caps, a batch costs 1 × $0.040 + 20 × $0.007 = $0.18. A member add is 1 Place Details call plus 1 photo, so past the free caps it costs 1 × $0.025 + 1 × $0.007 = about $0.03. The first time anyone in a session opens a card's details sheet, its gallery costs up to 3 more photos (about $0.02 past the free cap), or up to 4 for an explore result that isn't added (about $0.03); the summary, hours, chips and reviews on the sheet cost nothing, because they come with the search or details call already made. If every card in a batch were opened, the batch would use 80 photos instead of 20, so the free photos would cover about 12 batches instead of 50. Autocomplete keystrokes are free when the search ends in a Place Details call. In the lobby that means an autocomplete session that ends in an add is free (only its Place Details call bills), while a dish search ends in a Text Search instead, so Google bills each of that session's autocomplete requests individually.
 
 ### By monthly volume (USD)
 
@@ -328,7 +347,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 - [ ] Quadratic voting credit budget (9, or more if finalists go to 5)
 - [ ] Veto limit of 1 or 2 per person
 - [ ] Session cap on adds (40, or another number). Counted as member-added cards, not adds rows, so joining a spot someone else added is always allowed; checked in the add route, so two adds landing at 39 can make 41
-- [x] Typed starting areas (Create, and Join when location is denied or skipped): Places Autocomplete (New) with a session token, biased to the US, then a Place Details call for only the Essentials fields `location` and `formattedAddress` on the same token. The point is saved as the session's center or the member's location. Not the Geocoding API.
+- [x] Typed starting areas (Create, and Join when location is denied or skipped): Places Autocomplete (New) with a session token, biased to the US, then a Place Details call for only the Essentials fields `location` and `formattedAddress` on the same token. On Create the point is saved as the session's center only: a typed area is where the group meets, not where the host is, so the host's member row gets a location only when they used their device's. On Join it is the member's own location. Not the Geocoding API.
 - [ ] Accounts in the MVP or deferred to V2
 - [x] How a friend resolves a join code before they are a member: `join_session(code, display_name, color, lat, lng)`, a security-definer function that inserts the member row with a free person color and returns only the session id and status, so `sessions` rows stay private. The Join screen's preview (name, host, who is in, filters) is rendered on the server with the secret key.
 

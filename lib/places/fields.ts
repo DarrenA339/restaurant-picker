@@ -2,8 +2,9 @@
  * The Places API (New) field mask from docs/SPEC.md ("Search field mask").
  * Google bills a request at the highest tier among the fields asked for, so
  * a new field goes in the spec's table first: one Enterprise + Atmosphere
- * field (servesVegetarianFood) already puts every call on the top tier, and
- * the two extra Pro fields below ride along at no extra cost.
+ * field (servesVegetarianFood) already puts every call on the top tier, so
+ * the lower-tier fields and the details sheet's fields ride along at no
+ * extra cost.
  */
 export const PLACE_FIELDS = [
   // Pro
@@ -14,12 +15,15 @@ export const PLACE_FIELDS = [
   "googleMapsUri",
   "primaryTypeDisplayName",
   "utcOffsetMinutes",
+  "shortFormattedAddress",
   // Enterprise
   "rating",
   "userRatingCount",
   "priceLevel",
   "currentOpeningHours",
   "websiteUri",
+  "priceRange",
+  "internationalPhoneNumber",
   // Essentials (types) and Pro (primaryType, accessibility)
   "types",
   "primaryType",
@@ -45,6 +49,12 @@ export const PLACE_FIELDS = [
   "delivery",
   "allowsDogs",
   "liveMusic",
+  // Enterprise + Atmosphere: the details sheet (summary, reviews, payment chips)
+  "editorialSummary",
+  "generativeSummary",
+  "reviewSummary",
+  "reviews",
+  "paymentOptions",
 ] as const;
 
 /** Place Details: plain field names. */
@@ -64,6 +74,13 @@ export const NEARBY_FIELD_MASK = PLACE_FIELDS.map((field) => `places.${field}`).
  * Place Details Essentials, not the card tier.
  */
 export const AREA_FIELD_MASK = "location,formattedAddress";
+
+/**
+ * A place's photo names and credits, for the details sheet's gallery. Place
+ * Details bills these two fields at the IDs Only tier, which is free; the
+ * photos themselves are billed when each one is resolved.
+ */
+export const PHOTOS_FIELD_MASK = "id,photos";
 
 /** Autocomplete: the id and the two text lines of each prediction. */
 export const AUTOCOMPLETE_FIELD_MASK = [

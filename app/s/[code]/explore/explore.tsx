@@ -78,8 +78,9 @@ export function Explore({
     session.center_lat != null && session.center_lng != null
       ? { lat: session.center_lat, lng: session.center_lng }
       : null;
-  const origin: LatLng | null =
-    me?.lat != null && me.lng != null ? { lat: me.lat, lng: me.lng } : sessionCenter;
+  const viewer: LatLng | null = me?.lat != null && me.lng != null ? { lat: me.lat, lng: me.lng } : null;
+  /** Where the unlabelled list distances are measured from. */
+  const origin: LatLng | null = viewer ?? sessionCenter;
   const mapCenter = sessionCenter ?? origin ?? BOSTON;
   const inSession = new Map(live.restaurants.map((row) => [row.place_id, row]));
 
@@ -553,8 +554,10 @@ export function Explore({
       />
 
       <DetailsSheet
+        sessionId={session.id}
         place={details}
-        origin={origin}
+        viewer={viewer}
+        meetingArea={sessionCenter}
         state={details ? stateOf(details.placeId) : "idle"}
         onAdd={() => {
           if (details) void add(details.placeId, details.data.name);

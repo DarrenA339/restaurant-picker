@@ -128,6 +128,35 @@ export type Database = {
           },
         ]
       }
+      place_photos: {
+        Row: {
+          created_at: string
+          photos: Json
+          place_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          photos: Json
+          place_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          photos?: Json
+          place_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_photos_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           batch: number | null

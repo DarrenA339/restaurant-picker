@@ -9,7 +9,12 @@ import {
   hoursLine,
   MAX_RADIUS_M,
   searchArea,
+  formatPriceRange,
+  telHref,
+  todayIn,
+  toPlaceDetails,
   toRestaurantData,
+  websiteLabel,
   type GooglePlace,
 } from "./place";
 
@@ -99,6 +104,15 @@ describe("toRestaurantData", () => {
       openNow: true,
       closesAt: "11 PM",
       servesVegetarianFood: true,
+      details: {
+        photos: [
+          {
+            name: "places/ChIJjuniper/photos/abc",
+            attributions: [{ name: "Sam", uri: "https://maps.google.com/maps/contrib/1" }],
+          },
+          { name: "places/ChIJjuniper/photos/def", attributions: [{ name: "Not used" }] },
+        ],
+      },
     });
   });
 
@@ -184,5 +198,223 @@ describe("hoursLine", () => {
     expect(hoursLine({ openNow: true })).toBe("Open now");
     expect(hoursLine({ openNow: false, closesAt: "11 PM" })).toBe("Closed now");
     expect(hoursLine({})).toBeUndefined();
+  });
+});
+
+describe("toPlaceDetails", () => {
+  const review = (n: number) => ({
+    relativePublishTimeDescription: `${n} weeks ago`,
+    text: { text: `Review ${n}` },
+    rating: 5,
+    authorAttribution: {
+      displayName: `Author ${n}`,
+      uri: `https://maps.google.com/contrib/${n}`,
+      photoUri: `https://lh3.googleusercontent.com/a/${n}`,
+    },
+    googleMapsUri: `https://maps.google.com/review/${n}`,
+  });
+
+  it("is undefined when Google sent nothing for the sheet", () => {
+    expect(toPlaceDetails({ displayName: { text: "Tanuki" }, rating: 4.2 })).toBeUndefined();
+  });
+
+  it("prefers the editorial summary and keeps its text unchanged", () => {
+    const details = toPlaceDetails({
+      editorialSummary: { text: "  Casual Korean spot. " },
+      generativeSummary: { overview: { text: "AI overview" }, disclosureText: { text: "Summarized with Gemini" } },
+      reviewSummary: { text: { text: "AI reviews" }, disclosureText: { text: "Summarized with Gemini" } },
+    });
+    expect(details?.summary).toEqual({ kind: "editorial", text: "  Casual Korean spot. " });
+  });
+
+  it("falls back to the AI overview with Google's disclosure and report link", () => {
+    const details = toPlaceDetails({
+      generativeSummary: {
+        overview: { text: "Lively spot for stews." },
+        disclosureText: { text: "Summarized with Gemini" },
+        overviewFlagContentUri: "https://www.google.com/local/review/rap/report?d=1",
+      },
+      reviewSummary: { text: { text: "AI reviews" } },
+    });
+    expect(details?.summary).toEqual({
+      kind: "generative",
+      text: "Lively spot for stews.",
+      disclosure: "Summarized with Gemini",
+      flagUri: "https://www.google.com/local/review/rap/report?d=1",
+    });
+  });
+
+  it("skips an AI summary that came without Google's disclosure line", () => {
+    const details = toPlaceDetails({
+      generativeSummary: { overview: { text: "No disclosure" } },
+      reviewSummary: { text: { text: "People praise the banchan." }, disclosureText: { text: "Summarized with Gemini" } },
+    });
+    expect(details?.summary).toEqual({
+      kind: "review",
+      text: "People praise the banchan.",
+      disclosure: "Summarized with Gemini",
+    });
+    expect(toPlaceDetails({ reviewSummary: { text: { text: "No disclosure" } } })).toBeUndefined();
+  });
+
+  it("falls back last to the review summary with its reviews link", () => {
+    const details = toPlaceDetails({
+      editorialSummary: { text: "   " },
+      reviewSummary: {
+        text: { text: "People praise the banchan." },
+        disclosureText: { text: "Summarized with Gemini" },
+        flagContentUri: "https://www.google.com/report",
+        reviewsUri: "https://www.google.com/maps/place//reviews",
+      },
+    });
+    expect(details?.summary).toEqual({
+      kind: "review",
+      text: "People praise the banchan.",
+      disclosure: "Summarized with Gemini",
+      flagUri: "https://www.google.com/report",
+      reviewsUri: "https://www.google.com/maps/place//reviews",
+    });
+  });
+
+  it("keeps three reviews, skipping any without an author or text", () => {
+    const details = toPlaceDetails({
+      reviews: [
+        review(1),
+        { text: { text: "No author" } },
+        { authorAttribution: { displayName: "No text" } },
+        review(2),
+        { originalText: { text: "Solo en español" }, authorAttribution: { displayName: "Ana" } },
+        review(3),
+      ],
+    });
+    expect(details?.reviews).toEqual([
+      {
+        author: "Author 1",
+        text: "Review 1",
+        authorUri: "https://maps.google.com/contrib/1",
+        authorPhotoUri: "https://lh3.googleusercontent.com/a/1",
+        rating: 5,
+        relativeTime: "1 weeks ago",
+        googleMapsUri: "https://maps.google.com/review/1",
+      },
+      expect.objectContaining({ author: "Author 2" }),
+      { author: "Ana", text: "Solo en español" },
+    ]);
+  });
+
+  it("keeps the names of four photos at most", () => {
+    const photos = [1, 2, 3, 4, 5, 6].map((n) => ({ name: `places/X/photos/p${n}` }));
+    expect(toPlaceDetails({ photos })?.photos).toEqual([
+      { name: "places/X/photos/p1" },
+      { name: "places/X/photos/p2" },
+      { name: "places/X/photos/p3" },
+      { name: "places/X/photos/p4" },
+    ]);
+  });
+
+  it("lists only the attributes Google confirms", () => {
+    const details = toPlaceDetails({
+      goodForGroups: true,
+      reservable: false,
+      servesWine: true,
+      allowsDogs: true,
+      accessibilityOptions: { wheelchairAccessibleEntrance: true },
+      paymentOptions: { acceptsCreditCards: true, acceptsCashOnly: false, acceptsNfc: true },
+      // Not on the sheet's list.
+      liveMusic: true,
+      servesBrunch: true,
+    });
+    expect(details?.attributes).toEqual(["groups", "wine", "dogs", "wheelchair", "credit_cards", "contactless"]);
+  });
+
+  it("splits the week into days and keeps the offset with it", () => {
+    const details = toPlaceDetails({
+      currentOpeningHours: {
+        weekdayDescriptions: ["Monday: 11:30 AM – 10:00 PM", "Tuesday: Closed", "garbage"],
+      },
+      utcOffsetMinutes: -300,
+    });
+    expect(details?.weekHours).toEqual([
+      { day: "Monday", hours: "11:30 AM – 10:00 PM" },
+      { day: "Tuesday", hours: "Closed" },
+    ]);
+    expect(details?.utcOffsetMinutes).toBe(-300);
+  });
+
+  it("carries the short address and phone number", () => {
+    const details = toPlaceDetails({
+      shortFormattedAddress: "1186 Mass Ave, Cambridge",
+      internationalPhoneNumber: "+1 617-555-0142",
+    });
+    expect(details).toEqual({ address: "1186 Mass Ave, Cambridge", phone: "+1 617-555-0142" });
+  });
+});
+
+describe("formatPriceRange", () => {
+  const usd = (units: string) => ({ currencyCode: "USD", units });
+
+  it("prints a dollar range", () => {
+    expect(formatPriceRange({ startPrice: usd("20"), endPrice: usd("30") })).toBe("$20–30");
+    expect(formatPriceRange({ startPrice: usd("10"), endPrice: usd("10") })).toBe("$10");
+  });
+
+  it("prints an open-ended range with a plus", () => {
+    expect(formatPriceRange({ startPrice: usd("100") })).toBe("$100+");
+  });
+
+  it("gives nothing without a start or in another currency", () => {
+    expect(formatPriceRange(undefined)).toBeUndefined();
+    expect(formatPriceRange({ endPrice: usd("30") })).toBeUndefined();
+    expect(
+      formatPriceRange({ startPrice: { currencyCode: "EUR", units: "20" }, endPrice: usd("30") }),
+    ).toBeUndefined();
+  });
+});
+
+describe("todayIn", () => {
+  const week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(
+    (day) => ({ day, hours: "Noon – 9 PM" }),
+  );
+
+  it("finds today in the place's own zone", () => {
+    // 03:00 UTC on Saturday is still Friday evening in Boston (UTC-5).
+    const now = new Date("2026-11-07T03:00:00Z");
+    expect(todayIn(week, -300, now)).toBe(4);
+    expect(todayIn(week, 0, now)).toBe(5);
+  });
+
+  it("falls back to Boston time without an offset", () => {
+    expect(todayIn(week, undefined, new Date("2026-11-07T03:00:00Z"))).toBe(4);
+  });
+
+  it("works whichever day Google starts the week on", () => {
+    const sundayFirst = [week[6], ...week.slice(0, 6)];
+    expect(todayIn(sundayFirst, -300, new Date("2026-11-07T03:00:00Z"))).toBe(5);
+  });
+
+  it("is -1 when today isn't listed", () => {
+    expect(todayIn(week.slice(0, 2), -300, new Date("2026-11-07T03:00:00Z"))).toBe(-1);
+  });
+});
+
+describe("websiteLabel", () => {
+  it("says Menu only for a menu page", () => {
+    expect(websiteLabel("https://juniper.example/menu")).toBe("Menu");
+    expect(websiteLabel("https://juniper.example/menus/dinner.pdf")).toBe("Menu");
+    expect(websiteLabel("https://menu.juniper.example/")).toBe("Menu");
+    expect(websiteLabel("https://juniper.example/#menu")).toBe("Menu");
+  });
+
+  it("says Website for everything else", () => {
+    expect(websiteLabel("https://juniper.example/")).toBe("Website");
+    expect(websiteLabel("https://juniper.example/about?ref=menu")).toBe("Website");
+    expect(websiteLabel("https://menufy.example/juniper")).toBe("Website");
+    expect(websiteLabel("not a url")).toBe("Website");
+  });
+});
+
+describe("telHref", () => {
+  it("keeps the digits and the plus", () => {
+    expect(telHref("+1 617-555-0142")).toBe("tel:+16175550142");
   });
 });

@@ -4,13 +4,16 @@ import { motion, useMotionValue, useTransform, type PanInfo } from "motion/react
 import { useRef } from "react";
 import { CameraIcon, CheckIcon, ChevronRightIcon, ClockIcon, CloseIcon, PinIcon, StarIcon, VetoIcon } from "@/components/icons";
 import { hoursLine } from "@/lib/places/place";
-import { distanceMi, formatMiles, type LatLng, type RestaurantData } from "@/lib/restaurants";
+import { distanceLabel, type LatLng, type RestaurantData } from "@/lib/restaurants";
 import { priceLabel } from "@/lib/session-filters";
 import type { SwipeValue } from "./swipes";
 
 type SwipeCardProps = {
   data: RestaurantData;
-  origin: LatLng | null;
+  /** The viewer's own location, if they shared one. */
+  viewer: LatLng | null;
+  /** The session's starting area, which distances fall back to. */
+  meetingArea: LatLng | null;
   /** The top card takes drags; the one underneath only peeks. */
   interactive: boolean;
   /** Set once voted: the card flies off this way, then calls onLeft. */
@@ -33,7 +36,7 @@ const exits: Record<SwipeValue, Record<string, number>> = {
 };
 
 /** The restaurant card from docs/design/07-swipe: photo, name, meta, and the drag that votes. */
-export function SwipeCard({ data, origin, interactive, leaving, reducedMotion, onLeft, onSwipe, onOpen }: SwipeCardProps) {
+export function SwipeCard({ data, viewer, meetingArea, interactive, leaving, reducedMotion, onLeft, onSwipe, onOpen }: SwipeCardProps) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-10, 10]);
   const yesOpacity = useTransform(x, [20, SWIPE_PX], [0, 1]);
@@ -41,7 +44,7 @@ export function SwipeCard({ data, origin, interactive, leaving, reducedMotion, o
   const downAt = useRef<{ x: number; y: number } | null>(null);
 
   const meta = [data.cuisine, data.priceLevel ? priceLabel(data.priceLevel) : null].filter(Boolean) as string[];
-  const distance = origin && data.location ? `${formatMiles(distanceMi(origin, data.location))} from you` : null;
+  const distance = distanceLabel(viewer, meetingArea, data.location);
   const hours = hoursLine(data);
   const credit = data.photoAttributions?.[0];
 

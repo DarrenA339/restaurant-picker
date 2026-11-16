@@ -1,4 +1,16 @@
-import { distanceMi, type LatLng, type PhotoAttribution, type RestaurantData } from "@/lib/restaurants";
+import {
+  distanceMi,
+  type DayHours,
+  type GalleryPhoto,
+  type LatLng,
+  type PhotoAttribution,
+  type PhotoRef,
+  type PlaceAttribute,
+  type PlaceDetails,
+  type PlaceReview,
+  type PlaceSummary,
+  type RestaurantData,
+} from "@/lib/restaurants";
 import type { PriceLevel, SessionFilters } from "@/lib/session-filters";
 
 /** The subset of Google's Place resource the field mask asks for. */
@@ -9,10 +21,43 @@ export type GooglePhoto = {
   authorAttributions?: { displayName?: string; uri?: string; photoUri?: string }[];
 };
 
+export type GoogleMoney = { currencyCode?: string; units?: string; nanos?: number };
+
+export type GoogleReview = {
+  relativePublishTimeDescription?: string;
+  text?: LocalizedText;
+  originalText?: LocalizedText;
+  rating?: number;
+  authorAttribution?: { displayName?: string; uri?: string; photoUri?: string };
+  googleMapsUri?: string;
+};
+
 export type GooglePlace = {
   id?: string;
   displayName?: LocalizedText;
   formattedAddress?: string;
+  shortFormattedAddress?: string;
+  internationalPhoneNumber?: string;
+  priceRange?: { startPrice?: GoogleMoney; endPrice?: GoogleMoney };
+  editorialSummary?: LocalizedText;
+  generativeSummary?: {
+    overview?: LocalizedText;
+    overviewFlagContentUri?: string;
+    disclosureText?: LocalizedText;
+  };
+  reviewSummary?: {
+    text?: LocalizedText;
+    flagContentUri?: string;
+    disclosureText?: LocalizedText;
+    reviewsUri?: string;
+  };
+  reviews?: GoogleReview[];
+  paymentOptions?: {
+    acceptsCreditCards?: boolean;
+    acceptsDebitCards?: boolean;
+    acceptsCashOnly?: boolean;
+    acceptsNfc?: boolean;
+  };
   primaryTypeDisplayName?: LocalizedText;
   location?: { latitude?: number; longitude?: number };
   photos?: GooglePhoto[];
@@ -129,6 +174,157 @@ export function cuisineFrom(typeName: string): string {
   return stripped || trimmed;
 }
 
+function photoCredit(photo: GooglePhoto | undefined): PhotoAttribution[] {
+  return (photo?.authorAttributions ?? []).flatMap((a): PhotoAttribution[] => {
+    const name = a.displayName?.trim();
+    if (!name) return [];
+    return [a.uri ? { name, uri: a.uri } : { name }];
+  });
+}
+
+/** The details sheet shows this many photos and reviews at most. */
+export const MAX_GALLERY_PHOTOS = 4;
+export const MAX_REVIEWS = 3;
+
+/** Whole dollars from Google's Money; undefined for other currencies. */
+function dollars(money: GoogleMoney | undefined): number | undefined {
+  if (!money || money.currencyCode !== "USD") return undefined;
+  const units = Number(money.units ?? "0");
+  return Number.isFinite(units) ? units : undefined;
+}
+
+/** "$20–30", "$20" when both ends match, "$100+" when Google gives no upper end. */
+export function formatPriceRange(range: GooglePlace["priceRange"]): string | undefined {
+  const start = dollars(range?.startPrice);
+  if (start === undefined) return undefined;
+  if (!range?.endPrice) return `$${start}+`;
+  const end = dollars(range.endPrice);
+  if (end === undefined) return undefined;
+  return end === start ? `$${start}` : `$${start}–${end}`;
+}
+
+/**
+ * Google's summary of a place, in the order the sheet prefers: the editorial
+ * line, else the AI overview, else the AI review summary. The text is kept
+ * exactly as sent. An AI summary is kept only with Google's disclosure line,
+ * which its policies require beside it, and brings its report link along.
+ */
+function toSummary(place: GooglePlace): PlaceSummary | undefined {
+  const editorial = place.editorialSummary?.text;
+  if (editorial?.trim()) return { kind: "editorial", text: editorial };
+
+  const generative = place.generativeSummary;
+  const overview = generative?.overview?.text;
+  const overviewDisclosure = generative?.disclosureText?.text;
+  if (generative && overview?.trim() && overviewDisclosure) {
+    const summary: PlaceSummary = { kind: "generative", text: overview, disclosure: overviewDisclosure };
+    if (generative.overviewFlagContentUri) summary.flagUri = generative.overviewFlagContentUri;
+    return summary;
+  }
+
+  const review = place.reviewSummary;
+  const reviewText = review?.text?.text;
+  const reviewDisclosure = review?.disclosureText?.text;
+  if (review && reviewText?.trim() && reviewDisclosure) {
+    const summary: PlaceSummary = { kind: "review", text: reviewText, disclosure: reviewDisclosure };
+    if (review.flagContentUri) summary.flagUri = review.flagContentUri;
+    if (review.reviewsUri) summary.reviewsUri = review.reviewsUri;
+    return summary;
+  }
+  return undefined;
+}
+
+/** Which Google flag earns which chip; a chip needs a confirmed true. */
+const ATTRIBUTE_FLAGS: [PlaceAttribute, (place: GooglePlace) => boolean | undefined][] = [
+  ["groups", (p) => p.goodForGroups],
+  ["reservations", (p) => p.reservable],
+  ["outdoor", (p) => p.outdoorSeating],
+  ["beer", (p) => p.servesBeer],
+  ["wine", (p) => p.servesWine],
+  ["cocktails", (p) => p.servesCocktails],
+  ["dessert", (p) => p.servesDessert],
+  ["kids", (p) => p.goodForChildren],
+  ["dogs", (p) => p.allowsDogs],
+  ["wheelchair", (p) => p.accessibilityOptions?.wheelchairAccessibleEntrance],
+  ["dine_in", (p) => p.dineIn],
+  ["takeout", (p) => p.takeout],
+  ["delivery", (p) => p.delivery],
+  ["credit_cards", (p) => p.paymentOptions?.acceptsCreditCards],
+  ["debit_cards", (p) => p.paymentOptions?.acceptsDebitCards],
+  ["cash_only", (p) => p.paymentOptions?.acceptsCashOnly],
+  ["contactless", (p) => p.paymentOptions?.acceptsNfc],
+];
+
+/** "Monday: 11:30 AM – 10:00 PM" → { day: "Monday", hours: "11:30 AM – 10:00 PM" }. */
+function toWeekHours(descriptions: string[] | undefined): DayHours[] {
+  return (descriptions ?? []).flatMap((line): DayHours[] => {
+    const at = line.indexOf(": ");
+    if (at < 1) return [];
+    const day = line.slice(0, at).trim();
+    const hours = line.slice(at + 2).trim();
+    return day && hours ? [{ day, hours }] : [];
+  });
+}
+
+function toReviews(reviews: GoogleReview[] | undefined): PlaceReview[] {
+  const kept: PlaceReview[] = [];
+  for (const review of reviews ?? []) {
+    if (kept.length === MAX_REVIEWS) break;
+    const author = review.authorAttribution?.displayName?.trim();
+    const text = (review.text?.text ?? review.originalText?.text)?.trim();
+    // Google requires the author next to a review, so one without a name is skipped.
+    if (!author || !text) continue;
+    const item: PlaceReview = { author, text };
+    if (review.authorAttribution?.uri) item.authorUri = review.authorAttribution.uri;
+    if (review.authorAttribution?.photoUri) item.authorPhotoUri = review.authorAttribution.photoUri;
+    if (finite(review.rating)) item.rating = review.rating;
+    if (review.relativePublishTimeDescription) item.relativeTime = review.relativePublishTimeDescription;
+    if (review.googleMapsUri) item.googleMapsUri = review.googleMapsUri;
+    kept.push(item);
+  }
+  return kept;
+}
+
+/**
+ * What the details sheet adds to a card, from the same Places result.
+ * Undefined when Google sent none of it, so the key is left off the row.
+ */
+export function toPlaceDetails(place: GooglePlace): PlaceDetails | undefined {
+  const details: PlaceDetails = {};
+
+  const summary = toSummary(place);
+  if (summary) details.summary = summary;
+
+  const priceRange = formatPriceRange(place.priceRange);
+  if (priceRange) details.priceRange = priceRange;
+
+  const weekHours = toWeekHours(place.currentOpeningHours?.weekdayDescriptions);
+  if (weekHours.length) {
+    details.weekHours = weekHours;
+    if (finite(place.utcOffsetMinutes)) details.utcOffsetMinutes = place.utcOffsetMinutes;
+  }
+
+  const address = place.shortFormattedAddress?.trim();
+  if (address) details.address = address;
+  const phone = place.internationalPhoneNumber?.trim();
+  if (phone) details.phone = phone;
+
+  const attributes = ATTRIBUTE_FLAGS.filter(([, read]) => read(place) === true).map(([key]) => key);
+  if (attributes.length) details.attributes = attributes;
+
+  const reviews = toReviews(place.reviews);
+  if (reviews.length) details.reviews = reviews;
+
+  const photos = (place.photos ?? []).slice(0, MAX_GALLERY_PHOTOS).flatMap((photo): PhotoRef[] => {
+    if (!photo.name) return [];
+    const credit = photoCredit(photo);
+    return [credit.length ? { name: photo.name, attributions: credit } : { name: photo.name }];
+  });
+  if (photos.length) details.photos = photos;
+
+  return Object.keys(details).length ? details : undefined;
+}
+
 /**
  * A Places result as the data blob stored on a restaurants row. Absent
  * fields are left out rather than set to undefined, so the JSON Google
@@ -154,13 +350,7 @@ export function toRestaurantData(place: GooglePlace, photoUri: string | null): R
   if (finite(lat) && finite(lng)) data.location = { lat, lng };
 
   // Attribution belongs with the photo it credits, so none without a photo.
-  const attributions = photoUri
-    ? (place.photos?.[0]?.authorAttributions ?? []).flatMap((a): PhotoAttribution[] => {
-        const name = a.displayName?.trim();
-        if (!name) return [];
-        return [a.uri ? { name, uri: a.uri } : { name }];
-      })
-    : [];
+  const attributions = photoUri ? photoCredit(place.photos?.[0]) : [];
   if (attributions.length) data.photoAttributions = attributions;
 
   if (place.googleMapsUri) data.googleMapsUri = place.googleMapsUri;
@@ -178,6 +368,9 @@ export function toRestaurantData(place: GooglePlace, photoUri: string | null): R
   if (typeof place.servesVegetarianFood === "boolean") {
     data.servesVegetarianFood = place.servesVegetarianFood;
   }
+
+  const details = toPlaceDetails(place);
+  if (details) data.details = details;
 
   return data;
 }
@@ -241,6 +434,49 @@ export function hoursLine(data: Pick<RestaurantData, "openNow" | "closesAt">): s
   return undefined;
 }
 
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+/**
+ * Which line of the week is today at the place: its index, or -1. Matched by
+ * day name because where Google starts the week depends on the locale. Uses
+ * the place's UTC offset when there is one, else the default zone.
+ */
+export function todayIn(
+  weekHours: DayHours[],
+  utcOffsetMinutes: number | undefined,
+  now: Date,
+  fallbackZone = DEFAULT_ZONE,
+): number {
+  let today: string;
+  if (finite(utcOffsetMinutes)) {
+    today = WEEKDAYS[new Date(now.getTime() + utcOffsetMinutes * 60_000).getUTCDay()];
+  } else {
+    today = new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: fallbackZone })
+      .format(now)
+      .toLowerCase();
+  }
+  return weekHours.findIndex((line) => line.day.toLowerCase() === today);
+}
+
+/**
+ * The website button's label: "Menu" only when the link itself is a menu
+ * page (a "menu" or "menus" word in its host, path, or fragment).
+ */
+export function websiteLabel(uri: string): "Menu" | "Website" {
+  try {
+    const url = new URL(uri);
+    const words = `${url.hostname}${url.pathname}${url.hash}`.toLowerCase().split(/[^a-z]+/);
+    return words.some((word) => word === "menu" || word === "menus") ? "Menu" : "Website";
+  } catch {
+    return "Website";
+  }
+}
+
+/** A phone number as a tel: link, keeping only the digits and a leading plus. */
+export function telHref(phone: string): string {
+  return `tel:${phone.replace(/[^0-9+]/g, "")}`;
+}
+
 // ---------------------------------------------------------------------------
 // Route payloads shared with the client
 // ---------------------------------------------------------------------------
@@ -251,6 +487,8 @@ export type Prediction = { placeId: string; mainText: string; secondaryText: str
 export type AutocompleteResult = { places: Prediction[]; queries: { text: string }[] };
 
 export type SearchResult = { places: PlaceResult[] };
+
+export type GalleryResult = { photos: GalleryPhoto[] };
 
 /** A resolved starting area: Google's address line for it, and where it is. */
 export type AreaResult = { placeId: string; address: string; location: LatLng };

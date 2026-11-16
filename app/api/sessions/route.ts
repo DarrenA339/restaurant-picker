@@ -72,8 +72,12 @@ export async function POST(request: Request) {
   if (!user) return bad("Sign in first.", 401);
 
   const admin = supabaseAdmin();
-  const lat = center ? rough(center.lat) : null;
-  const lng = center ? rough(center.lng) : null;
+  // The host's own location is known only when the center is their device's
+  // position. A typed area is where the group meets, not where the host is,
+  // so their distances read "from the meeting area", not "from you".
+  const hostIsThere = center !== null && body.centerFromDevice === true;
+  const lat = hostIsThere ? rough(center.lat) : null;
+  const lng = hostIsThere ? rough(center.lng) : null;
 
   for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt += 1) {
     const { data: session, error } = await admin

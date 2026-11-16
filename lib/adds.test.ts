@@ -135,6 +135,15 @@ describe("addSpot", () => {
       location: { lat: 42.3808, lng: -71.1095 },
       photoUri: PHOTO,
       photoAttributions: [{ name: "Sam", uri: "https://maps.google.com/maps/contrib/1" }],
+      // The gallery's photo names ride along; only the first photo is resolved here.
+      details: {
+        photos: [
+          {
+            name: "places/ChIJjuniper/photos/abc",
+            attributions: [{ name: "Sam", uri: "https://maps.google.com/maps/contrib/1" }],
+          },
+        ],
+      },
     });
     expect(store.db.adds).toEqual([add(ME, JUNIPER)]);
   });

@@ -8,7 +8,7 @@ import {
   useMethodLabel,
   votingMethodLabel,
 } from "./lobby-copy";
-import { distanceMi, formatMiles, restaurantMeta } from "./restaurants";
+import { distanceLabel, distanceMi, formatMiles, readRestaurantData, restaurantMeta } from "./restaurants";
 import {
   activeFilterCount,
   clearedFilters,
@@ -93,6 +93,45 @@ describe("restaurant meta", () => {
       "Korean · $$ · 0 mi",
     );
     expect(restaurantMeta({ name: "Mystery" }, null)).toBe("");
+  });
+
+  it("says where a distance is measured from", () => {
+    const central = { lat: 42.3653, lng: -71.1036 };
+    const mit = { lat: 42.3601, lng: -71.0942 };
+    // The viewer's own location wins, and only then is it "from you".
+    expect(distanceLabel(harvardSquare, mit, central)).toBe("1 mi from you");
+    expect(distanceLabel(null, mit, central)).toBe("0.6 mi from the meeting area");
+    expect(distanceLabel(null, null, central)).toBeNull();
+    expect(distanceLabel(harvardSquare, mit, undefined)).toBeNull();
+  });
+});
+
+describe("stored details", () => {
+  it("reads back what it understands and drops the rest", () => {
+    const data = readRestaurantData({
+      name: "Juniper & Rice",
+      details: {
+        summary: { kind: "editorial", text: "Casual Korean spot." },
+        priceRange: "$20–30",
+        weekHours: [{ day: "Monday", hours: "Closed" }, { day: 3 }],
+        attributes: ["groups", "jacuzzi"],
+        reviews: [{ author: "Dana L.", text: "Great.", rating: 5 }, { text: "No author" }],
+        photos: [{ name: "places/X/photos/a", attributions: [{ name: "Sam" }] }, {}],
+      },
+    });
+    expect(data?.details).toMatchObject({
+      summary: { kind: "editorial", text: "Casual Korean spot." },
+      priceRange: "$20–30",
+      weekHours: [{ day: "Monday", hours: "Closed" }],
+      attributes: ["groups"],
+      reviews: [{ author: "Dana L.", text: "Great.", rating: 5 }],
+      photos: [{ name: "places/X/photos/a", attributions: [{ name: "Sam" }] }],
+    });
+  });
+
+  it("is absent on a row dealt before the sheet grew", () => {
+    expect(readRestaurantData({ name: "Old card", details: {} })?.details).toBeUndefined();
+    expect(readRestaurantData({ name: "Old card" })?.details).toBeUndefined();
   });
 });
 

@@ -135,6 +135,8 @@ export function CreateForm() {
         hostName: hostName.trim(),
         filters,
         center,
+        // Only the device's own position is also the host's location.
+        centerFromDevice: filters.areaLabel === YOUR_LOCATION,
       });
       const create = () =>
         fetch("/api/sessions", {

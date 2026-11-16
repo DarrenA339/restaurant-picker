@@ -1,6 +1,6 @@
 import type { VotingMethod } from "@/lib/lobby-copy";
 import type { AutocompleteResult, SearchResult } from "@/lib/places/place";
-import type { RestaurantRow } from "@/lib/restaurants";
+import { readGallery, type GalleryPhoto, type RestaurantRow } from "@/lib/restaurants";
 import { searchFiltersToParams, type SearchFilters } from "@/lib/session-filters";
 
 type SessionPatch = { voting_method?: VotingMethod; suggestions_on?: boolean };
@@ -167,4 +167,19 @@ export async function searchPlaces(sessionId: string, options: SearchOptions, si
   const response = await fetch(`/api/places/search?${params}`, { signal });
   if (!response.ok) return fail(response, "Search isn’t working right now.");
   return (await response.json()) as SearchResult;
+}
+
+/**
+ * The details sheet's gallery for one place. The first open in a session
+ * resolves the photos; after that the server answers from what it kept.
+ */
+export async function fetchGallery(id: string, placeId: string): Promise<GalleryPhoto[]> {
+  const response = await fetch(`/api/sessions/${id}/photos`, {
+    method: "POST",
+    headers: json,
+    body: JSON.stringify({ placeId }),
+  });
+  if (!response.ok) return fail(response, "Couldn’t load the photos.");
+  const body = (await response.json()) as { photos?: unknown };
+  return readGallery(body.photos);
 }
