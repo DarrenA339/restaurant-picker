@@ -17,5 +17,6 @@ One image per screen, exported from the design canvas at 2x. Numbers follow the 
 | 11-winner.png | Dinner decided (desktop: follow 03-join-desktop) |
 | components.png | Shared components and their states |
 | states.png | Edge states |
+| brand.png | Chews brand sheet: logo, palette, type and voice (source: source/brand.dc.html) |
 
 Exact spacing, sizes, colors and copy live in `source/` (see its README). Placeholder photos and drawn maps are stand-ins for real Google Places photos and a live Google Map.

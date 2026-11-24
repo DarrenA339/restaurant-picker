@@ -2,81 +2,54 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Where are we eating? Desktop</title>
+<title>Chews welcome, desktop</title>
 <script src="./support.js"></script>
 </head>
 <body>
 <x-dc>
 <helmet>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Manrope:wght@500;600;700;800&amp;display=swap">
 <style>
 body{margin:0}
-a{color:#B33A22}a:hover{color:#8F2D1A}
-button,input{font-family:inherit}
-button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #17181A;outline-offset:3px}
+button:focus-visible,a:focus-visible{outline:3px solid #2A1C15;outline-offset:3px}
 </style>
 </helmet>
-<div style="width: 100%; min-height: 800px; height: 100vh; box-sizing: border-box; background: #FAF9F6; color: #17181A; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; overflow: auto">
-
-<header style="width: 100%; max-width: 1104px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px 0; display: flex; align-items: center; gap: 10px">
-<span style="width: 36px; height: 36px; border-radius: 11px; background: {{accent}}; display: flex; align-items: center; justify-content: center" aria-hidden="true">
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 2 2M9 3v18M11 3v7a2 2 0 0 1-2 2M17 21V3c-2.2 1.2-3.5 3.6-3.5 6.5V13H17"></path></svg>
-</span>
-<span style="font-size: 19px; font-weight: 800; letter-spacing: -0.01em">[APP NAME]</span>
-</header>
-
+<div style="width: 100%; min-height: 800px; height: 100vh; box-sizing: border-box; background: #FBF6EE; color: #2A1C15; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif">
+<div style="min-height: 800px; height: 100%; display: flex; flex-direction: column">
+<header style="width: 100%; max-width: 1104px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px 0"><div style="display: flex; align-items: center; gap: 12px"><svg width="40" height="40" aria-hidden="true" style="display: block; flex-shrink: 0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="#D2432A"/><path d="M76.9 52.5L77.3 52.9L77.9 53.0L78.7 52.6L79.0 52.3L79.1 51.7L78.7 50.4L78.5 49.1L78.5 47.9L78.8 46.6L79.2 45.4L79.8 44.2L80.7 43.2L81.7 42.3L82.7 41.6L83.8 41.2L84.7 40.9L85.9 40.7L87.3 40.7L88.4 40.9L89.6 41.3L91.1 42.0L91.7 41.9L92.1 41.5L92.1 41.0L92.0 40.6L90.7 38.8L89.3 37.1L86.6 34.4L84.0 32.1L82.2 30.9L80.0 29.5L77.8 28.4L75.4 27.3L73.0 26.5L70.9 25.9L68.4 25.4L65.8 25.1L63.2 25.0L60.7 25.1L58.1 25.3L55.6 25.8L53.1 26.4L51.0 27.0L48.6 28.0L46.3 29.1L43.4 30.9L40.6 32.9L38.1 35.2L35.7 37.8L33.7 40.6L31.9 43.5L30.5 46.6L29.3 49.8L28.5 53.2L28.0 56.6L27.8 60.0L28.0 63.4L28.5 66.8L29.3 70.2L30.5 73.4L31.9 76.5L33.7 79.4L35.7 82.2L38.0 84.7L40.6 87.1L43.4 89.1L46.3 90.9L49.4 92.3L52.6 93.5L56.0 94.3L59.4 94.8L62.8 95.0L66.2 94.8L69.6 94.3L73.0 93.5L76.2 92.3L79.3 90.9L81.5 89.6L83.7 88.1L85.7 86.5L87.6 84.7L89.9 82.2L92.0 79.4L92.1 78.8L91.8 78.2L91.5 78.0L91.0 78.0L89.7 78.6L88.6 79.0L87.3 79.3L86.1 79.3L84.7 79.1L83.6 78.8L82.5 78.3L81.6 77.6L80.7 76.8L79.9 75.9L79.4 75.1L79.0 74.0L78.6 72.7L78.5 71.1L78.6 69.9L79.0 68.4L79.1 68.0L79.0 67.7L78.7 67.4L77.8 67.0L77.4 67.1L77.1 67.3L76.2 68.7L75.3 70.0L74.3 71.2L73.2 72.1L71.0 73.7L68.6 74.9L67.1 75.4L65.7 75.7L64.2 75.9L62.8 76.0L61.2 75.9L59.9 75.7L58.5 75.4L57.0 74.9L55.1 74.0L53.1 72.7L51.4 71.2L49.9 69.5L48.7 67.5L47.8 65.6L47.1 63.3L46.8 61.0L46.9 58.4L47.4 55.7L48.3 53.2L49.7 50.8L51.5 48.7L53.6 46.9L56.0 45.5L58.5 44.6L61.2 44.1L64.0 44.0L66.7 44.5L69.1 45.3L71.5 46.6L73.7 48.3L75.5 50.3Z" fill="#FBF6EE"/></svg><span style="font-family: Caprasimo, 'Cooper Black', Georgia, serif; font-size: 34px; line-height: 1; letter-spacing: -0.01em; white-space: nowrap"><span style="color: #2A1C15">chews</span></span></div></header>
 <main style="flex: 1; width: 100%; max-width: 1104px; margin: 0 auto; box-sizing: border-box; padding: 32px 32px 48px; display: flex; align-items: center">
 <div style="width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 64px">
-
-<div style="flex: 1 1 420px; min-width: 0; height: 540px; border-radius: 28px; overflow: hidden; background: #EFE7DC; box-shadow: 0 12px 32px rgba(23, 24, 26, 0.08)">
-<sc-if value="{{usePhoto}}" hint-placeholder-val="{{false}}">
-<img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="Friends sharing dishes across a table" style="width: 100%; height: 100%; object-fit: cover; display: block">
-</sc-if>
-<sc-if value="{{usePlaceholder}}" hint-placeholder-val="{{true}}">
-<div role="img" aria-label="Photo placeholder: friends' hands reaching for dishes on a shared table" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #5E5A52">
-<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#5E5A52" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M8 6l1.5-2h5L16 6"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
-<span style="font-size: 16px; font-weight: 800">Shared-meal photo</span>
-<span style="font-size: 14px; font-weight: 600">Hands reaching across a shared table</span>
+<div style="flex: 1 1 440px; min-width: 0"><div style="position: relative; width: 100%; height: 540px; flex-shrink: 0; border-radius: 32px; background: #FBE6AE; overflow: hidden"><div aria-hidden="true" style="position: absolute; left: 33px; top: 110px; width: 236px; height: 316px; border-radius: 28px; background: #FFFFFF; transform: rotate(-9deg); box-shadow: 0 6px 18px rgba(42, 28, 21, 0.10); overflow: hidden"><div style="height: 177px; background: #EFD3BD"></div><div style="padding: 19px; display: flex; flex-direction: column; gap: 12px"><span style="display: block; width: 70%; height: 17px; border-radius: 999px; background: #F3EADC"></span><span style="display: block; width: 45%; height: 12px; border-radius: 999px; background: #F3EADC"></span></div></div><div aria-hidden="true" style="position: absolute; left: 231px; top: 108px; width: 236px; height: 316px; border-radius: 28px; background: #FFFFFF; transform: rotate(8deg); box-shadow: 0 6px 18px rgba(42, 28, 21, 0.10); overflow: hidden"><div style="height: 177px; background: #E8CDB0"></div><div style="padding: 19px; display: flex; flex-direction: column; gap: 12px"><span style="display: block; width: 70%; height: 17px; border-radius: 999px; background: #F3EADC"></span><span style="display: block; width: 45%; height: 12px; border-radius: 999px; background: #F3EADC"></span></div></div><div role="img" aria-label="A Chews swipe card for Juniper and Rice, a Korean spot" style="position: absolute; left: 132px; top: 104px; width: 236px; height: 316px; border-radius: 28px; background: #FFFFFF; transform: rotate(-2deg); box-shadow: 0 14px 32px rgba(42, 28, 21, 0.16); overflow: hidden; display: flex; flex-direction: column">
+<img src="/_blob/c682cf515b74bfe3dfb45e5269693580" alt="" style="width: 100%; height: 177px; object-fit: cover; display: block">
+<div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 5px">
+<span style="font-size: 27px; line-height: 1.1; font-weight: 800; color: #2A1C15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Juniper &amp; Rice</span>
+<span style="font-size: 19px; font-weight: 600; color: #73645A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Korean · $$ · ★ 4.8</span>
 </div>
-</sc-if>
-</div>
-
+</div><div aria-hidden="true" style="position: absolute; left: 25px; top: 38px; height: 48px; padding: 0 19px 0 30px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 4px 12px rgba(42, 28, 21, 0.12); display: flex; align-items: center; gap: 13px; transform: rotate(-3deg)">
+<span style="display: flex; align-items: center"><span style="width: 38px; height: 38px; border-radius: 999px; background: #2F6F8F; color: #FFFFFF; border: 2px solid #FFFFFF; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-left: -11px">MK</span><span style="width: 38px; height: 38px; border-radius: 999px; background: #6B4FA0; color: #FFFFFF; border: 2px solid #FFFFFF; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-left: -11px">TJ</span><span style="width: 38px; height: 38px; border-radius: 999px; background: #2E7A64; color: #FFFFFF; border: 2px solid #FFFFFF; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-left: -11px">NB</span></span>
+<span style="font-size: 19px; font-weight: 800; color: #2A1C15; white-space: nowrap">4 picking</span>
+</div><div aria-hidden="true" style="position: absolute; left: 324px; top: 90px; width: 71px; height: 71px; border-radius: 999px; background: #D2432A; border: 6px solid #FFFFFF; box-sizing: border-box; box-shadow: 0 6px 16px rgba(210, 67, 42, 0.28); display: flex; align-items: center; justify-content: center; transform: rotate(8deg)"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></div><div aria-hidden="true" style="position: absolute; left: 104px; top: 376px; width: 55px; height: 55px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 6px 16px rgba(42, 28, 21, 0.14); display: flex; align-items: center; justify-content: center; transform: rotate(-8deg)"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#2A1C15" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div></div></div>
 <div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column">
-<h1 style="margin: 0; font-size: 64px; line-height: 1.02; font-weight: 800; letter-spacing: -0.035em">Where are we eating?</h1>
-<p style="margin: 16px 0 0; font-size: 20px; line-height: 1.45; font-weight: 500; color: #5E6168">Pick a place together. Skip the group chat debate.</p>
-
+<h1 style="margin: 0; font-family: Caprasimo, 'Cooper Black', Georgia, serif; font-weight: 400; font-size: 64px; line-height: 1.02; letter-spacing: -0.015em; color: #2A1C15">Where are we eating?</h1>
+<p style="margin: 18px 0 0; font-size: 20px; line-height: 1.45; font-weight: 500; color: #73645A">Pick a place together. Skip the group chat debate.</p>
 <ol aria-label="How it works" style="list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px 28px">
-<li style="display: flex; align-items: center; gap: 10px">
-<span style="width: 36px; height: 36px; border-radius: 11px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="3"></rect><path d="M2 9l2 3-2 3M22 9l-2 3 2 3"></path></svg></span>
-<span style="font-size: 15px; font-weight: 600; color: #3D4047">Swipe on spots</span>
-</li>
-<li style="display: flex; align-items: center; gap: 10px">
-<span style="width: 36px; height: 36px; border-radius: 11px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"></path><path d="M4 6h.01M4 12h.01M4 18h.01"></path></svg></span>
-<span style="font-size: 15px; font-weight: 600; color: #3D4047">Rank favorites</span>
-</li>
-<li style="display: flex; align-items: center; gap: 10px">
-<span style="width: 36px; height: 36px; border-radius: 11px; background: #F1EFEA; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17181A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.8-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 15.2 12 21 12 21z"></path><circle cx="12" cy="9.8" r="2.3"></circle></svg></span>
-<span style="font-size: 15px; font-weight: 600; color: #3D4047">Get your pick</span>
-</li>
+<li style="display: flex; align-items: center; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 11px; background: #F3EADC; display: flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2A1C15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="3"></rect><path d="M2 9l2 3-2 3M22 9l-2 3 2 3"></path></svg></span><span style="font-size: 15px; font-weight: 600; color: #4A3D35">Swipe on spots</span></li><li style="display: flex; align-items: center; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 11px; background: #F3EADC; display: flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2A1C15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"></path><path d="M4 6h.01M4 12h.01M4 18h.01"></path></svg></span><span style="font-size: 15px; font-weight: 600; color: #4A3D35">Rank favorites</span></li><li style="display: flex; align-items: center; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 11px; background: #F3EADC; display: flex; align-items: center; justify-content: center; flex-shrink: 0" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2A1C15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.8-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 15.2 12 21 12 21z"></path><circle cx="12" cy="9.8" r="2.3"></circle></svg></span><span style="font-size: 15px; font-weight: 600; color: #4A3D35">Get your pick</span></li>
 </ol>
-
 <div style="margin-top: 40px; display: flex; flex-wrap: wrap; gap: 12px">
-<button style="height: 56px; padding: 0 32px; border-radius: 18px; border: none; background: {{accent}}; color: #FFFFFF; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(210, 67, 42, 0.20)">Start a group</button>
-<button style="height: 56px; padding: 0 28px; border-radius: 18px; border: 1.5px solid #E7E5E0; background: #FFFFFF; color: #17181A; font-size: 16px; font-weight: 700; cursor: pointer">Join with a code</button>
+<button style="height: 56px; padding: 0 32px; border-radius: 18px; border: none; background: #D2432A; color: #FFFFFF; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(210, 67, 42, 0.22)">Start a group</button>
+<button style="height: 56px; padding: 0 28px; border-radius: 18px; border: 1.5px solid #E9DFD1; background: #FFFFFF; color: #2A1C15; font-family: Manrope, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 700; cursor: pointer">Join with a code</button>
 </div>
-<p style="margin: 14px 0 0; font-size: 14px; font-weight: 500; color: #5E6168">No account needed. Invite friends by link.</p>
+<p style="margin: 14px 0 0; font-size: 14px; font-weight: 500; color: #73645A">No account needed. Invite friends by link.</p>
 </div>
-
 </div>
 </main>
-
+</div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"hero":{"editor":"enum","options":["placeholder","current photo"],"default":"placeholder"},"accent":{"editor":"color","default":"#D2432A","options":["#D2432A","#C2410C","#B4232F"]},"$preview":{"width":1280,"height":800}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
 class Component extends DCLogic {
   renderVals() {
-    var usePhoto = (this.props.hero ?? 'placeholder') === 'current photo';
-    return { accent: this.props.accent ?? '#D2432A', usePhoto: usePhoto, usePlaceholder: !usePhoto };
+    return {};
   }
 }
 </script>
