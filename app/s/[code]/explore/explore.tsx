@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import {
   BackIcon,
   CheckIcon,
@@ -37,6 +37,7 @@ import { DetailsSheet } from "./details-sheet";
 import { ExploreMap, type FitRequest, type MapMember, type MapPin } from "./explore-map";
 import { FiltersSheet } from "./filters-sheet";
 import { ResultRow, rowId, type AddState } from "./result-row";
+import { HALF_HEIGHT, useSnapSheet, type Snap } from "./use-snap-sheet";
 
 type ExploreProps = {
   initialSession: SessionView;
@@ -49,6 +50,13 @@ type ExploreProps = {
 type LastSearch = { text: string; area: SearchArea | null };
 
 const DEBOUNCE_MS = 250;
+
+/** What the handle does next, for its accessible name. */
+const HANDLE_LABEL: Record<Snap, string> = {
+  collapsed: "Show results at half height",
+  half: "Expand results to full height",
+  full: "Collapse results",
+};
 const MIN_CHARS = 2;
 
 function isAbort(error: unknown) {
@@ -104,6 +112,17 @@ export function Explore({
   const { show: showToast } = useToast();
   const desktop = useIsDesktop();
   const panelRef = useBottomBar(!desktop);
+  const {
+    rootRef,
+    sheetRef,
+    listRef,
+    headerProps: sheetHeaderProps,
+    snap: sheetSnap,
+    settled: sheetSettled,
+    heights: sheetHeights,
+    snapTo: snapSheetTo,
+    cycle: cycleSheet,
+  } = useSnapSheet(!desktop);
 
   // One autocomplete session token per typing session; it ends with the add
   // (Place Details) or is dropped after a Text Search.
@@ -123,13 +142,21 @@ export function Explore({
     [],
   );
 
-  // A tapped pin brings its row into view.
+  // A tapped pin brings its row into view. While the sheet is collapsed there
+  // is no list to scroll, so that waits until the sheet has come to rest
+  // higher up. Other snaps leave the list where the member scrolled it.
+  const scrolledFor = useRef<{ selected: string | null; settled: Snap }>({ selected: null, settled: "half" });
   useEffect(() => {
-    if (!selected) return;
+    const last = scrolledFor.current;
+    const collapsed = !desktop && sheetSettled === "collapsed";
+    const raised = last.settled === "collapsed" && sheetSettled !== "collapsed";
+    const changed = last.selected !== selected;
+    scrolledFor.current = { selected, settled: sheetSettled };
+    if (!selected || collapsed || !(changed || raised)) return;
     const row = document.getElementById(rowId(selected));
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     row?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
-  }, [selected]);
+  }, [selected, desktop, sheetSettled]);
 
   function token(): string {
     tokenRef.current ??= crypto.randomUUID();
@@ -280,6 +307,7 @@ export function Explore({
   function selectPin(placeId: string) {
     setSelected(placeId);
     if (!results.some((r) => r.placeId === placeId)) setDetailsId(placeId);
+    else if (!desktop && sheetSnap === "collapsed") snapSheetTo("half");
   }
 
   function stateOf(placeId: string): AddState {
@@ -330,9 +358,16 @@ export function Explore({
         : `${spotsLabel(results.length)} for “${searched}”`;
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-[#EEF0EB] lg:flex">
-      {/* The map: above the results sheet on phones, beside the panel on desktop. */}
-      <div className="absolute inset-x-0 top-0 bottom-[344px] lg:static lg:order-2 lg:h-full lg:min-w-0 lg:flex-1">
+    <div ref={rootRef} className="relative h-dvh overflow-hidden bg-[#EEF0EB] lg:flex">
+      {/*
+        The map: above the results sheet on phones, beside the panel on desktop.
+        Its bottom edge meets the sheet where the sheet last settled, so the map
+        resizes once per snap, not during a drag, and Google's logo stays in view.
+      */}
+      <div
+        style={{ "--map-bottom": `${sheetHeights[sheetSettled]}px` } as CSSProperties}
+        className="absolute inset-x-0 top-0 bottom-(--map-bottom) lg:static lg:order-2 lg:h-full lg:min-w-0 lg:flex-1"
+      >
         <ExploreMap
           center={mapCenter}
           pins={pins}
@@ -482,22 +517,45 @@ export function Explore({
         {/* Taps here reach the map. */}
         <div className="min-h-0 flex-1 lg:hidden" aria-hidden="true" />
 
-        <section
+        {/* What toasts sit above: the settled sheet, but no higher than half, so a full sheet doesn't push them off the top. */}
+        <div
           ref={panelRef}
+          aria-hidden="true"
+          style={{ height: Math.min(sheetHeights[sheetSettled], HALF_HEIGHT) }}
+          className="pointer-events-none absolute inset-x-0 bottom-0 lg:hidden"
+        />
+
+        {/* A bottom sheet with three snap points on phones (use-snap-sheet.ts); the rest of the side panel on desktop. */}
+        <section
+          ref={sheetRef}
           aria-labelledby="explore-title"
-          className="pointer-events-auto flex h-[344px] shrink-0 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(42,28,21,0.10)] lg:h-auto lg:min-h-0 lg:flex-1 lg:rounded-none lg:shadow-none"
+          style={{ "--sheet-h": `${sheetHeights[sheetSnap]}px` } as CSSProperties}
+          className="pointer-events-auto flex h-(--sheet-h) shrink-0 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(42,28,21,0.10)] transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none lg:h-auto lg:min-h-0 lg:flex-1 lg:rounded-none lg:shadow-none lg:transition-none"
         >
-          <div className="flex h-[22px] shrink-0 items-center justify-center lg:hidden">
-            <span className="h-[5px] w-10 rounded-full bg-[#D9D6CF]" aria-hidden="true" />
-          </div>
-          <div className="flex shrink-0 flex-col gap-[3px] px-5 pt-0.5 pb-2 lg:pt-0 lg:pb-3">
-            <h1 id="explore-title" aria-live="polite" className="text-[19px] font-extrabold lg:text-xl">
-              {label}
-            </h1>
-            <p className="text-sm font-medium text-quiet">Add spots for your group to vote on.</p>
+          <div {...sheetHeaderProps} className="shrink-0 max-lg:cursor-grab max-lg:touch-none max-lg:select-none">
+            <button
+              type="button"
+              onClick={cycleSheet}
+              aria-label={HANDLE_LABEL[sheetSnap]}
+              className="flex h-[22px] w-full items-center justify-center bg-transparent p-0 focus-visible:outline-offset-[-3px] lg:hidden"
+            >
+              <span className="h-[5px] w-10 rounded-full bg-[#D9D6CF]" aria-hidden="true" />
+            </button>
+            <div className="flex flex-col gap-[3px] px-5 pt-0.5 pb-2 lg:pt-0 lg:pb-3">
+              <h1 id="explore-title" aria-live="polite" className="text-[19px] font-extrabold lg:text-xl">
+                {label}
+              </h1>
+              <p className="text-sm font-medium text-quiet">Add spots for your group to vote on.</p>
+            </div>
           </div>
 
-          <ul className="min-h-0 flex-1 overflow-y-auto px-3 pt-1 pb-[calc(28px+env(safe-area-inset-bottom,0px))] lg:pb-6">
+          <ul
+            ref={listRef}
+            inert={!desktop && sheetSnap === "collapsed"}
+            className={`min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 pt-1 pb-[calc(28px+env(safe-area-inset-bottom,0px))] transition-opacity duration-200 motion-reduce:transition-none lg:pb-6 ${
+              sheetSnap === "collapsed" ? "max-lg:opacity-0" : ""
+            }`}
+          >
             {results.map((result) => {
               const place = placeFor(result.placeId) ?? result;
               return (
