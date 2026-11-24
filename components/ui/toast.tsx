@@ -105,7 +105,7 @@ function ToastLayer({ toast }: { toast: ToastInput | null }) {
             {toast.kind === "ok" ? (
               <div
                 role="status"
-                className="flex h-11 max-w-full items-center gap-2 rounded-field bg-ink px-4 text-sm font-bold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(23,24,26,0.2)]"
+                className="flex h-11 max-w-full items-center gap-2 rounded-field bg-ink px-4 text-sm font-bold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(42,28,21,0.2)]"
               >
                 <CheckIcon size={16} strokeWidth={3} className="shrink-0" />
                 <span className="truncate">{toast.text}</span>
@@ -113,7 +113,7 @@ function ToastLayer({ toast }: { toast: ToastInput | null }) {
             ) : (
               <div
                 role="alert"
-                className="flex min-h-12 w-full max-w-[390px] items-center gap-2.5 rounded-field border-[1.5px] border-[#EBCFCA] bg-surface py-1 pr-1.5 pl-3.5 text-sm font-bold text-ink shadow-[0_8px_20px_rgba(23,24,26,0.12)]"
+                className="flex min-h-12 w-full max-w-[390px] items-center gap-2.5 rounded-field border-[1.5px] border-[#EBCFCA] bg-surface py-1 pr-1.5 pl-3.5 text-sm font-bold text-ink shadow-[0_8px_20px_rgba(42,28,21,0.12)]"
               >
                 <AlertIcon size={16} className="shrink-0 text-[#A3271B]" />
                 <span className="flex-1">{toast.text}</span>

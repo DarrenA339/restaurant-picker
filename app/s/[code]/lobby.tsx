@@ -214,7 +214,7 @@ export function Lobby({
             <div className="flex gap-2.5">
               <Link
                 href={explorePath}
-                className="flex h-14 min-w-0 flex-1 items-center gap-2.5 rounded-button bg-surface px-4 text-left text-base font-semibold text-quiet shadow-[0_6px_18px_rgba(23,24,26,0.08),0_1px_3px_rgba(23,24,26,0.06)] lg:px-[18px]"
+                className="flex h-14 min-w-0 flex-1 items-center gap-2.5 rounded-button bg-surface px-4 text-left text-base font-semibold text-quiet shadow-[0_6px_18px_rgba(42,28,21,0.08),0_1px_3px_rgba(42,28,21,0.06)] lg:px-[18px]"
               >
                 <SearchIcon size={20} className="shrink-0 text-ink" />
                 Add a place or a dish
@@ -251,7 +251,7 @@ export function Lobby({
               arrivedLive={(id) => !alreadyHere.current.has(id)}
             />
 
-            <div className="flex items-center justify-between gap-3 rounded-card bg-surface py-3 pr-3 pl-[18px] shadow-[0_1px_3px_rgba(23,24,26,0.07)]">
+            <div className="flex items-center justify-between gap-3 rounded-card bg-surface py-3 pr-3 pl-[18px] shadow-[0_1px_3px_rgba(42,28,21,0.07)]">
               <span className="flex flex-col gap-0.5">
                 <span className="text-base font-extrabold lg:text-[15px]">How we pick the winner</span>
                 <span className="text-sm font-semibold text-quiet lg:text-[13px]">
@@ -269,7 +269,7 @@ export function Lobby({
               ) : null}
             </div>
 
-            <div className="flex flex-col gap-2 rounded-card bg-surface px-[18px] py-4 shadow-[0_1px_3px_rgba(23,24,26,0.07)] lg:gap-1.5 lg:py-3.5">
+            <div className="flex flex-col gap-2 rounded-card bg-surface px-[18px] py-4 shadow-[0_1px_3px_rgba(42,28,21,0.07)] lg:gap-1.5 lg:py-3.5">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-extrabold lg:text-[15px]">Then we add suggestions</h2>
                 {isHost ? (
@@ -321,7 +321,7 @@ export function Lobby({
               ) : (
                 <div
                   role="status"
-                  className="flex min-h-[84px] items-center gap-3.5 rounded-button bg-surface px-[18px] py-3.5 shadow-[0_1px_3px_rgba(23,24,26,0.07)]"
+                  className="flex min-h-[84px] items-center gap-3.5 rounded-button bg-surface px-[18px] py-3.5 shadow-[0_1px_3px_rgba(42,28,21,0.07)]"
                 >
                   {host ? (
                     <Avatar name={host.display_name} color={toPersonColor(host.color)} size={40} />
@@ -367,7 +367,7 @@ function WhosHere({ members, hostId, userId, arrivedLive }: WhosHereProps) {
   return (
     <section
       aria-labelledby="whos-here"
-      className="hidden flex-col rounded-card bg-surface px-[18px] pt-4 pb-2 shadow-[0_1px_3px_rgba(23,24,26,0.07)] lg:flex"
+      className="hidden flex-col rounded-card bg-surface px-[18px] pt-4 pb-2 shadow-[0_1px_3px_rgba(42,28,21,0.07)] lg:flex"
     >
       <div className="flex items-baseline justify-between">
         <h2 id="whos-here" className="text-base font-extrabold">

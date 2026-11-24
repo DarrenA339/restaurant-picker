@@ -25,8 +25,8 @@ const INSET = 14;
 /** When both range handles sit on one stop they are nudged apart so both stay grabbable. */
 const MERGED_OFFSETS = [-21, -7];
 
-const restShadow = "shadow-[0_1px_3px_rgba(23,24,26,0.22),0_0_0_1px_rgba(23,24,26,0.06)]";
-const dragShadow = "shadow-[0_0_0_6px_rgba(210,67,42,0.18),0_1px_3px_rgba(23,24,26,0.22)]";
+const restShadow = "shadow-[0_1px_3px_rgba(42,28,21,0.22),0_0_0_1px_rgba(42,28,21,0.06)]";
+const dragShadow = "shadow-[0_0_0_6px_rgba(210,67,42,0.18),0_1px_3px_rgba(42,28,21,0.22)]";
 
 /**
  * The distance and price sliders from docs/design/sliders.png: 28px white

@@ -27,7 +27,7 @@ function Svg({ size = 24, strokeWidth = 2.2, children, ...rest }: IconProps) {
   );
 }
 
-/** The app mark: a fork and knife. */
+/** A fork and knife, for restaurant map pins. The app mark is Brand. */
 export function ForkKnifeIcon(props: IconProps) {
   return (
     <Svg {...props}>

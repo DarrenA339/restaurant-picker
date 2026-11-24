@@ -20,7 +20,7 @@ export function MemberDot({ member, isViewer }: { member: MapMember; isViewer: b
       title={isViewer ? "You" : member.name}
     >
       <span
-        className={`flex size-[30px] items-center justify-center rounded-full border-[2.5px] border-white text-[11px] font-extrabold text-white shadow-[0_2px_6px_rgba(23,24,26,0.22)] ${color}`}
+        className={`flex size-[30px] items-center justify-center rounded-full border-[2.5px] border-white text-[11px] font-extrabold text-white shadow-[0_2px_6px_rgba(42,28,21,0.22)] ${color}`}
         aria-hidden="true"
       >
         {isViewer ? "You" : initialsFor(member.name)}
@@ -41,8 +41,8 @@ export function RestaurantPin({
 }) {
   const size = selected ? "size-[38px]" : "size-[30px]";
   const shadow = selected
-    ? "shadow-[0_0_0_6px_rgba(210,67,42,0.22),0_3px_8px_rgba(23,24,26,0.25)]"
-    : "shadow-[0_3px_8px_rgba(23,24,26,0.25)]";
+    ? "shadow-[0_0_0_6px_rgba(210,67,42,0.22),0_3px_8px_rgba(42,28,21,0.25)]"
+    : "shadow-[0_3px_8px_rgba(42,28,21,0.25)]";
   return (
     <AdvancedMarker
       position={pin.location}
@@ -71,7 +71,7 @@ export function RestaurantPin({
 function PinLabel({ name }: { name: string }) {
   return (
     <span className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 flex -translate-x-1/2 flex-col items-center">
-      <span className="flex h-7 items-center rounded-[9px] bg-surface px-2.5 text-xs font-extrabold whitespace-nowrap text-ink shadow-[0_3px_10px_rgba(23,24,26,0.16)]">
+      <span className="flex h-7 items-center rounded-[9px] bg-surface px-2.5 text-xs font-extrabold whitespace-nowrap text-ink shadow-[0_3px_10px_rgba(42,28,21,0.16)]">
         {name}
       </span>
       <span className="size-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-surface" />
@@ -89,7 +89,7 @@ export function CardPin({ name, location }: { name: string; location: LatLng }) 
       zIndex={5}
       title={name}
     >
-      <span className="flex flex-col items-center gap-1 drop-shadow-[0_3px_5px_rgba(23,24,26,0.25)]">
+      <span className="flex flex-col items-center gap-1 drop-shadow-[0_3px_5px_rgba(42,28,21,0.25)]">
         <span className="flex h-[26px] items-center rounded-lg bg-surface px-2.5 text-xs font-extrabold whitespace-nowrap text-ink lg:h-[30px] lg:rounded-[9px] lg:px-3 lg:text-[13px]">
           {name}
         </span>

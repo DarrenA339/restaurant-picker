@@ -211,7 +211,7 @@ export function SwipeScreen({
       <header className="flex shrink-0 items-center justify-between gap-3 lg:gap-4">
         <div className="flex flex-col gap-px lg:gap-0.5">
           <span className="text-[13px] font-semibold text-quiet lg:text-sm">{session.name}</span>
-          <h1 className="text-[22px] leading-[1.2] font-extrabold tracking-[-0.01em] lg:text-[28px] lg:leading-[1.1]">
+          <h1 className="text-[22px] leading-[1.2] font-display font-normal tracking-[-0.01em] lg:text-[28px] lg:leading-[1.1]">
             Pick a spot
           </h1>
         </div>
@@ -223,7 +223,7 @@ export function SwipeScreen({
             ring="page"
             label={`${members.length} in this session`}
           />
-          <span className="flex h-8 items-center rounded-full bg-surface px-3 text-sm font-bold whitespace-nowrap shadow-[0_1px_2px_rgba(23,24,26,0.08)] lg:h-9 lg:px-3.5 lg:text-[15px]">
+          <span className="flex h-8 items-center rounded-full bg-surface px-3 text-sm font-bold whitespace-nowrap shadow-[0_1px_2px_rgba(42,28,21,0.08)] lg:h-9 lg:px-3.5 lg:text-[15px]">
             {position} of {deck.length}
           </span>
         </div>
@@ -255,7 +255,7 @@ export function SwipeScreen({
         variant="swipe"
         className="lg:mt-6"
         left={
-          <div className="relative mt-3.5 h-[188px] shrink-0 overflow-hidden rounded-card shadow-[0_1px_3px_rgba(23,24,26,0.08)] lg:mt-0 lg:h-[620px]">
+          <div className="relative mt-3.5 h-[188px] shrink-0 overflow-hidden rounded-card shadow-[0_1px_3px_rgba(42,28,21,0.08)] lg:mt-0 lg:h-[620px]">
             <MapStrip
               pin={pin}
               fallback={sessionCenter ?? viewer ?? BOSTON}
@@ -270,7 +270,7 @@ export function SwipeScreen({
             <div className="relative mt-3.5 min-h-0 flex-1 lg:mt-0 lg:h-[500px] lg:flex-none">
               {nextData ? (
                 <div
-                  className="absolute inset-0 translate-y-2 scale-[0.97] overflow-hidden rounded-[26px] bg-surface shadow-[0_2px_6px_rgba(23,24,26,0.05)]"
+                  className="absolute inset-0 translate-y-2 scale-[0.97] overflow-hidden rounded-[26px] bg-surface shadow-[0_2px_6px_rgba(42,28,21,0.05)]"
                   aria-hidden="true"
                 >
                   {nextData.photoUri ? (

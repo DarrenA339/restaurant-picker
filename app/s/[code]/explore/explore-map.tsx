@@ -126,7 +126,7 @@ function SearchAreaButton({ searching, onSearch }: { searching: boolean; onSearc
         const bounds = map?.getBounds();
         if (bounds) onSearch(areaFromBounds(bounds.toJSON()));
       }}
-      className="absolute top-[76px] left-1/2 flex h-10 -translate-x-1/2 items-center gap-2 rounded-full bg-surface px-4 text-sm font-extrabold whitespace-nowrap text-ink shadow-[0_2px_10px_rgba(23,24,26,0.18)] lg:top-5"
+      className="absolute top-[76px] left-1/2 flex h-10 -translate-x-1/2 items-center gap-2 rounded-full bg-surface px-4 text-sm font-extrabold whitespace-nowrap text-ink shadow-[0_2px_10px_rgba(42,28,21,0.18)] lg:top-5"
     >
       <RefreshIcon size={15} className={searching ? "animate-spin motion-reduce:animate-none" : ""} />
       {searching ? "Searching" : "Search this area"}

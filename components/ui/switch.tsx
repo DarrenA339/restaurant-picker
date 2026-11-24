@@ -23,7 +23,7 @@ export function Switch({ checked, onChange, label, disabled = false }: SwitchPro
         }`}
       >
         <span
-          className={`absolute top-[3px] block size-[26px] rounded-full bg-surface shadow-[0_1px_3px_rgba(23,24,26,0.3)] transition-[left] duration-150 ${
+          className={`absolute top-[3px] block size-[26px] rounded-full bg-surface shadow-[0_1px_3px_rgba(42,28,21,0.3)] transition-[left] duration-150 ${
             checked ? "left-[23px]" : "left-[3px]"
           }`}
         />

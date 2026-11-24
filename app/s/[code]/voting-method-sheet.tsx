@@ -103,7 +103,7 @@ export function VotingMethodSheet({
         })}
       </div>
 
-      <div className="flex flex-col gap-2 px-5 pt-3 pb-6 shadow-[0_-1px_0_#ECEAE5]">
+      <div className="flex flex-col gap-2 px-5 pt-3 pb-6 shadow-[0_-1px_0_#EDE4D7]">
         {error ? (
           <p
             role="alert"

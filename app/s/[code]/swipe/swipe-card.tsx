@@ -79,7 +79,7 @@ export function SwipeCard({ data, viewer, meetingArea, interactive, leaving, red
         if (!down || !interactive || leaving) return;
         if (Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_PX) onOpen();
       }}
-      className="absolute inset-0 flex touch-pan-y flex-col overflow-hidden rounded-[26px] bg-surface shadow-[0_12px_32px_rgba(23,24,26,0.08),0_2px_6px_rgba(23,24,26,0.05)] select-none"
+      className="absolute inset-0 flex touch-pan-y flex-col overflow-hidden rounded-[26px] bg-surface shadow-[0_12px_32px_rgba(42,28,21,0.08),0_2px_6px_rgba(42,28,21,0.05)] select-none"
     >
       <div className="relative min-h-[160px] flex-1 bg-[#E9E4DA] lg:h-[340px] lg:flex-none">
         {data.photoUri ? (
@@ -106,7 +106,7 @@ export function SwipeCard({ data, viewer, meetingArea, interactive, leaving, red
           <>
             <motion.span
               style={{ opacity: leaving === "yes" ? 1 : yesOpacity }}
-              className="absolute top-3.5 left-3.5 flex h-[34px] items-center gap-1.5 rounded-full bg-accent px-3.5 text-[15px] font-extrabold text-white shadow-[0_4px_12px_rgba(23,24,26,0.2)]"
+              className="absolute top-3.5 left-3.5 flex h-[34px] items-center gap-1.5 rounded-full bg-accent px-3.5 text-[15px] font-extrabold text-white shadow-[0_4px_12px_rgba(42,28,21,0.2)]"
               aria-hidden="true"
             >
               <CheckIcon size={16} strokeWidth={3} />
@@ -114,7 +114,7 @@ export function SwipeCard({ data, viewer, meetingArea, interactive, leaving, red
             </motion.span>
             <motion.span
               style={{ opacity: leaving === "no" ? 1 : noOpacity }}
-              className="absolute top-3.5 right-3.5 flex h-[34px] items-center gap-1.5 rounded-full bg-ink px-3.5 text-[15px] font-extrabold text-white shadow-[0_4px_12px_rgba(23,24,26,0.2)]"
+              className="absolute top-3.5 right-3.5 flex h-[34px] items-center gap-1.5 rounded-full bg-ink px-3.5 text-[15px] font-extrabold text-white shadow-[0_4px_12px_rgba(42,28,21,0.2)]"
               aria-hidden="true"
             >
               <CloseIcon size={16} strokeWidth={3} />
@@ -122,7 +122,7 @@ export function SwipeCard({ data, viewer, meetingArea, interactive, leaving, red
             </motion.span>
             {leaving === "veto" ? (
               <span
-                className="absolute top-3.5 left-1/2 flex h-[34px] -translate-x-1/2 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[15px] font-extrabold text-ink shadow-[0_4px_12px_rgba(23,24,26,0.2)]"
+                className="absolute top-3.5 left-1/2 flex h-[34px] -translate-x-1/2 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[15px] font-extrabold text-ink shadow-[0_4px_12px_rgba(42,28,21,0.2)]"
                 aria-hidden="true"
               >
                 <VetoIcon size={16} strokeWidth={2.6} />

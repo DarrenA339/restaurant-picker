@@ -5,7 +5,7 @@ import { BackIcon, CameraIcon, ChevronRightIcon } from "@/components/icons";
 import type { GalleryPhoto, PhotoAttribution } from "@/lib/restaurants";
 
 const arrowClass =
-  "absolute top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface text-ink shadow-[0_2px_8px_rgba(23,24,26,0.18)] disabled:opacity-45";
+  "absolute top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface text-ink shadow-[0_2px_8px_rgba(42,28,21,0.18)] disabled:opacity-45";
 
 function Credit({ attribution, linkClass }: { attribution: PhotoAttribution; linkClass: string }) {
   return (

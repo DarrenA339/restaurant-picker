@@ -28,10 +28,10 @@ type TwoColumnVariant = "hero" | "panel" | "swipe";
 // in the screen's single column, in source order, sharing its gap. From
 // 1024px up they become the two columns from the desktop designs.
 const variants: Record<TwoColumnVariant, { wrap: string; left: string; right: string }> = {
-  // Welcome: photo and headline side by side, vertically centered, 64px apart.
+  // Welcome: the card stack and headline side by side, vertically centered, 64px apart.
   hero: {
     wrap: "lg:items-center lg:gap-16",
-    left: "lg:flex-[1_1_420px]",
+    left: "lg:flex-[1_1_440px]",
     right: "lg:flex-[1_1_400px]",
   },
   // Lobby: a wide main column and a 360px sticky side panel, 32px apart.

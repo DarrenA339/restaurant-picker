@@ -135,7 +135,7 @@ export function DecidingView({
   ) : (
     <div
       role="status"
-      className="flex min-h-[84px] items-center gap-3.5 rounded-button bg-surface px-[18px] py-3.5 shadow-[0_1px_3px_rgba(23,24,26,0.07)]"
+      className="flex min-h-[84px] items-center gap-3.5 rounded-button bg-surface px-[18px] py-3.5 shadow-[0_1px_3px_rgba(42,28,21,0.07)]"
     >
       {host ? <Avatar name={host.display_name} color={toPersonColor(host.color)} size={40} /> : null}
       <span className="flex flex-col gap-0.5">
@@ -155,7 +155,7 @@ export function DecidingView({
     <FlowScreen bodyClassName="gap-6 pt-4 pb-6" footerClassName="flex flex-col gap-2.5" footer={footer}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-[13px] font-semibold text-quiet">{session.name}</span>
-        <span className="flex h-8 items-center rounded-full bg-surface px-3 text-[13px] font-bold shadow-[0_1px_2px_rgba(23,24,26,0.08)]">
+        <span className="flex h-8 items-center rounded-full bg-surface px-3 text-[13px] font-bold shadow-[0_1px_2px_rgba(42,28,21,0.08)]">
           Deciding
         </span>
       </div>
@@ -175,7 +175,7 @@ export function DecidingView({
           <span className="flex size-16 items-center justify-center rounded-[22px] bg-tint text-ink" aria-hidden="true">
             <SearchIcon size={26} />
           </span>
-          <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">
+          <h1 className="text-[34px] leading-[1.08] font-display font-normal tracking-[-0.01em]">
             Nothing matches these filters
           </h1>
           <p className="text-base leading-[1.45] font-medium text-quiet">
@@ -192,7 +192,7 @@ export function DecidingView({
             >
               <CheckIcon size={30} strokeWidth={3} />
             </span>
-            <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">
+            <h1 className="text-[34px] leading-[1.08] font-display font-normal tracking-[-0.01em]">
               {one ? "1 spot made the cut" : `${finalists.length} spots made the cut`}
             </h1>
             <p className="text-base leading-[1.45] font-medium text-quiet">
@@ -206,7 +206,7 @@ export function DecidingView({
 
           <section
             aria-labelledby="finalists-title"
-            className="flex flex-col gap-3 rounded-card bg-surface px-[18px] pt-4 pb-4 shadow-[0_1px_3px_rgba(23,24,26,0.07)]"
+            className="flex flex-col gap-3 rounded-card bg-surface px-[18px] pt-4 pb-4 shadow-[0_1px_3px_rgba(42,28,21,0.07)]"
           >
             <h2 id="finalists-title" className="text-[17px] font-extrabold">
               {one ? "Finalist" : "Finalists"}

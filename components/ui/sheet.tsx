@@ -85,7 +85,7 @@ export function Sheet({
               aria-modal="true"
               aria-labelledby={labelledBy}
               tabIndex={-1}
-              className={`fixed top-1/2 left-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[28px] bg-surface shadow-[0_24px_60px_rgba(23,24,26,0.25)] focus-visible:outline-none ${flush ? "" : "pt-5"} ${dialogSizes[size]}`}
+              className={`fixed top-1/2 left-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[28px] bg-surface shadow-[0_24px_60px_rgba(42,28,21,0.25)] focus-visible:outline-none ${flush ? "" : "pt-5"} ${dialogSizes[size]}`}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}

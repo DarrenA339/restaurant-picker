@@ -40,7 +40,7 @@ export function JoinWithCode() {
     return (
       <Button
         variant="secondary"
-        className="h-[50px] border-[#E7E5E0] lg:h-14 lg:px-7"
+        className="h-[50px] border-line lg:h-14 lg:px-7"
         onClick={() => setOpened(true)}
       >
         Join with a code

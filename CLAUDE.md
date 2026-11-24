@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A mobile-first group restaurant picker: a host creates a session with filters, friends join from a link with no account, everyone swipes yes/no/veto on Google Places results dealt in batches of 20, and a server-side voting rule (approval + Borda over the top 5) picks the winner. Scope is Boston/Cambridge/Somerville.
+Chews, a mobile-first group restaurant picker: a host creates a session with filters, friends join from a link with no account, everyone swipes yes/no/veto on Google Places results dealt in batches of 20, and a server-side voting rule (approval + Borda over the top 5) picks the winner. Scope is Boston/Cambridge/Somerville.
 
 `docs/SPEC.md` is the source of truth for product behavior, routes, data model, voting rules, edge cases, Places API usage, and the phased build plan. Read it before implementing a feature, and keep it updated when a decision changes (it has an "Open decisions" checklist).
 
@@ -61,7 +61,10 @@ Mobile is the design; from 1024px (Tailwind's `lg`) every screen takes the deskt
 - `AppShell` (used once, in `app/layout.tsx`): a 430px column below `lg`, full width above.
 - `FlowScreen` (+ `ScreenFooter`): Create, Join, Done, Final round, Winner, edge states, placeholders. Renders the brand header (desktop only) and a centered 480px column; `footer` is sticky at the bottom on phones and inline at the end of the column on desktop. `as="form"` when the screen is one form.
 - `WideScreen` + `TwoColumn`: Welcome (`variant="hero"`), Lobby and Swipe (`variant="panel"`, sticky right column). On phones the columns are `display: contents`, so children sit in the single column in source order; write the JSX in phone order and let `lg:` classes move things.
-- `Brand` / `BrandHeader`: the "[APP NAME]" mark at its two sizes.
+- `Brand` / `BrandHeader`: the Chews lockup at its two sizes: the c mark (inline SVG from `public/brand/chews-mark.svg`) on a tomato tile, plus "chews" as text in the display face. The only brand mark; don't put another icon in a header.
+- Display face: Caprasimo is loaded in `app/layout.tsx` as `--font-display` and applied with the `font-display` utility (`app/globals.css`), always with `font-normal` (it has one weight). Only the wordmark and fixed-copy page headlines use it (Welcome, "Dinner decided", screen titles). Session names, restaurant names, sheet and section titles, buttons, forms and body text stay Manrope.
+- Color tokens live in `app/globals.css`. `butter` and `butter-soft` are for brand moments (the Welcome hero), never a UI control; tomato `accent` is the one UI accent.
+- `app/welcome-hero.tsx` is the Welcome card-stack illustration (one `role="img"` with a text alternative). Its photo is `public/brand/hero-card.jpg`, a licensed file credited in `docs/brand/README.md`; never a Google Places photo, since those can't be stored.
 - `components/ui/sheet.tsx`: a bottom sheet on phones, a centered dialog from `lg` (`size="narrow"` 520px for filters and the voting method, `"wide"` 960px for details). `useIsDesktop()` in `components/layout/use-desktop.ts` is the matching media query for client logic.
 
 Phone-only and desktop-only elements (the lobby's avatar stack vs. its "Who's here" list, "Invite" vs. "Invite friends") are rendered once with `lg:hidden` / `hidden lg:flex`, not duplicated components.
@@ -111,7 +114,7 @@ Defined in `.env.local` (gitignored). The browser-exposed ones are the `NEXT_PUB
 
 
 # Project
-Group restaurant picker. Friends join by link, swipe yes/no/veto on cards dealt in batches of 20, then rank finalists. docs/SPEC.md is the source of truth; read it before planning any phase.
+Chews: a group restaurant picker. Friends join by link, swipe yes/no/veto on cards dealt in batches of 20, then rank finalists. docs/SPEC.md is the source of truth; read it before planning any phase.
 
 # Stack
 Next.js App Router, TypeScript, Tailwind, Supabase (Postgres, anonymous auth, Realtime), Motion, @vis.gl/react-google-maps, Vitest.

@@ -182,7 +182,7 @@ export function AreaField({
           id={`${id}-suggestions`}
           aria-label="Suggestions"
           onMouseDown={(event) => event.preventDefault()}
-          className="absolute top-[calc(100%+6px)] right-0 left-0 z-20 flex flex-col gap-0.5 rounded-2xl bg-surface p-1.5 shadow-[0_12px_32px_rgba(23,24,26,0.16)]"
+          className="absolute top-[calc(100%+6px)] right-0 left-0 z-20 flex flex-col gap-0.5 rounded-2xl bg-surface p-1.5 shadow-[0_12px_32px_rgba(42,28,21,0.16)]"
         >
           {predictions.map((prediction) => (
             <li key={prediction.placeId}>

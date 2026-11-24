@@ -94,7 +94,7 @@ export function DoneView({ session, members, userId, mode = "picking", total = 0
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-[13px] font-semibold text-quiet">{session.name}</span>
-        <span className="flex h-8 items-center rounded-full bg-surface px-3 text-[13px] font-bold shadow-[0_1px_2px_rgba(23,24,26,0.08)]">
+        <span className="flex h-8 items-center rounded-full bg-surface px-3 text-[13px] font-bold shadow-[0_1px_2px_rgba(42,28,21,0.08)]">
           {ranking ? "Ranking" : "Picking"}
         </span>
       </div>
@@ -108,7 +108,7 @@ export function DoneView({ session, members, userId, mode = "picking", total = 0
         </span>
         {everyoneDone ? (
           <>
-            <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">
+            <h1 className="text-[34px] leading-[1.08] font-display font-normal tracking-[-0.01em]">
               {ranking ? "Everyone’s in" : "Everyone’s done"}
             </h1>
             <p className="text-base leading-[1.45] font-medium text-quiet">
@@ -117,14 +117,14 @@ export function DoneView({ session, members, userId, mode = "picking", total = 0
           </>
         ) : ranking ? (
           <>
-            <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">Your ranking is in</h1>
+            <h1 className="text-[34px] leading-[1.08] font-display font-normal tracking-[-0.01em]">Your ranking is in</h1>
             <p className="text-base leading-[1.45] font-medium text-quiet">
               Saved. Sit tight while the last ranking comes in.
             </p>
           </>
         ) : (
           <>
-            <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-[-0.02em]">You’re done picking</h1>
+            <h1 className="text-[34px] leading-[1.08] font-display font-normal tracking-[-0.01em]">You’re done picking</h1>
             <p className="text-base leading-[1.45] font-medium text-quiet">
               You went through all {total} {total === 1 ? "spot" : "spots"}. Nice.
             </p>
@@ -134,7 +134,7 @@ export function DoneView({ session, members, userId, mode = "picking", total = 0
 
       <section
         aria-labelledby="group-title"
-        className="flex flex-col gap-3 rounded-card bg-surface px-[18px] pt-4 pb-4 shadow-[0_1px_3px_rgba(23,24,26,0.07)]"
+        className="flex flex-col gap-3 rounded-card bg-surface px-[18px] pt-4 pb-4 shadow-[0_1px_3px_rgba(42,28,21,0.07)]"
       >
         <div className="flex items-baseline justify-between">
           <h2 id="group-title" className="text-[17px] font-extrabold">

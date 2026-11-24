@@ -196,7 +196,7 @@ export function CreateForm() {
         >
           <BackIcon size={22} />
         </Link>
-        <h1 className="text-[30px] leading-[1.1] font-extrabold tracking-[-0.02em]">
+        <h1 className="text-[30px] leading-[1.1] font-display font-normal tracking-[-0.01em]">
           Set up a meal
         </h1>
         <p className="text-[15px] font-medium text-quiet">
@@ -315,7 +315,7 @@ export function CreateForm() {
         stopText={priceLabel}
       />
 
-      <div className="overflow-hidden rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(23,24,26,0.07)]">
+      <div className="overflow-hidden rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(42,28,21,0.07)]">
         <button
           type="button"
           onClick={() => setMoreOpen((open) => !open)}

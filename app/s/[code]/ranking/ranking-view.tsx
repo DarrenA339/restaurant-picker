@@ -186,13 +186,13 @@ export function RankingView({
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-[13px] font-semibold text-quiet">{session.name}</span>
-        <span className="flex h-8 items-center rounded-full bg-surface px-3 text-[13px] font-bold shadow-[0_1px_2px_rgba(23,24,26,0.08)]">
+        <span className="flex h-8 items-center rounded-full bg-surface px-3 text-[13px] font-bold shadow-[0_1px_2px_rgba(42,28,21,0.08)]">
           {votingMethodInfo(method).name}
         </span>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <h1 id="final-title" className="text-[32px] leading-[1.08] font-extrabold tracking-[-0.02em]">
+        <h1 id="final-title" className="text-[32px] leading-[1.08] font-display font-normal tracking-[-0.01em]">
           {copy.title}
         </h1>
         <p className="text-[15px] leading-[1.45] font-medium text-quiet">{copy.sub}</p>
@@ -211,8 +211,8 @@ export function RankingView({
                 onClick={() => setPick(row.placeId)}
                 className={`flex w-full items-center gap-3.5 rounded-[20px] bg-surface p-2.5 pr-4 text-left text-ink ${
                   checked
-                    ? "shadow-[0_0_0_2px_var(--color-accent),0_1px_3px_rgba(23,24,26,0.08)]"
-                    : "shadow-[0_1px_3px_rgba(23,24,26,0.08)]"
+                    ? "shadow-[0_0_0_2px_var(--color-accent),0_1px_3px_rgba(42,28,21,0.08)]"
+                    : "shadow-[0_1px_3px_rgba(42,28,21,0.08)]"
                 }`}
               >
                 <Tile data={row.data} size="size-[72px] rounded-2xl" />
@@ -247,8 +247,8 @@ export function RankingView({
                 as="li"
                 className={`flex cursor-grab items-center gap-2.5 rounded-[20px] bg-surface py-2.5 pr-2.5 pl-2 active:cursor-grabbing ${
                   top
-                    ? "shadow-[0_0_0_2px_var(--color-accent),0_1px_3px_rgba(23,24,26,0.08)]"
-                    : "shadow-[0_1px_3px_rgba(23,24,26,0.08)]"
+                    ? "shadow-[0_0_0_2px_var(--color-accent),0_1px_3px_rgba(42,28,21,0.08)]"
+                    : "shadow-[0_1px_3px_rgba(42,28,21,0.08)]"
                 }`}
               >
                 <span className="flex h-11 w-6 shrink-0 items-center justify-center text-[#B9B6AE]" aria-hidden="true">
@@ -298,7 +298,7 @@ export function RankingView({
 
       {method === "quadratic" ? (
         <>
-          <div className="flex flex-col gap-2.5 rounded-[18px] bg-surface px-4 py-3.5 shadow-[0_1px_3px_rgba(23,24,26,0.07)]">
+          <div className="flex flex-col gap-2.5 rounded-[18px] bg-surface px-4 py-3.5 shadow-[0_1px_3px_rgba(42,28,21,0.07)]">
             <div className="flex items-baseline justify-between">
               <span className="text-[15px] font-extrabold">
                 {QUADRATIC_BUDGET - spent} {QUADRATIC_BUDGET - spent === 1 ? "credit" : "credits"} left
@@ -328,7 +328,7 @@ export function RankingView({
               return (
                 <li
                   key={row.placeId}
-                  className={`flex items-center gap-3 rounded-[20px] border-2 bg-surface p-2.5 shadow-[0_1px_3px_rgba(23,24,26,0.08)] ${
+                  className={`flex items-center gap-3 rounded-[20px] border-2 bg-surface p-2.5 shadow-[0_1px_3px_rgba(42,28,21,0.08)] ${
                     v > 0 ? "border-[#F1CFC7]" : "border-transparent"
                   }`}
                 >

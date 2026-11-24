@@ -27,7 +27,7 @@ export function InviteButton({ code, name }: InviteButtonProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-3.5 text-sm font-bold text-ink shadow-[0_1px_3px_rgba(23,24,26,0.1)] lg:gap-2 lg:px-4"
+        className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-3.5 text-sm font-bold text-ink shadow-[0_1px_3px_rgba(42,28,21,0.1)] lg:gap-2 lg:px-4"
       >
         <ShareIcon size={16} />
         <span className="lg:hidden">Invite</span>
@@ -120,7 +120,7 @@ function InviteSheet({ open, onClose, code, name }: InviteSheetProps) {
             className="shrink-0 rounded-lg bg-white"
           >
             {origin ? (
-              <QRCodeSVG value={link} size={120} level="M" marginSize={0} fgColor="#17181A" bgColor="#FFFFFF" />
+              <QRCodeSVG value={link} size={120} level="M" marginSize={0} fgColor="#2A1C15" bgColor="#FFFFFF" />
             ) : (
               <div className="size-[120px]" />
             )}

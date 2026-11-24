@@ -68,7 +68,7 @@ export function WinnerView({ session, members, restaurants, order, winnerId, use
   if (!winner || !winnerId) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-3 px-5 text-center">
-        <h1 className="text-[28px] font-extrabold">This dinner has ended</h1>
+        <h1 className="font-display text-[28px] leading-[1.1] font-normal tracking-[-0.01em]">This dinner has ended</h1>
         <p className="text-[15px] font-medium text-quiet">{session.name} is over, but the result didn’t come through.</p>
         <Link href="/new" className="text-[15px] font-bold underline underline-offset-[3px]">
           Start a new dinner
@@ -98,13 +98,15 @@ export function WinnerView({ session, members, restaurants, order, winnerId, use
         </div>
 
         {/* Positioned so its rounded top paints over the photo's bottom edge. */}
-        <div className="relative -mt-7 flex flex-1 flex-col gap-3.5 rounded-t-[28px] bg-surface px-5 pt-[22px] pb-6 lg:rounded-[28px] lg:shadow-[0_12px_32px_rgba(23,24,26,0.07)]">
-          <p className="flex items-center gap-2 text-[15px] font-bold text-accent-text">
-            <CheckIcon size={18} strokeWidth={3} />
+        <div className="relative -mt-7 flex flex-1 flex-col gap-3.5 rounded-t-[28px] bg-surface px-5 pt-[22px] pb-6 lg:rounded-[28px] lg:shadow-[0_12px_32px_rgba(42,28,21,0.07)]">
+          <h1 className="font-display flex items-center gap-2.5 text-[32px] leading-[1.1] font-normal tracking-[-0.01em]">
+            <CheckIcon size={24} strokeWidth={3.2} className="shrink-0 text-accent-text" />
             Dinner decided
-          </p>
+          </h1>
           <div className="flex flex-col gap-1">
-            <h1 className="text-[40px] leading-[1.04] font-extrabold tracking-[-0.03em]">{winner.name}</h1>
+            <h2 className="text-[32px] leading-[1.06] font-extrabold tracking-[-0.025em] [overflow-wrap:anywhere]">
+              {winner.name}
+            </h2>
             <p className="flex flex-wrap items-center gap-1.5 text-[15px] font-semibold text-quiet">
               {winner.cuisine ? <span>{winner.cuisine}</span> : null}
               {winner.cuisine && winner.priceLevel ? <span aria-hidden="true">·</span> : null}

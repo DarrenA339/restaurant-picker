@@ -5,17 +5,20 @@
 }
 
 @theme {
-  --color-page: #FAF9F6;
+  --color-page: #FBF6EE;
   --color-surface: #FFFFFF;
-  --color-ink: #17181A;
-  --color-quiet: #5E6168;
-  --color-line: #E2E0DB;
-  --color-track: #ECEAE5;
-  --color-tint: #F1EFEA;
+  --color-ink: #2A1C15;
+  --color-quiet: #73645A;
+  --color-line: #E9DFD1;
+  --color-track: #EDE4D7;
+  --color-tint: #F3EADC;
   --color-accent: #D2432A;
-  --color-accent-text: #B33A22;
-  --color-accent-soft: #FFF6F3;
-  --color-person-1: #17181A;
+  --color-accent-text: #AE3620;
+  --color-accent-soft: #FDF1EC;
+  /* Brand moments only (hero grounds, the dark-mode icon). Never a UI control. */
+  --color-butter: #F5C64F;
+  --color-butter-soft: #FBE6AE;
+  --color-person-1: #2A1C15;
   --color-person-2: #2F6F8F;
   --color-person-3: #6B4FA0;
   --color-person-4: #2E7A64;
@@ -56,4 +59,12 @@
     outline: 3px solid var(--color-ink);
     outline-offset: 3px;
   }
+}
+
+/*
+ * Caprasimo, loaded in app/layout.tsx as --font-display. Only for the
+ * wordmark and page headlines; it has one weight, so pair it with font-normal.
+ */
+@utility font-display {
+  font-family: var(--font-display), "Cooper Black", Georgia, serif;
 }

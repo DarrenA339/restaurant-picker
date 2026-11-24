@@ -349,7 +349,7 @@ export function Explore({
       </div>
 
       {/* On phones the panel floats over the map: the bar on top, the sheet at the bottom, taps between them reach the map. */}
-      <aside className="pointer-events-none absolute inset-0 z-10 flex flex-col lg:pointer-events-auto lg:static lg:order-1 lg:h-full lg:w-[400px] lg:flex-none lg:bg-surface lg:shadow-[4px_0_24px_rgba(23,24,26,0.08)]">
+      <aside className="pointer-events-none absolute inset-0 z-10 flex flex-col lg:pointer-events-auto lg:static lg:order-1 lg:h-full lg:w-[400px] lg:flex-none lg:bg-surface lg:shadow-[4px_0_24px_rgba(42,28,21,0.08)]">
         {!live.connected ? (
           <div
             role="status"
@@ -367,14 +367,14 @@ export function Explore({
           <Link
             href={`/s/${session.code}`}
             aria-label="Done, back to the session"
-            className="flex h-12 shrink-0 items-center gap-1 rounded-2xl bg-surface px-3.5 text-[15px] font-extrabold text-ink shadow-[0_2px_8px_rgba(23,24,26,0.12)] lg:h-11 lg:rounded-[14px] lg:bg-tint lg:px-3 lg:shadow-none"
+            className="flex h-12 shrink-0 items-center gap-1 rounded-2xl bg-surface px-3.5 text-[15px] font-extrabold text-ink shadow-[0_2px_8px_rgba(42,28,21,0.12)] lg:h-11 lg:rounded-[14px] lg:bg-tint lg:px-3 lg:shadow-none"
           >
             <BackIcon size={18} strokeWidth={2.6} />
             Done
           </Link>
 
           <div className="relative min-w-0 flex-1">
-            <div className="flex h-12 items-center gap-1.5 rounded-2xl bg-surface pr-0.5 pl-3 shadow-[0_2px_8px_rgba(23,24,26,0.12)] lg:h-11 lg:rounded-[14px] lg:border-[1.5px] lg:border-line lg:shadow-none">
+            <div className="flex h-12 items-center gap-1.5 rounded-2xl bg-surface pr-0.5 pl-3 shadow-[0_2px_8px_rgba(42,28,21,0.12)] lg:h-11 lg:rounded-[14px] lg:border-[1.5px] lg:border-line lg:shadow-none">
               <SearchIcon size={18} className="shrink-0 text-quiet" />
               <input
                 ref={inputRef}
@@ -407,7 +407,7 @@ export function Explore({
             {hasPredictions && predictions ? (
               <ul
                 aria-label="Suggestions"
-                className="absolute top-[calc(100%+6px)] right-0 left-0 z-20 flex flex-col gap-0.5 rounded-2xl bg-surface p-1.5 shadow-[0_12px_32px_rgba(23,24,26,0.16)]"
+                className="absolute top-[calc(100%+6px)] right-0 left-0 z-20 flex flex-col gap-0.5 rounded-2xl bg-surface p-1.5 shadow-[0_12px_32px_rgba(42,28,21,0.16)]"
               >
                 {predictions.queries.map((q) => (
                   <li key={`q-${q.text}`}>
@@ -465,7 +465,7 @@ export function Explore({
             type="button"
             onClick={() => setFiltersOpen(true)}
             aria-label={activeFilters > 0 ? `Filters, ${activeFilters} active` : "Filters"}
-            className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface text-ink shadow-[0_2px_8px_rgba(23,24,26,0.12)] lg:size-11 lg:rounded-[14px] lg:border-[1.5px] lg:border-line lg:shadow-none"
+            className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface text-ink shadow-[0_2px_8px_rgba(42,28,21,0.12)] lg:size-11 lg:rounded-[14px] lg:border-[1.5px] lg:border-line lg:shadow-none"
           >
             <SlidersIcon size={20} className="lg:size-[19px]" />
             {activeFilters > 0 ? (
@@ -485,7 +485,7 @@ export function Explore({
         <section
           ref={panelRef}
           aria-labelledby="explore-title"
-          className="pointer-events-auto flex h-[344px] shrink-0 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(23,24,26,0.10)] lg:h-auto lg:min-h-0 lg:flex-1 lg:rounded-none lg:shadow-none"
+          className="pointer-events-auto flex h-[344px] shrink-0 flex-col rounded-t-[26px] bg-surface shadow-[0_-8px_24px_rgba(42,28,21,0.10)] lg:h-auto lg:min-h-0 lg:flex-1 lg:rounded-none lg:shadow-none"
         >
           <div className="flex h-[22px] shrink-0 items-center justify-center lg:hidden">
             <span className="h-[5px] w-10 rounded-full bg-[#D9D6CF]" aria-hidden="true" />

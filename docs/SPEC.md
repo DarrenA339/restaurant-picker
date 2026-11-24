@@ -1,4 +1,4 @@
-# Restaurant Picker Project Spec
+# Chews Project Spec
 
 Nov 4, 2026 · @Darren Ath-Ly
 
@@ -47,7 +47,7 @@ The app has four routes. The session page at `/s/[code]` swaps views based on th
 Mobile is the primary design. At 1024px and wider, screens adapt instead of stretching.
 
 - **Flow screens** (Join, Create, Done, Final round, Voting method, Winner): a centered 480px column on the page background. Buttons pinned to the bottom on mobile become regular buttons at the end of the column.
-- **Welcome**: two columns, max 1040px. Photo on the left, headline and actions on the right.
+- **Welcome**: two columns, max 1040px. The card-stack illustration on the left, headline and actions on the right.
 - **Lobby**: two columns, max 1040px. Left: the add bar and the added-spots list. Right: members, voting method, suggestions, and Start.
 - **Swipe**: two columns, max 1040px. Left: the map, sticky and full height. Right: the card and vote buttons. Keyboard: Left arrow for No, Right arrow for Yes, V for Veto, Enter for Details, ignored while typing in a field.
 - **Explore**: the map fills the window, with results in a 400px left panel instead of a bottom sheet.
@@ -340,7 +340,7 @@ The biggest risks are a stalled group and surprise Google bills, and both have f
 
 ### Open decisions
 
-- [ ] App name
+- [x] App name: Chews. Brand sheet in docs/design/source/brand.dc.html, assets in docs/brand/README.md
 - [x] Max distance: a slider from 0.25 to 10 miles snapping to 0.25, 0.5, 1, 2, 3, 5, and 10 (the Create design's chips were 0.5, 1, 2, and 5)
 - [ ] Deck center at the host's location or the group's midpoint
 - [ ] Finalist count of 3 or 5

@@ -160,7 +160,7 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
         </>
       }
     >
-      <div className="flex flex-col gap-3.5 rounded-sheet bg-surface px-5 py-[22px] shadow-[0_12px_32px_rgba(23,24,26,0.07)] lg:p-6">
+      <div className="flex flex-col gap-3.5 rounded-sheet bg-surface px-5 py-[22px] shadow-[0_12px_32px_rgba(42,28,21,0.07)] lg:p-6">
         <div className="flex items-center gap-2.5">
           <AvatarStack people={members} label={inLabel} />
           <span className="min-w-0 flex-1 text-sm leading-[1.35] font-semibold text-quiet">
@@ -231,7 +231,7 @@ export function JoinForm({ code, session, members }: JoinFormProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-[20px] bg-surface p-[18px] shadow-[0_1px_3px_rgba(23,24,26,0.07)] lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-x-3.5 lg:gap-y-1">
+      <div className="flex flex-col gap-3 rounded-[20px] bg-surface p-[18px] shadow-[0_1px_3px_rgba(42,28,21,0.07)] lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-x-3.5 lg:gap-y-1">
         <div className="flex items-start gap-3 lg:items-center lg:gap-3.5">
           <span
             className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-tint text-ink"

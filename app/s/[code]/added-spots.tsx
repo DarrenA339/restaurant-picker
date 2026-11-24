@@ -37,7 +37,7 @@ export function AddedSpots({ spots, mine, origin, onRemove, note }: AddedSpotsPr
         <span className="text-sm font-bold text-quiet">{spotsLabel(total)}</span>
       </div>
       {note ? <p className="-mt-1 text-[13px] font-semibold text-quiet">{note}</p> : null}
-      <ul className="rounded-card bg-surface px-3.5 py-1 shadow-[0_1px_3px_rgba(23,24,26,0.07)] lg:px-4">
+      <ul className="rounded-card bg-surface px-3.5 py-1 shadow-[0_1px_3px_rgba(42,28,21,0.07)] lg:px-4">
         {total === 0 ? (
           <li className="flex min-h-[68px] items-center text-sm font-medium text-quiet">
             Nothing added yet. Search a place or a dish to get started.
