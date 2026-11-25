@@ -1,5 +1,5 @@
 import type { Database } from "@/lib/database.types";
-import { BATCH_SIZE } from "@/lib/deck";
+import { addPercent, splitBatch, type DeckMix } from "@/lib/deck";
 import {
   formatDistance,
   priceRangeText,
@@ -8,8 +8,6 @@ import {
 } from "@/lib/session-filters";
 
 export type VotingMethod = Database["public"]["Enums"]["voting_method"];
-
-export { BATCH_SIZE };
 
 export type VotingMethodInfo = {
   id: VotingMethod;
@@ -59,11 +57,6 @@ export function useMethodLabel(id: VotingMethod): string {
   return `Use ${votingMethodInfo(id).name.toLowerCase()}`;
 }
 
-/** How many suggestions fill the first batch after the group's adds. */
-export function fillCount(totalAdds: number, suggestionsOn: boolean): number {
-  return suggestionsOn ? Math.max(0, BATCH_SIZE - totalAdds) : 0;
-}
-
 export function spotsLabel(total: number): string {
   return total === 1 ? "1 spot" : `${total} spots`;
 }
@@ -73,39 +66,57 @@ export function peopleLabel(count: number): string {
   return count === 1 ? "1 person" : `${count} people`;
 }
 
-/** The suggestions card's body text. */
-export function suggestionsText(args: {
-  suggestionsOn: boolean;
-  isHost: boolean;
-  hostName: string;
-  filters: SessionFilters;
-  totalAdds: number;
-}): string {
-  const { suggestionsOn, isHost, hostName, filters, totalAdds } = args;
-  if (!suggestionsOn) {
-    return isHost
-      ? "Off. The deck is only what the group added."
-      : `${hostName} turned these off. The deck is only what the group added.`;
-  }
-  const fill = fillCount(totalAdds, true);
-  return `${fill} more spots near ${shortArea(filters.areaLabel)} that fit the plan, up to ${formatDistance(
-    filters.distanceMi,
-  )} and ${priceRangeText(filters.prices)}. They come after the group’s adds.`;
+/** The Mix slider's stops, in order. */
+export const MIX_LABELS: Record<DeckMix, string> = {
+  adds_only: "Only our adds",
+  mostly_adds: "Mostly adds",
+  half: "Half and half",
+  mostly_new: "Mostly new",
+};
+
+/** What a batch is made of, under the Mix slider. */
+export function mixText(mix: DeckMix, filters: SessionFilters): string {
+  if (mix === "adds_only") return "Every card is a spot the group added. No new places.";
+  return `About ${addPercent(mix)}% of each batch is the group’s adds. The rest are new places near ${shortArea(
+    filters.areaLabel,
+  )}, up to ${formatDistance(filters.distanceMi)} and ${priceRangeText(filters.prices)}.`;
 }
 
-/** Start needs something to deal: an add, or suggestions. */
-export function canStart(totalAdds: number, suggestionsOn: boolean): boolean {
-  return totalAdds > 0 || suggestionsOn;
+/** The first batch for this many adds, assuming the area has places to suggest. */
+export function firstBatch(totalAdds: number, batchSize: number, mix: DeckMix) {
+  return splitBatch(batchSize, mix, totalAdds, Infinity);
 }
 
-/** The line under the host's Start button. */
-export function startNote(totalAdds: number, suggestionsOn: boolean): string {
-  if (!canStart(totalAdds, suggestionsOn)) return "Add a spot or turn suggestions on to start.";
-  const fill = fillCount(totalAdds, suggestionsOn);
-  if (fill > 0) {
-    return `${totalAdds} added ${totalAdds === 1 ? "spot" : "spots"} first, then ${fill} ${
-      fill === 1 ? "suggestion" : "suggestions"
-    }`;
-  }
-  return `${spotsLabel(totalAdds)}, all added by the group`;
+/** Start needs something to deal: an add, or a mix that brings in new places. */
+export function canStart(totalAdds: number, mix: DeckMix): boolean {
+  return totalAdds > 0 || mix !== "adds_only";
+}
+
+/** The line under the host's Start button: what the first batch holds. */
+export function startNote(totalAdds: number, batchSize: number, mix: DeckMix): string {
+  if (!canStart(totalAdds, mix)) return "Add a spot, or move the mix toward new places, to start.";
+  const { adds, suggestions } = firstBatch(totalAdds, batchSize, mix);
+  const cards = adds + suggestions;
+  const first = cards === 1 ? "First card" : `First ${cards} cards`;
+  if (suggestions === 0) return `${first}: all added by the group`;
+  if (adds === 0) return `${first}: all new places`;
+  return `${first}: ${adds} added, ${suggestions} new`;
+}
+
+/** "2 of 3 ready": the guests who tapped "I'm done adding". */
+export function readyLabel(ready: number, guests: number): string {
+  return `${ready} of ${guests} ready`;
+}
+
+/** The host's Start button. */
+export function startLabel(everyoneReady: boolean): string {
+  return everyoneReady ? "Everyone’s ready. Start picking" : "Start picking";
+}
+
+/** "Start without Nia?" when the host starts before everyone is ready. */
+export function startWithoutQuestion(names: readonly string[]): string {
+  if (names.length === 0) return "Start now?";
+  if (names.length === 1) return `Start without ${names[0]}?`;
+  if (names.length === 2) return `Start without ${names[0]} and ${names[1]}?`;
+  return `Start without ${names[0]}, ${names[1]} and ${names.length - 2} more?`;
 }

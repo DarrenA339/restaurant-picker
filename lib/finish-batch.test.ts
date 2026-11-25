@@ -16,7 +16,8 @@ function session(overrides: Partial<DealSession> = {}): DealSession {
     filters: DEFAULT_FILTERS,
     center_lat: 42.37,
     center_lng: -71.12,
-    suggestions_on: true,
+    batch_size: 10,
+    deck_mix: "mostly_adds",
     search_body: null,
     page_token: null,
     ...overrides,
@@ -148,5 +149,66 @@ describe("finishBatch", () => {
     expect(result).toEqual({ ok: true, step: "deal-more", finalists: [], status: "deciding", exhausted: true });
     expect(db.status).toBe("deciding");
     expect(db.result).toMatchObject({ finalists: [], winner_place_id: null });
+  });
+});
+
+describe("finishBatch: batches under 5 cards", () => {
+  const small = () => session({ batch_size: 4 });
+  const dealt = () =>
+    vi.fn<(s: DealSession) => Promise<DealResult>>(async () => ({
+      ok: true,
+      batch: 2,
+      adds: [],
+      suggestions: ["s1"],
+      exhausted: false,
+    }));
+
+  it("deals the next batch instead of asking the host to confirm one finalist", async () => {
+    const { db, store } = memory({ swipes: [yes(A, "p2"), no(B, "p2")] });
+    const deal = dealt();
+
+    const result = await finishBatch({ store, deal }, small());
+
+    expect(result).toEqual({ ok: true, step: "deal-more", finalists: [], status: "swiping", exhausted: false });
+    expect(deal).toHaveBeenCalledTimes(1);
+    expect(db.result).toBeNull();
+  });
+
+  it("deals the next batch with two finalists, and stops for the host at three", async () => {
+    const two = memory({ swipes: [yes(A, "p1"), no(B, "p1"), yes(B, "p2"), no(A, "p2")] });
+    const deal = dealt();
+    expect(await finishBatch({ store: two.store, deal }, small())).toMatchObject({ step: "deal-more", status: "swiping" });
+
+    const three = memory({ swipes: [yes(A, "p1"), yes(B, "p2"), yes(A, "p3")] });
+    const untouched = dealt();
+    const result = await finishBatch({ store: three.store, deal: untouched }, small());
+    expect(result).toMatchObject({ step: "host-choice", finalists: ["p1", "p2", "p3"], status: "deciding" });
+    expect(untouched).not.toHaveBeenCalled();
+  });
+
+  it("still ends at once on a unanimous yes", async () => {
+    const { store } = memory({ swipes: [yes(A, "p1"), yes(B, "p1")] });
+    const deal = dealt();
+
+    expect(await finishBatch({ store, deal }, small())).toMatchObject({ step: "winner", status: "done" });
+    expect(deal).not.toHaveBeenCalled();
+  });
+
+  it("puts the finalists to the host when there is nothing left to deal", async () => {
+    const { db, store } = memory({ swipes: [yes(A, "p2"), no(B, "p2")] });
+    const deal = vi.fn<(s: DealSession) => Promise<DealResult>>(async () => ({ ok: false, code: "nothing_to_deal" }));
+
+    const result = await finishBatch({ store, deal }, small());
+
+    expect(result).toMatchObject({ step: "confirm-one", finalists: ["p2"], status: "deciding" });
+    expect(db.result).toMatchObject({ finalists: ["p2"] });
+  });
+
+  it("leaves batches of 5 or more alone", async () => {
+    const { store } = memory({ swipes: [yes(A, "p2"), no(B, "p2")] });
+    const deal = dealt();
+
+    expect(await finishBatch({ store, deal }, session({ batch_size: 5 }))).toMatchObject({ step: "confirm-one" });
+    expect(deal).not.toHaveBeenCalled();
   });
 });

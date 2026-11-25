@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { bad, UUID } from "@/lib/api";
 import { Constants } from "@/lib/database.types";
+import { BATCH_SIZES, DECK_MIXES, type DeckMix } from "@/lib/deck";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -13,10 +14,15 @@ function isVotingMethod(value: unknown): value is VotingMethod {
   );
 }
 
+function isDeckMix(value: unknown): value is DeckMix {
+  return typeof value === "string" && (DECK_MIXES as readonly string[]).includes(value);
+}
+
 /**
- * PATCH /api/sessions/[id]: the host changes `voting_method` and/or
- * `suggestions_on` while the session is still in the lobby. Both lock at
- * Start, so the update is conditional on status = 'lobby'.
+ * PATCH /api/sessions/[id]: the host changes `voting_method`, `batch_size`
+ * (5, 10, 15 or 20) and/or `deck_mix` while the session is still in the
+ * lobby. All three lock at Start, so the update is conditional on
+ * status = 'lobby'.
  */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/sessions/[id]">) {
   const { id } = await ctx.params;
@@ -28,14 +34,20 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/sessions/[
   > | null;
   if (!body) return bad("Send a JSON body.");
 
-  const changes: { voting_method?: VotingMethod; suggestions_on?: boolean } = {};
+  const changes: { voting_method?: VotingMethod; batch_size?: number; deck_mix?: DeckMix } = {};
   if ("voting_method" in body) {
     if (!isVotingMethod(body.voting_method)) return bad("Unknown voting method.");
     changes.voting_method = body.voting_method;
   }
-  if ("suggestions_on" in body) {
-    if (typeof body.suggestions_on !== "boolean") return bad("suggestions_on must be true or false.");
-    changes.suggestions_on = body.suggestions_on;
+  if ("batch_size" in body) {
+    if (!(BATCH_SIZES as readonly unknown[]).includes(body.batch_size)) {
+      return bad(`Batch size must be ${BATCH_SIZES.slice(0, -1).join(", ")} or ${BATCH_SIZES[BATCH_SIZES.length - 1]}.`);
+    }
+    changes.batch_size = body.batch_size as number;
+  }
+  if ("deck_mix" in body) {
+    if (!isDeckMix(body.deck_mix)) return bad("Unknown mix.");
+    changes.deck_mix = body.deck_mix;
   }
   if (Object.keys(changes).length === 0) return bad("Nothing to change.");
 
@@ -60,7 +72,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/sessions/[
     .update(changes)
     .eq("id", id)
     .eq("status", "lobby")
-    .select("voting_method, suggestions_on")
+    .select("voting_method, batch_size, deck_mix")
     .maybeSingle();
   if (error) {
     console.error("patch session failed", error);

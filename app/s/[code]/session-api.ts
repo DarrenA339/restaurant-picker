@@ -1,9 +1,10 @@
+import type { DeckMix } from "@/lib/deck";
 import type { VotingMethod } from "@/lib/lobby-copy";
 import type { AutocompleteResult, SearchResult } from "@/lib/places/place";
 import { readGallery, type GalleryPhoto, type RestaurantRow } from "@/lib/restaurants";
 import { searchFiltersToParams, type SearchFilters } from "@/lib/session-filters";
 
-type SessionPatch = { voting_method?: VotingMethod; suggestions_on?: boolean };
+type SessionPatch = { voting_method?: VotingMethod; batch_size?: number; deck_mix?: DeckMix };
 
 /** A route's error, with the machine-readable `code` some responses carry (lib/api.ts). */
 export class ApiError extends Error {
@@ -24,7 +25,7 @@ async function fail(response: Response, fallback: string): Promise<never> {
 
 const json = { "Content-Type": "application/json" };
 
-/** Host only, lobby only: change the voting method and/or suggestions toggle. */
+/** Host only, lobby only: change the voting method, the batch size and/or the mix. */
 export async function patchSession(id: string, patch: SessionPatch) {
   const response = await fetch(`/api/sessions/${id}`, {
     method: "PATCH",
@@ -32,7 +33,7 @@ export async function patchSession(id: string, patch: SessionPatch) {
     body: JSON.stringify(patch),
   });
   if (!response.ok) return fail(response, "Couldn’t save that.");
-  return (await response.json()) as { voting_method: VotingMethod; suggestions_on: boolean };
+  return (await response.json()) as { voting_method: VotingMethod; batch_size: number; deck_mix: DeckMix };
 }
 
 export type BatchSummary = { batch: number; cards: number; exhausted: boolean };

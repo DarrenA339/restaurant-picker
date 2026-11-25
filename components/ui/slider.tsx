@@ -18,6 +18,12 @@ type SliderProps<T extends number> = {
   valueText: (value: T) => string;
   /** The label under each stop ("0.25", "$$"). */
   stopText: (value: T) => string;
+  /**
+   * Long stop labels ("Only our adds"): each wraps onto two lines in a 72px
+   * column, and the first and last align to the track's ends instead of
+   * centering on their stops.
+   */
+  edgeLabels?: boolean;
 };
 
 /** Half a handle: the track is inset by this so handles never overhang the field. */
@@ -45,6 +51,7 @@ export function Slider<T extends number>({
   handleLabels,
   valueText,
   stopText,
+  edgeLabels = false,
 }: SliderProps<T>) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<number | null>(null);
@@ -123,6 +130,9 @@ export function Slider<T extends number>({
   }
 
   const filled = (i: number) => (range ? i >= lo && i <= hi : i <= hi);
+  /** With edge labels the row spans the full width, so inner stops are offset by the track's inset. */
+  const edgeLeft = (i: number) =>
+    i === 0 ? "0%" : i === last ? "100%" : `calc(${INSET}px + (100% - ${2 * INSET}px) * ${i / last})`;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -194,16 +204,24 @@ export function Slider<T extends number>({
         </div>
       </div>
 
-      <div className="relative h-4" style={{ marginLeft: INSET, marginRight: INSET }} aria-hidden="true">
+      <div
+        className={`relative ${edgeLabels ? "h-[30px]" : "h-4"}`}
+        style={edgeLabels ? undefined : { marginLeft: INSET, marginRight: INSET }}
+        aria-hidden="true"
+      >
         {steps.map((step, i) => {
           const on = range ? i >= lo && i <= hi : i === hi;
           return (
             <span
               key={step}
-              className={`absolute -translate-x-1/2 text-xs whitespace-nowrap ${
-                on ? "font-extrabold text-ink" : "font-semibold text-quiet"
-              }`}
-              style={{ left: `${pct(i)}%` }}
+              className={`absolute text-xs ${
+                !edgeLabels
+                  ? "-translate-x-1/2 whitespace-nowrap"
+                  : `w-[72px] leading-[1.25] ${
+                      i === 0 ? "text-left" : i === last ? "-translate-x-full text-right" : "-translate-x-1/2 text-center"
+                    }`
+              } ${on ? "font-extrabold text-ink" : "font-semibold text-quiet"}`}
+              style={{ left: edgeLabels ? edgeLeft(i) : `${pct(i)}%` }}
             >
               {stopText(step)}
             </span>

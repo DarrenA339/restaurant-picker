@@ -24,6 +24,25 @@ export function adminDealStore(admin = supabaseAdmin()): DealStore {
       return data;
     },
 
+    async listMemberIds(sessionId) {
+      const { data, error } = await admin.from("members").select("user_id").eq("session_id", sessionId);
+      if (error) throw error;
+      return data.map((row) => row.user_id);
+    },
+
+    async listPool(sessionId) {
+      const { data, error } = await admin
+        .from("restaurants")
+        .select("place_id, data")
+        .eq("session_id", sessionId)
+        .eq("source", "suggested")
+        .is("batch", null)
+        .order("created_at", { ascending: true })
+        .order("place_id", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+
     async claimBatch(sessionId, expect, next) {
       const { data, error } = await admin
         .from("sessions")
@@ -41,6 +60,7 @@ export function adminDealStore(admin = supabaseAdmin()): DealStore {
         .from("restaurants")
         .update({ batch })
         .eq("session_id", sessionId)
+        .eq("source", "member")
         .in("place_id", placeIds)
         .is("batch", null);
       if (error) throw error;
@@ -51,6 +71,19 @@ export function adminDealStore(admin = supabaseAdmin()): DealStore {
         .from("restaurants")
         .upsert(rows, { onConflict: "session_id,place_id", ignoreDuplicates: true });
       if (error) throw error;
+    },
+
+    async dealPool(sessionId, rows, batch) {
+      for (const row of rows) {
+        const { error } = await admin
+          .from("restaurants")
+          .update({ batch, data: row.data })
+          .eq("session_id", sessionId)
+          .eq("place_id", row.place_id)
+          .eq("source", "suggested")
+          .is("batch", null);
+        if (error) throw error;
+      }
     },
 
     async recordYes(rows) {
@@ -66,6 +99,15 @@ export function adminDealStore(admin = supabaseAdmin()): DealStore {
         .from("members")
         .update({ done_swiping: false })
         .eq("session_id", sessionId);
+      if (error) throw error;
+    },
+
+    async markDoneSwiping(sessionId, userIds) {
+      const { error } = await admin
+        .from("members")
+        .update({ done_swiping: true })
+        .eq("session_id", sessionId)
+        .in("user_id", userIds);
       if (error) throw error;
     },
   };

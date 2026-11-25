@@ -9,10 +9,11 @@ import { viewerLocation, visitorUser } from "@/lib/supabase/visitor";
 
 /**
  * POST /api/sessions/[id]/start: the host starts picking. Builds batch 1
- * (lib/deal.ts): the group's adds first, then, if suggestions are on, one
- * Text Search to fill to 20 with one photo per new card, each adder's
- * automatic yes, and the session moved to swiping with a conditional update.
- * Realtime pushes the status change to every phone.
+ * (lib/deal.ts): the session's batch size split between the group's adds
+ * and suggestions by its mix, one Text Search when suggestions are needed
+ * (what the batch doesn't use is kept for later ones), one photo per card
+ * dealt, each adder's automatic yes, and the session moved to swiping with
+ * a conditional update. Realtime pushes the status change to every phone.
  */
 export async function POST(_request: Request, ctx: RouteContext<"/api/sessions/[id]/start">) {
   const calls = new CallLog();
@@ -37,9 +38,9 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/sessions/[
       switch (result.code) {
         case "nothing_to_deal":
           return bad(
-            session.suggestions_on
-              ? "No places found near here. Add a spot or widen the distance."
-              : "Add a spot or turn suggestions on first.",
+            session.deck_mix === "adds_only"
+              ? "Add a spot first, or move the mix off “Only our adds”."
+              : "No places found near here. Add a spot or widen the distance.",
             409,
             "nothing_to_deal",
           );

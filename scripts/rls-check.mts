@@ -11,6 +11,9 @@
  *     them at all (they are server-written).
  *   - vetoes: the trigger on swipes rejects a third veto per member per session,
  *     via insert or update, and refunds a veto that is changed back.
+ *   - ready, batch size and mix: a member sets only their own ready flag,
+ *     which resets when the session leaves the lobby, and nobody changes
+ *     batch_size or deck_mix from a client.
  *   - the `anon` role has no table access, and server-owned columns can't be
  *     written from a client.
  *
@@ -155,14 +158,14 @@ async function main() {
         status: "swiping",
         batch: 1,
       })
-      .select("id, code, suggestions_on, voting_method")
+      .select("id, code, deck_mix, batch_size, voting_method")
       .single();
     if (sessionError) fatal("create session", sessionError);
     sessionId = session.id;
     const code = session.code;
     check(
-      "a new session defaults to suggestions on and Borda",
-      session.suggestions_on === true && session.voting_method === "borda",
+      "a new session defaults to mostly adds, batches of 10 and Borda",
+      session.deck_mix === "mostly_adds" && session.batch_size === 10 && session.voting_method === "borda",
       session,
     );
 
@@ -200,11 +203,35 @@ async function main() {
     {
       const { error } = await a.client
         .from("sessions")
-        .update({ voting_method: "plurality", suggestions_on: false })
+        .update({ voting_method: "plurality" })
         .eq("id", sessionId);
       check(
-        "host A cannot change voting_method or suggestions_on directly (goes through PATCH)",
+        "host A cannot change voting_method directly (goes through PATCH)",
         error?.code === PERMISSION_DENIED,
+        error ?? "no error",
+      );
+    }
+    {
+      const { error } = await a.client.from("sessions").update({ batch_size: 20 }).eq("id", sessionId);
+      check(
+        "host A cannot change batch_size directly (goes through PATCH)",
+        error?.code === PERMISSION_DENIED,
+        error ?? "no error",
+      );
+    }
+    {
+      const { error } = await a.client.from("sessions").update({ deck_mix: "adds_only" }).eq("id", sessionId);
+      check(
+        "host A cannot change deck_mix directly (goes through PATCH)",
+        error?.code === PERMISSION_DENIED,
+        error ?? "no error",
+      );
+    }
+    {
+      const { error } = await admin.from("sessions").update({ batch_size: 21 }).eq("id", sessionId);
+      check(
+        "batch_size above 20 is rejected even for the server (check constraint)",
+        error?.code === CHECK_VIOLATION,
         error ?? "no error",
       );
     }
@@ -387,6 +414,60 @@ async function main() {
         .eq("user_id", a.id)
         .select("display_name");
       check("B updating A's row changes nothing", !error && data?.length === 0, error ?? data);
+    }
+
+    // --- ready ---------------------------------------------------------------
+    console.log("\nready (the lobby's \"I'm done adding\")");
+    {
+      // Back to the lobby for a moment: ready is a lobby flag, reset at Start.
+      const { error: lobbyError } = await admin.from("sessions").update({ status: "lobby" }).eq("id", sessionId);
+      if (lobbyError) fatal("back to lobby", lobbyError);
+
+      const { data, error } = await b.client
+        .from("members")
+        .update({ ready: true })
+        .eq("session_id", sessionId)
+        .eq("user_id", b.id)
+        .select("ready");
+      check("B can set their own ready flag", !error && data?.[0]?.ready === true, error ?? data);
+
+      const { data: other, error: otherError } = await b.client
+        .from("members")
+        .update({ ready: true })
+        .eq("session_id", sessionId)
+        .eq("user_id", a.id)
+        .select("ready");
+      check("B cannot set A's ready flag", !otherError && other?.length === 0, otherError ?? other);
+
+      const { data: seen } = await a.client
+        .from("members")
+        .select("user_id, ready")
+        .eq("session_id", sessionId)
+        .order("joined_at", { ascending: true });
+      check(
+        "A sees B ready and themselves not",
+        seen?.length === 2 &&
+          seen.find((m) => m.user_id === b.id)?.ready === true &&
+          seen.find((m) => m.user_id === a.id)?.ready === false,
+        seen,
+      );
+
+      const { error: batchError } = await b.client.from("sessions").update({ batch_size: 5 }).eq("id", sessionId);
+      const { error: mixError } = await b.client.from("sessions").update({ deck_mix: "half" }).eq("id", sessionId);
+      check(
+        "member B cannot change batch_size or deck_mix",
+        batchError?.code === PERMISSION_DENIED && mixError?.code === PERMISSION_DENIED,
+        batchError ?? mixError ?? "no error",
+      );
+
+      const { error: startError } = await admin.from("sessions").update({ status: "swiping" }).eq("id", sessionId);
+      if (startError) fatal("start again", startError);
+      const { data: after } = await a.client.from("members").select("ready").eq("session_id", sessionId);
+      check(
+        "leaving the lobby resets everyone's ready flag",
+        after?.length === 2 && after.every((m) => m.ready === false),
+        after,
+      );
     }
 
     // --- swipes --------------------------------------------------------------

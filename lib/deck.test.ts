@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   autoYes,
-  BATCH_SIZE,
   buildMemberDeck,
   deckSearchBody,
   hashSeed,
   pickSuggestions,
   readSearchState,
+  nothingToSwipe,
   roundRobinAdds,
+  splitBatch,
   seededShuffle,
   subCircles,
   textSearchBody,
@@ -65,7 +66,7 @@ describe("roundRobinAdds", () => {
 });
 
 describe("pickSuggestions", () => {
-  const rules = { center: harvard, maxMi: 2, exclude: new Set<string>(), limit: BATCH_SIZE };
+  const rules = { center: harvard, maxMi: 2, exclude: new Set<string>(), limit: 20 };
 
   it("keeps places within the max distance, in order, deduped and not already in", () => {
     const places = [place("near", 0.5), place("far", 3), place("near", 0.5), place("added", 1), place("ok", 1.9)];
@@ -200,5 +201,38 @@ describe("buildMemberDeck", () => {
   it("shuffles deterministically from a seed", () => {
     expect(seededShuffle([1, 2, 3, 4, 5], hashSeed("x"))).toEqual(seededShuffle([1, 2, 3, 4, 5], hashSeed("x")));
     expect(seededShuffle([1, 2, 3, 4, 5], hashSeed("x"))).not.toEqual(seededShuffle([1, 2, 3, 4, 5], hashSeed("y")));
+  });
+});
+
+describe("splitBatch", () => {
+  it("gives the adds their rounded share and suggestions the rest", () => {
+    expect(splitBatch(10, "adds_only", 30, Infinity)).toEqual({ adds: 10, suggestions: 0 });
+    expect(splitBatch(10, "mostly_adds", 30, Infinity)).toEqual({ adds: 8, suggestions: 2 });
+    expect(splitBatch(10, "half", 30, Infinity)).toEqual({ adds: 5, suggestions: 5 });
+    expect(splitBatch(10, "mostly_new", 30, Infinity)).toEqual({ adds: 3, suggestions: 7 });
+    expect(splitBatch(5, "mostly_adds", 30, Infinity)).toEqual({ adds: 4, suggestions: 1 });
+    expect(splitBatch(15, "mostly_new", 30, Infinity)).toEqual({ adds: 4, suggestions: 11 });
+    expect(splitBatch(20, "half", 30, Infinity)).toEqual({ adds: 10, suggestions: 10 });
+  });
+
+  it("fills from the other pool when one runs out", () => {
+    expect(splitBatch(10, "mostly_adds", 3, Infinity)).toEqual({ adds: 3, suggestions: 7 });
+    expect(splitBatch(10, "mostly_adds", 0, Infinity)).toEqual({ adds: 0, suggestions: 10 });
+    expect(splitBatch(10, "mostly_new", 30, 2)).toEqual({ adds: 8, suggestions: 2 });
+    expect(splitBatch(10, "half", 4, 3)).toEqual({ adds: 4, suggestions: 3 });
+  });
+
+  it("never takes a suggestion when the mix is only the group's adds", () => {
+    expect(splitBatch(10, "adds_only", 3, Infinity)).toEqual({ adds: 3, suggestions: 0 });
+    expect(splitBatch(10, "adds_only", 0, Infinity)).toEqual({ adds: 0, suggestions: 0 });
+  });
+});
+
+describe("nothingToSwipe", () => {
+  it("finds the members who added every card in the batch", () => {
+    const adds = [add(A, "a1", 1), add(A, "a2", 2), add(B, "a1", 3)];
+    expect(nothingToSwipe(["a1", "a2"], adds)).toEqual([A]);
+    expect(nothingToSwipe(["a1"], adds)).toEqual([A, B]);
+    expect(nothingToSwipe(["a1", "s1"], adds)).toEqual([]);
   });
 });

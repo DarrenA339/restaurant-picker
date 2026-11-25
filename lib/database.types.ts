@@ -90,6 +90,7 @@ export type Database = {
           joined_at: string
           lat: number | null
           lng: number | null
+          ready: boolean
           session_id: string
           user_id: string
           vetoes_left: number
@@ -102,6 +103,7 @@ export type Database = {
           joined_at?: string
           lat?: number | null
           lng?: number | null
+          ready?: boolean
           session_id: string
           user_id: string
           vetoes_left?: number
@@ -114,6 +116,7 @@ export type Database = {
           joined_at?: string
           lat?: number | null
           lng?: number | null
+          ready?: boolean
           session_id?: string
           user_id?: string
           vetoes_left?: number
@@ -230,10 +233,12 @@ export type Database = {
       sessions: {
         Row: {
           batch: number
+          batch_size: number
           center_lat: number | null
           center_lng: number | null
           code: string
           created_at: string
+          deck_mix: Database["public"]["Enums"]["deck_mix"]
           filters: Json
           host_id: string
           id: string
@@ -241,15 +246,16 @@ export type Database = {
           page_token: string | null
           search_body: Json | null
           status: Database["public"]["Enums"]["session_status"]
-          suggestions_on: boolean
           voting_method: Database["public"]["Enums"]["voting_method"]
         }
         Insert: {
           batch?: number
+          batch_size?: number
           center_lat?: number | null
           center_lng?: number | null
           code: string
           created_at?: string
+          deck_mix?: Database["public"]["Enums"]["deck_mix"]
           filters?: Json
           host_id: string
           id?: string
@@ -257,15 +263,16 @@ export type Database = {
           page_token?: string | null
           search_body?: Json | null
           status?: Database["public"]["Enums"]["session_status"]
-          suggestions_on?: boolean
           voting_method?: Database["public"]["Enums"]["voting_method"]
         }
         Update: {
           batch?: number
+          batch_size?: number
           center_lat?: number | null
           center_lng?: number | null
           code?: string
           created_at?: string
+          deck_mix?: Database["public"]["Enums"]["deck_mix"]
           filters?: Json
           host_id?: string
           id?: string
@@ -273,7 +280,6 @@ export type Database = {
           page_token?: string | null
           search_body?: Json | null
           status?: Database["public"]["Enums"]["session_status"]
-          suggestions_on?: boolean
           voting_method?: Database["public"]["Enums"]["voting_method"]
         }
         Relationships: []
@@ -337,6 +343,7 @@ export type Database = {
       }
     }
     Enums: {
+      deck_mix: "adds_only" | "mostly_adds" | "half" | "mostly_new"
       restaurant_source: "member" | "suggested"
       session_status: "lobby" | "swiping" | "deciding" | "ranking" | "done"
       swipe_value: "yes" | "no" | "veto"
@@ -468,6 +475,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      deck_mix: ["adds_only", "mostly_adds", "half", "mostly_new"],
       restaurant_source: ["member", "suggested"],
       session_status: ["lobby", "swiping", "deciding", "ranking", "done"],
       swipe_value: ["yes", "no", "veto"],

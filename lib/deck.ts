@@ -11,7 +11,52 @@ import { PRICE_LEVELS, type SearchFilters } from "@/lib/session-filters";
  * and Google; lib/deck.test.ts and lib/deal.test.ts run them against fakes.
  */
 
-export const BATCH_SIZE = 20;
+/** Google returns at most this many places per Text Search page or Nearby Search call. */
+export const SEARCH_PAGE_SIZE = 20;
+
+/** The host's choices for cards per batch (`sessions.batch_size`; the column allows 1 to 20). */
+export const BATCH_SIZES = [5, 10, 15, 20] as const;
+export const DEFAULT_BATCH_SIZE = 10;
+
+/** `sessions.deck_mix`: how much of each batch is the group's adds. */
+export type DeckMix = "adds_only" | "mostly_adds" | "half" | "mostly_new";
+export const DECK_MIXES: readonly DeckMix[] = ["adds_only", "mostly_adds", "half", "mostly_new"];
+export const DEFAULT_DECK_MIX: DeckMix = "mostly_adds";
+
+const ADD_SHARE: Record<DeckMix, number> = { adds_only: 1, mostly_adds: 0.75, half: 0.5, mostly_new: 0.25 };
+
+/** The adds' share of a batch as a percentage: 100, 75, 50 or 25. */
+export function addPercent(mix: DeckMix): number {
+  return ADD_SHARE[mix] * 100;
+}
+
+/**
+ * How one batch splits between the group's adds and suggestions. The adds
+ * get their share of `size` (rounded) and suggestions the rest; when either
+ * pool runs short the other fills in, except that "only our adds" never
+ * takes a suggestion. Pass Infinity for a pool whose size isn't known yet.
+ */
+export function splitBatch(
+  size: number,
+  mix: DeckMix,
+  addsAvailable: number,
+  suggestionsAvailable: number,
+): { adds: number; suggestions: number } {
+  const wanted = Math.min(Math.round(size * ADD_SHARE[mix]), addsAvailable);
+  const suggestions = mix === "adds_only" ? 0 : Math.min(size - wanted, suggestionsAvailable);
+  return { adds: Math.min(size - suggestions, addsAvailable), suggestions };
+}
+
+/** Members whose whole batch is spots they added themselves: nothing for them to swipe. */
+export function nothingToSwipe(batch: readonly string[], adds: readonly AddRow[]): string[] {
+  const byMember = new Map<string, Set<string>>();
+  for (const add of adds) {
+    const mine = byMember.get(add.user_id) ?? new Set<string>();
+    mine.add(add.place_id);
+    byMember.set(add.user_id, mine);
+  }
+  return [...byMember].filter(([, mine]) => batch.every((placeId) => mine.has(placeId))).map(([userId]) => userId);
+}
 
 export type AddRow = { user_id: string; place_id: string; created_at: string };
 
@@ -153,7 +198,7 @@ export function textSearchBody(filters: SearchFilters, area: SearchArea, words =
   const body: DeckSearchBody = {
     textQuery: cuisineQuery(filters.cuisines, words),
     includedType: filters.cuisines.length === 1 ? filters.cuisines[0] : "restaurant",
-    pageSize: BATCH_SIZE,
+    pageSize: SEARCH_PAGE_SIZE,
     locationBias: {
       circle: { center: { latitude: area.center.lat, longitude: area.center.lng }, radius: area.radiusM },
     },
@@ -184,7 +229,7 @@ export type NearbyBody = {
 export function nearbyBody(circle: SearchArea): NearbyBody {
   return {
     includedTypes: ["restaurant"],
-    maxResultCount: BATCH_SIZE,
+    maxResultCount: SEARCH_PAGE_SIZE,
     locationRestriction: {
       circle: { center: { latitude: circle.center.lat, longitude: circle.center.lng }, radius: circle.radiusM },
     },

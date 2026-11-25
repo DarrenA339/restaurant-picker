@@ -35,7 +35,7 @@ type Busy = "final" | "go" | "deal" | "widen" | null;
  * Deciding (docs/SPEC.md "Session lifecycle", in the style of docs/design/09-done):
  * everyone finished and the tally found finalists. They are listed with no
  * vote counts; the host sends them to the final round (or goes with the one)
- * or deals 20 more, and guests wait. With no finalists at all, the area ran
+ * or deals another batch, and guests wait. With no finalists at all, the area ran
  * out of places: the "Nothing matches these filters" edge state from
  * docs/design/states.png, with Widen for the host.
  */
@@ -127,7 +127,7 @@ export function DecidingView({
           loadingLabel="Dealing…"
           className="w-full"
         >
-          Deal 20 more
+          Deal {session.batch_size} more
         </Button>
         {errorLine}
       </>
@@ -144,8 +144,8 @@ export function DecidingView({
           {exhausted
             ? "Nothing nearby made the cut, so the search needs widening."
             : one
-              ? `${hostName} can go with it or deal 20 more.`
-              : `${hostName} picks the final round or deals 20 more.`}
+              ? `${hostName} can go with it or deal ${session.batch_size} more.`
+              : `${hostName} picks the final round or deals ${session.batch_size} more.`}
         </span>
       </span>
     </div>
@@ -198,8 +198,8 @@ export function DecidingView({
             <p className="text-base leading-[1.45] font-medium text-quiet">
               {isHost
                 ? one
-                  ? "Go with it, or deal 20 more to keep looking."
-                  : "Send them to the final round, or deal 20 more to keep looking."
+                  ? `Go with it, or deal ${session.batch_size} more to keep looking.`
+                  : `Send them to the final round, or deal ${session.batch_size} more to keep looking.`
                 : `${hostName} decides what’s next.`}
             </p>
           </div>

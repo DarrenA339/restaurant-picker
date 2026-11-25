@@ -3,11 +3,12 @@ import {
   dealBatch,
   type DealSession,
   type DealStore,
+  type PoolRow,
   type RestaurantInsert,
   type RestaurantLite,
   type YesRow,
 } from "./deal";
-import { BATCH_SIZE, type AddRow, type DeckSearchBody, type NearbyBody } from "./deck";
+import type { AddRow, DeckSearchBody, NearbyBody } from "./deck";
 import type { GooglePlace } from "./places/place";
 import { DEFAULT_FILTERS } from "./session-filters";
 
@@ -38,10 +39,12 @@ function places(prefix: string, count: number, miles = 0.5) {
 type Memory = {
   session: DealSession;
   adds: AddRow[];
-  restaurants: (RestaurantLite & { session_id: string })[];
+  restaurants: (RestaurantLite & { session_id: string; data?: unknown })[];
+  members: string[];
   inserted: RestaurantInsert[];
   yes: YesRow[];
   doneResets: number;
+  autoDone: string[];
   claims: { expect: { status: string; batch: number }; next: unknown }[];
 };
 
@@ -49,6 +52,7 @@ type Seed = {
   session?: Partial<DealSession>;
   adds?: AddRow[];
   restaurants?: (RestaurantLite & { session_id: string })[];
+  members?: string[];
 };
 
 function memory(overrides: Seed = {}) {
@@ -60,16 +64,19 @@ function memory(overrides: Seed = {}) {
       filters: DEFAULT_FILTERS,
       center_lat: harvard.lat,
       center_lng: harvard.lng,
-      suggestions_on: true,
+      batch_size: 20,
+      deck_mix: "mostly_adds",
       search_body: null,
       page_token: null,
       ...overrides.session,
     },
     adds: overrides.adds ?? [],
     restaurants: overrides.restaurants ?? [],
+    members: overrides.members ?? [A, B],
     inserted: [],
     yes: [],
     doneResets: 0,
+    autoDone: [],
     claims: [],
   };
   // Every add has its member-source row from the lobby.
@@ -85,6 +92,14 @@ function memory(overrides: Seed = {}) {
     async listRestaurants() {
       return db.restaurants.map(({ place_id, source, batch }) => ({ place_id, source, batch }));
     },
+    async listMemberIds() {
+      return db.members;
+    },
+    async listPool() {
+      return db.restaurants
+        .filter((r) => r.source === "suggested" && r.batch === null)
+        .map((r) => ({ place_id: r.place_id, data: r.data as PoolRow["data"] }));
+    },
     async claimBatch(_id, expect, next) {
       db.claims.push({ expect, next });
       if (db.session.status !== expect.status || db.session.batch !== expect.batch) return false;
@@ -98,7 +113,19 @@ function memory(overrides: Seed = {}) {
       for (const row of rows) {
         if (db.restaurants.some((r) => r.place_id === row.place_id)) continue;
         db.inserted.push(row);
-        db.restaurants.push({ session_id: SESSION, place_id: row.place_id, source: "suggested", batch: row.batch ?? null });
+        db.restaurants.push({
+          session_id: SESSION,
+          place_id: row.place_id,
+          source: "suggested",
+          batch: row.batch ?? null,
+          data: row.data,
+        });
+      }
+    },
+    async dealPool(_id, rows, batch) {
+      for (const row of rows) {
+        const kept = db.restaurants.find((r) => r.place_id === row.place_id && r.batch === null);
+        if (kept) Object.assign(kept, { batch, data: row.data });
       }
     },
     async recordYes(rows) {
@@ -106,6 +133,10 @@ function memory(overrides: Seed = {}) {
     },
     async resetDoneSwiping() {
       db.doneResets += 1;
+      db.autoDone = [];
+    },
+    async markDoneSwiping(_id, userIds) {
+      db.autoDone = userIds;
     },
   };
   return { db, store };
@@ -133,7 +164,7 @@ const decide = (db: Memory) => {
 };
 
 describe("dealBatch: start", () => {
-  it("deals the adds first, then fills to 20 with one Text Search, one photo each", async () => {
+  it("deals the adds, fills the batch from one Text Search, and resolves photos only for dealt cards", async () => {
     const { db, store } = memory({ adds: [add(A, "a1", 1), add(B, "b1", 2), add(A, "a2", 3)] });
     const g = google([{ places: places("s", 25), nextPageToken: "page2" }]);
 
@@ -141,7 +172,7 @@ describe("dealBatch: start", () => {
 
     expect(result).toMatchObject({ ok: true, batch: 1, adds: ["a1", "b1", "a2"], exhausted: false });
     if (!result.ok) throw new Error("failed");
-    expect(result.suggestions).toHaveLength(BATCH_SIZE - 3);
+    expect(result.suggestions).toHaveLength(17);
     expect(result.suggestions).toEqual(places("s", 17).map((p) => p.id));
     expect(g.searchText).toHaveBeenCalledTimes(1);
     expect(g.searchText.mock.calls[0][0]).toMatchObject({ textQuery: "restaurants", pageSize: 20, openNow: true });
@@ -150,6 +181,10 @@ describe("dealBatch: start", () => {
     expect(g.photoUri).toHaveBeenCalledTimes(17);
 
     expect(db.inserted[0]).toMatchObject({ source: "suggested", batch: 1, place_id: "s1" });
+    // The 8 results the batch didn't use wait in the pool, with no photo yet.
+    const pool = db.inserted.filter((row) => row.batch === null);
+    expect(pool.map((row) => row.place_id)).toEqual(places("s", 25).slice(17).map((p) => p.id));
+    expect(pool[0].data).toMatchObject({ name: "Place s18", photoUri: null });
     expect(db.inserted[0].data).toMatchObject({ name: "Place s1", photoUri: "https://lh3.googleusercontent.com/places/s1/photos/p" });
     expect(db.restaurants.filter((r) => r.source === "member").map((r) => r.batch)).toEqual([1, 1, 1]);
     expect(db.yes).toEqual([
@@ -162,8 +197,8 @@ describe("dealBatch: start", () => {
     expect(db.doneResets).toBe(1);
   });
 
-  it("deals only the adds when suggestions are off, without calling Google", async () => {
-    const { db, store } = memory({ session: { suggestions_on: false }, adds: [add(A, "a1", 1), add(B, "b1", 2)] });
+  it("deals only the adds when the mix is adds only, without calling Google", async () => {
+    const { db, store } = memory({ session: { deck_mix: "adds_only" }, adds: [add(A, "a1", 1), add(B, "b1", 2)] });
     const g = google();
 
     const result = await dealBatch({ store, places: g }, input(db));
@@ -174,8 +209,8 @@ describe("dealBatch: start", () => {
     expect(db.session.search_body).toBeNull();
   });
 
-  it("refuses to start with no adds and suggestions off, touching nothing", async () => {
-    const { db, store } = memory({ session: { suggestions_on: false } });
+  it("refuses to start with no adds when the mix is adds only, touching nothing", async () => {
+    const { db, store } = memory({ session: { deck_mix: "adds_only" } });
     const g = google();
 
     expect(await dealBatch({ store, places: g }, input(db))).toEqual({ ok: false, code: "nothing_to_deal" });
@@ -209,7 +244,7 @@ describe("dealBatch: start", () => {
 
   it("deals a shared spot once and records both members' yes", async () => {
     const { db, store } = memory({
-      session: { suggestions_on: false },
+      session: { deck_mix: "adds_only" },
       adds: [add(A, "shared", 1), add(B, "shared", 2), add(B, "b1", 3)],
     });
 
@@ -221,30 +256,82 @@ describe("dealBatch: start", () => {
 });
 
 describe("dealBatch: later batches", () => {
-  it("deals more than 20 adds round-robin before any suggestion, then fills", async () => {
+  it("splits each batch by the mix, deals the pool before calling Google again", async () => {
     const adds = [
-      ...Array.from({ length: 15 }, (_, i) => add(A, `a${i + 1}`, i)),
-      ...Array.from({ length: 10 }, (_, i) => add(B, `b${i + 1}`, 20 + i)),
+      ...Array.from({ length: 6 }, (_, i) => add(A, `a${i + 1}`, i)),
+      ...Array.from({ length: 6 }, (_, i) => add(B, `b${i + 1}`, 20 + i)),
     ];
-    const { db, store } = memory({ adds });
-    const g = google([{ places: places("s", 20) }]);
+    const { db, store } = memory({ session: { batch_size: 10, deck_mix: "mostly_adds" }, adds });
+    const g = google([{ places: places("s", 20), nextPageToken: "page2" }]);
 
+    // 75% of 10, rounded, is 8 adds; 2 suggestions fill the rest.
     const first = await dealBatch({ store, places: g }, input(db));
     decide(db);
-    expect(first).toMatchObject({ ok: true, batch: 1, suggestions: [] });
-    if (!first.ok) throw new Error("failed");
-    expect(first.adds).toEqual([
-      "a1", "b1", "a2", "b2", "a3", "b3", "a4", "b4", "a5", "b5",
-      "a6", "b6", "a7", "b7", "a8", "b8", "a9", "b9", "a10", "b10",
-    ]);
-    expect(g.searchText).not.toHaveBeenCalled();
-
-    const second = await dealBatch({ store, places: g }, input(db, false));
-    expect(second).toMatchObject({ ok: true, batch: 2, adds: ["a11", "a12", "a13", "a14", "a15"] });
-    if (!second.ok) throw new Error("failed");
-    expect(second.suggestions).toHaveLength(15);
+    expect(first).toMatchObject({
+      ok: true,
+      batch: 1,
+      adds: ["a1", "b1", "a2", "b2", "a3", "b3", "a4", "b4"],
+      suggestions: ["s1", "s2"],
+    });
     expect(g.searchText).toHaveBeenCalledTimes(1);
-    expect(db.restaurants.filter((r) => r.batch === 2)).toHaveLength(20);
+    expect(g.photoUri).toHaveBeenCalledTimes(2);
+    expect(db.restaurants.filter((r) => r.source === "suggested" && r.batch === null)).toHaveLength(18);
+
+    // Only 4 adds are left, so suggestions fill the other 6, straight from the pool.
+    const second = await dealBatch({ store, places: g }, input(db, false));
+    expect(second).toMatchObject({
+      ok: true,
+      batch: 2,
+      adds: ["a5", "b5", "a6", "b6"],
+      suggestions: ["s3", "s4", "s5", "s6", "s7", "s8"],
+    });
+    expect(g.searchText).toHaveBeenCalledTimes(1);
+    expect(g.photoUri).toHaveBeenCalledTimes(8);
+    const s3 = db.restaurants.find((r) => r.place_id === "s3");
+    expect(s3).toMatchObject({ batch: 2, data: { photoUri: "https://lh3.googleusercontent.com/places/s3/photos/p" } });
+    expect(db.restaurants.filter((r) => r.batch === 2)).toHaveLength(10);
+    expect(db.session.page_token).toBe("page2");
+  });
+
+  it("fills with adds when the suggestions run out", async () => {
+    const adds = Array.from({ length: 10 }, (_, i) => add(i % 2 ? B : A, `m${i + 1}`, i));
+    const { db, store } = memory({ session: { batch_size: 10, deck_mix: "mostly_new" }, adds });
+    const g = google([{ places: [place("only")] }]);
+
+    const result = await dealBatch({ store, places: g }, input(db));
+
+    // 25% of 10 rounds to 3 adds, but one suggestion is all the area has.
+    expect(result).toMatchObject({ ok: true, suggestions: ["only"] });
+    if (!result.ok) throw new Error("failed");
+    expect(result.adds).toHaveLength(9);
+  });
+
+  it("gives every mix its share of adds", async () => {
+    const shares = { adds_only: 10, mostly_adds: 8, half: 5, mostly_new: 3 } as const;
+    for (const [mix, expected] of Object.entries(shares)) {
+      const adds = Array.from({ length: 12 }, (_, i) => add(i % 2 ? B : A, `m${i + 1}`, i));
+      const { db, store } = memory({ session: { batch_size: 10, deck_mix: mix as keyof typeof shares }, adds });
+      const result = await dealBatch({ store, places: google([{ places: places("s", 20) }]) }, input(db));
+      if (!result.ok) throw new Error("failed");
+      expect([mix, result.adds.length, result.suggestions.length]).toEqual([mix, expected, 10 - expected]);
+    }
+  });
+
+  it("marks a member done when the batch is only their own adds, but never the whole group", async () => {
+    const adds = [add(A, "a1", 1), add(A, "a2", 2)];
+    const two = memory({ session: { batch_size: 5, deck_mix: "adds_only" }, adds });
+    await dealBatch({ store: two.store, places: google() }, input(two.db));
+    expect(two.db.autoDone).toEqual([A]);
+
+    // Alone, someone still has to finish the batch for the tally to run.
+    const solo = memory({ session: { batch_size: 5, deck_mix: "adds_only" }, adds, members: [A] });
+    await dealBatch({ store: solo.store, places: google() }, input(solo.db));
+    expect(solo.db.autoDone).toEqual([]);
+
+    // A suggestion in the batch gives everyone something to swipe.
+    const mixed = memory({ session: { batch_size: 5, deck_mix: "half" }, adds });
+    await dealBatch({ store: mixed.store, places: google([{ places: places("s", 5) }]) }, input(mixed.db));
+    expect(mixed.db.autoDone).toEqual([]);
   });
 
   it("pages the same Text Search with the stored body and token", async () => {

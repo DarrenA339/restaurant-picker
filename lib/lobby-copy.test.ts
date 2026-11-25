@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   canStart,
-  fillCount,
+  firstBatch,
+  mixText,
   peopleLabel,
+  readyLabel,
+  startLabel,
   startNote,
-  suggestionsText,
+  startWithoutQuestion,
   useMethodLabel,
   votingMethodLabel,
 } from "./lobby-copy";
@@ -35,37 +38,41 @@ describe("lobby copy", () => {
     expect(peopleLabel(4)).toBe("4 people");
   });
 
-  it("fills the first batch to 20 only when suggestions are on", () => {
-    expect(fillCount(14, true)).toBe(6);
-    expect(fillCount(25, true)).toBe(0);
-    expect(fillCount(14, false)).toBe(0);
+  it("splits the first batch by the mix", () => {
+    expect(firstBatch(14, 10, "mostly_adds")).toEqual({ adds: 8, suggestions: 2 });
+    expect(firstBatch(3, 10, "mostly_adds")).toEqual({ adds: 3, suggestions: 7 });
+    expect(firstBatch(14, 20, "adds_only")).toEqual({ adds: 14, suggestions: 0 });
   });
 
-  it("writes the start note for both cases", () => {
-    expect(startNote(14, true)).toBe("14 added spots first, then 6 suggestions");
-    expect(startNote(1, true)).toBe("1 added spot first, then 19 suggestions");
-    expect(startNote(14, false)).toBe("14 spots, all added by the group");
-    expect(startNote(1, false)).toBe("1 spot, all added by the group");
-    expect(startNote(0, false)).toBe("Add a spot or turn suggestions on to start.");
+  it("writes the start note from the first batch", () => {
+    expect(startNote(14, 10, "mostly_adds")).toBe("First 10 cards: 8 added, 2 new");
+    expect(startNote(1, 20, "half")).toBe("First 20 cards: 1 added, 19 new");
+    expect(startNote(14, 10, "adds_only")).toBe("First 10 cards: all added by the group");
+    expect(startNote(1, 10, "adds_only")).toBe("First card: all added by the group");
+    expect(startNote(0, 5, "mostly_new")).toBe("First 5 cards: all new places");
+    expect(startNote(0, 10, "adds_only")).toBe("Add a spot, or move the mix toward new places, to start.");
   });
 
   it("only lets the host start with something to deal", () => {
-    expect(canStart(0, false)).toBe(false);
-    expect(canStart(0, true)).toBe(true);
-    expect(canStart(1, false)).toBe(true);
+    expect(canStart(0, "adds_only")).toBe(false);
+    expect(canStart(0, "mostly_adds")).toBe(true);
+    expect(canStart(1, "adds_only")).toBe(true);
   });
 
-  it("explains suggestions from the host's filters, or who turned them off", () => {
-    const base = { filters: DEFAULT_FILTERS, totalAdds: 14, hostName: "Sam" };
-    expect(suggestionsText({ ...base, suggestionsOn: true, isHost: true })).toBe(
-      "6 more spots near Harvard Square that fit the plan, up to 2 mi and $ to $$. They come after the group’s adds.",
+  it("explains the mix from the host's filters", () => {
+    expect(mixText("mostly_adds", DEFAULT_FILTERS)).toBe(
+      "About 75% of each batch is the group’s adds. The rest are new places near Harvard Square, up to 2 mi and $ to $$.",
     );
-    expect(suggestionsText({ ...base, suggestionsOn: false, isHost: true })).toBe(
-      "Off. The deck is only what the group added.",
-    );
-    expect(suggestionsText({ ...base, suggestionsOn: false, isHost: false })).toBe(
-      "Sam turned these off. The deck is only what the group added.",
-    );
+    expect(mixText("adds_only", DEFAULT_FILTERS)).toBe("Every card is a spot the group added. No new places.");
+  });
+
+  it("words the ready check", () => {
+    expect(readyLabel(2, 3)).toBe("2 of 3 ready");
+    expect(startLabel(false)).toBe("Start picking");
+    expect(startLabel(true)).toBe("Everyone’s ready. Start picking");
+    expect(startWithoutQuestion(["Nia"])).toBe("Start without Nia?");
+    expect(startWithoutQuestion(["Nia", "Sam"])).toBe("Start without Nia and Sam?");
+    expect(startWithoutQuestion(["Nia", "Sam", "Jo", "Lee"])).toBe("Start without Nia, Sam and 2 more?");
   });
 });
 

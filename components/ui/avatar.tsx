@@ -1,3 +1,4 @@
+import { CheckIcon } from "@/components/icons";
 import { initialsFor, personBgClass, type PersonColor } from "@/lib/people";
 
 const sizes = {
@@ -36,7 +37,12 @@ export function Avatar({ name, color, size = 36, label, text, className = "" }: 
   );
 }
 
-export type StackPerson = { name: string; color: PersonColor };
+export type StackPerson = {
+  name: string;
+  color: PersonColor;
+  /** Shows a small check on the avatar (the lobby's "I'm done adding"). Say it in `label` too. */
+  ready?: boolean;
+};
 
 type AvatarStackProps = {
   people: StackPerson[];
@@ -69,13 +75,15 @@ export function AvatarStack({
   return (
     <div className="flex items-center" role="img" aria-label={label}>
       {shown.map((person, i) => (
-        <Avatar
-          key={`${person.color}-${person.name}-${i}`}
-          name={person.name}
-          color={person.color}
-          size={size}
-          className={`${ringClass} ${i === 0 ? "" : overlap}`}
-        />
+        <span key={`${person.color}-${person.name}-${i}`} className={`relative inline-flex ${i === 0 ? "" : overlap}`}>
+          <Avatar name={person.name} color={person.color} size={size} className={ringClass} />
+          {person.ready ? (
+            // Bottom left, where the next avatar's overlap doesn't cover it.
+            <span className="absolute -bottom-0.5 -left-0.5 flex size-3.5 items-center justify-center rounded-full border-[1.5px] border-page bg-[#2E6B57] text-white">
+              <CheckIcon size={8} strokeWidth={4.5} />
+            </span>
+          ) : null}
+        </span>
       ))}
       {overflow > 0 ? (
         <span

@@ -36,6 +36,10 @@ export type FinishResult =
   | { ok: true; step: NextStep["kind"]; finalists: string[]; status: SessionStatus; exhausted: boolean }
   | { ok: false; code: "not_swiping" | "conflict" };
 
+/** Batches under this many cards keep dealing until there are at least SMALL_BATCH_MIN_FINALISTS finalists. */
+export const SMALL_BATCH = 5;
+export const SMALL_BATCH_MIN_FINALISTS = 3;
+
 /**
  * Everyone finished a batch (docs/SPEC.md "Voting design" and "Session
  * lifecycle"). Claims swiping → deciding with a conditional update, so the
@@ -48,7 +52,15 @@ export type FinishResult =
  *   - deal-more: nothing qualified; the next batch is dealt and swiping resumes.
  *     If the area is out of places the session stays in deciding with no
  *     finalists, which the screen shows as the "Nothing matches" edge state.
+ *
+ * Small batches (docs/SPEC.md "Small batches"): with fewer than 5 cards a
+ * batch, one or two finalists is too thin a choice to put to the host, so
+ * the next batch is dealt instead, as long as there is one to deal. A
+ * unanimous yes still wins at once. This is a rule about dealing, so it
+ * lives here with the done-swiping and end-swiping routes' orchestration,
+ * not in lib/voting.ts.
  */
+
 export async function finishBatch(deps: FinishDeps, session: DealSession): Promise<FinishResult> {
   const { store, deal } = deps;
   if (session.status !== "swiping") return { ok: false, code: "not_swiping" };
@@ -61,6 +73,16 @@ export async function finishBatch(deps: FinishDeps, session: DealSession): Promi
   ]);
   const t = tally(memberIds, placeIds, swipes);
   const step = nextStep(t);
+
+  const thin =
+    step.kind === "confirm-one" ||
+    (step.kind === "host-choice" && step.finalists.length < SMALL_BATCH_MIN_FINALISTS);
+  if (session.batch_size < SMALL_BATCH && thin) {
+    await store.clearResult(session.id);
+    const dealt = await deal({ ...session, status: "deciding" });
+    if (dealt.ok) return { ok: true, step: "deal-more", finalists: [], status: "swiping", exhausted: false };
+    // Nothing left to deal: the host decides with the finalists there are.
+  }
   const result = (finalists: string[], winner: string | null = null, runnerUp: string | null = null): ResultRow => ({
     session_id: session.id,
     finalists,

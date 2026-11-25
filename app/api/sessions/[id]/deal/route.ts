@@ -9,11 +9,12 @@ import { adminFinishStore } from "@/lib/supabase/finish-store";
 import { viewerLocation, visitorUser } from "@/lib/supabase/visitor";
 
 /**
- * POST /api/sessions/[id]/deal: from deciding, the host deals the next 20
- * instead of going to the final round (lib/deal.ts): any remaining adds
- * first, then the stored Text Search's next page, then Nearby Search over
- * smaller circles once the pages run out, deduped against everything
- * already in the session. Each batch resets everyone's done flag and drops
+ * POST /api/sessions/[id]/deal: from deciding, the host deals the next
+ * batch instead of going to the final round (lib/deal.ts): the remaining
+ * adds and suggestions in the session's mix, suggestions from the pool of
+ * unused search results first, then the stored Text Search's next page,
+ * then Nearby Search over smaller circles once the pages run out, deduped
+ * against everything already in the session. Each batch resets everyone's done flag and drops
  * the finalists; the next tally finds new ones.
  */
 export async function POST(_request: Request, ctx: RouteContext<"/api/sessions/[id]/deal">) {
@@ -40,9 +41,9 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/sessions/[
       switch (result.code) {
         case "nothing_to_deal":
           return bad(
-            session.suggestions_on
-              ? "No more places near here. Widen the distance to keep going."
-              : "Every spot the group added has been dealt.",
+            session.deck_mix === "adds_only"
+              ? "Every spot the group added has been dealt."
+              : "No more places near here. Widen the distance to keep going.",
             409,
             "exhausted",
           );

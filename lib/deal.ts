@@ -1,32 +1,43 @@
 import type { Json, Tables, TablesInsert } from "@/lib/database.types";
 import {
   autoYes,
-  BATCH_SIZE,
   deckSearchBody,
   nearbyBody,
+  nothingToSwipe,
   pickSuggestions,
   readSearchState,
   roundRobinAdds,
+  splitBatch,
   subCircles,
   writeSearchBody,
   type AddRow,
   type DeckSearchBody,
   type NearbyBody,
   type SearchState,
-  type Suggestion,
 } from "@/lib/deck";
 import { searchArea, toRestaurantData, type GooglePlace } from "@/lib/places/place";
-import type { LatLng } from "@/lib/restaurants";
+import { readRestaurantData, type LatLng } from "@/lib/restaurants";
 import { DEFAULT_FILTERS, parseFilters } from "@/lib/session-filters";
 
 export type DealSession = Pick<
   Tables<"sessions">,
-  "id" | "status" | "batch" | "filters" | "center_lat" | "center_lng" | "suggestions_on" | "search_body" | "page_token"
+  | "id"
+  | "status"
+  | "batch"
+  | "batch_size"
+  | "deck_mix"
+  | "filters"
+  | "center_lat"
+  | "center_lng"
+  | "search_body"
+  | "page_token"
 >;
 
 export type RestaurantLite = Pick<Tables<"restaurants">, "place_id" | "source" | "batch">;
 export type RestaurantInsert = TablesInsert<"restaurants">;
 export type YesRow = { session_id: string; user_id: string; place_id: string };
+/** A suggestion kept from an earlier search and not dealt yet (a restaurants row with no batch). */
+export type PoolRow = { place_id: string; data: Json };
 
 export type BatchClaim = {
   status: Tables<"sessions">["status"];
@@ -39,6 +50,9 @@ export type BatchClaim = {
 export type DealStore = {
   listAdds(sessionId: string): Promise<AddRow[]>;
   listRestaurants(sessionId: string): Promise<RestaurantLite[]>;
+  listMemberIds(sessionId: string): Promise<string[]>;
+  /** The undealt suggestions (source suggested, no batch), oldest first. */
+  listPool(sessionId: string): Promise<PoolRow[]>;
   /** Moves the session on only if it is still where we read it; false when someone else got there first. */
   claimBatch(
     sessionId: string,
@@ -47,11 +61,16 @@ export type DealStore = {
   ): Promise<boolean>;
   /** Stamps the batch number on undealt adds. */
   dealAdds(sessionId: string, placeIds: string[], batch: number): Promise<void>;
+  /** New suggestion rows: dealt ones carry the batch, spare ones none (the pool). */
   insertSuggestions(rows: RestaurantInsert[]): Promise<void>;
+  /** Pooled suggestions dealt now: the batch number and the data with its photo. */
+  dealPool(sessionId: string, rows: PoolRow[], batch: number): Promise<void>;
   /** Each adder's automatic yes; rows that already exist are left alone. */
   recordYes(rows: YesRow[]): Promise<void>;
   /** A new batch: nobody is done with it yet. */
   resetDoneSwiping(sessionId: string): Promise<void>;
+  /** Members with nothing to swipe in this batch are done with it already. */
+  markDoneSwiping(sessionId: string, userIds: string[]): Promise<void>;
 };
 
 /** What dealing needs from Google (lib/places/google.ts, or vi.fn() in tests). */
@@ -77,7 +96,7 @@ export type DealResult =
       batch: number;
       adds: string[];
       suggestions: string[];
-      /** Suggestions are on but the area has nothing left to offer. */
+      /** The mix wants suggestions but the area has nothing left to offer. */
       exhausted: boolean;
     }
   | { ok: false; code: "not_lobby" | "not_swiping" | "nothing_to_deal" | "conflict" };
@@ -101,18 +120,32 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
   return results;
 }
 
+/** A suggestion that can be dealt: fresh from Google, or waiting in the pool. */
+type Candidate = { placeId: string; data: Json; pooled: boolean };
+
+function isRecord(value: Json): value is { [key: string]: Json | undefined } {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 /**
- * Deals one batch of up to 20 cards (docs/SPEC.md "Deck order"):
+ * Deals one batch of `sessions.batch_size` cards (docs/SPEC.md "Deck order"):
  *
- *   1. the group's undealt adds first, round-robin by member;
- *   2. once every add is dealt, suggestions fill the rest while they are on:
- *      the stored Text Search's next page (the first page on the first
- *      fill), then, past its pages, Nearby Search over smaller circles;
- *      everything filtered by distance and deduped against the session;
- *   3. one photo per new card, each adder's automatic yes on their dealt
- *      adds, the batch number stamped on, done flags reset, and the session
- *      moved to swiping with a conditional update so two taps deal once.
- *      Batch 1 comes from the lobby; later batches from deciding.
+ *   1. the split: the group's undealt adds, round-robin by member, get the
+ *      mix's share of the batch (100, 75, 50 or 25 percent, rounded) and
+ *      suggestions the rest; when either runs out the other fills in, and
+ *      "only our adds" never takes a suggestion;
+ *   2. suggestions come from the pool first: results of earlier searches
+ *      kept as restaurants rows with no batch. Google is called only when
+ *      the pool is short: the stored Text Search's next page (the first page
+ *      on the first fill), then, past its pages, Nearby Search over smaller
+ *      circles; everything filtered by distance and deduped against the
+ *      session. Results this batch doesn't use go into the pool;
+ *   3. one photo per suggestion dealt (never for the pool), each adder's
+ *      automatic yes on their dealt adds, the batch number stamped on, done
+ *      flags reset (a member whose batch is all their own adds is done
+ *      already), and the session moved to swiping with a conditional update
+ *      so two taps deal once. Batch 1 comes from the lobby; later batches
+ *      from deciding.
  *
  * Google is called before the claim, so a lost race costs at most one
  * search's worth of calls and never writes a second batch.
@@ -121,9 +154,11 @@ export async function dealBatch(deps: DealDeps, input: DealInput): Promise<DealR
   const { store, places } = deps;
   const { session, hostLocation, start } = input;
   if (start && session.status !== "lobby") return { ok: false, code: "not_lobby" };
-  // Later batches come from deciding: the host's "Deal 20 more", or the tally finding no finalists.
+  // Later batches come from deciding: the host's "Deal N more", or the tally finding no finalists.
   if (!start && session.status !== "deciding") return { ok: false, code: "not_swiping" };
   const batch = session.batch + 1;
+  const size = session.batch_size;
+  const mix = session.deck_mix;
 
   const [adds, restaurants] = await Promise.all([
     store.listAdds(session.id),
@@ -133,33 +168,42 @@ export async function dealBatch(deps: DealDeps, input: DealInput): Promise<DealR
   const known = new Set(restaurants.map((r) => r.place_id));
 
   const queue = roundRobinAdds(adds, dealt);
-  const batchAdds = queue.slice(0, BATCH_SIZE);
-  const addsLeft = queue.length - batchAdds.length;
-  const need = BATCH_SIZE - batchAdds.length;
+  // What the batch wants from suggestions if there turn out to be enough of them.
+  const need = splitBatch(size, mix, queue.length, Infinity).suggestions;
 
   const filters = parseFilters(session.filters) ?? DEFAULT_FILTERS;
   const area = searchArea(session, filters, hostLocation);
   let state: SearchState = readSearchState(session.search_body, session.page_token);
-  const suggestions: Suggestion[] = [];
+  const candidates: Candidate[] = [];
   let exhausted = false;
 
-  if (need > 0 && session.suggestions_on && addsLeft === 0) {
-    const exclude = new Set([...known, ...batchAdds]);
+  if (need > 0) {
+    for (const row of await store.listPool(session.id)) {
+      candidates.push({ placeId: row.place_id, data: row.data, pooled: true });
+    }
+
+    const exclude = new Set(known);
     // Every filter is judged on the results: Google applies only some of them
     // in a Text Search and none in a Nearby Search (lib/places/attributes.ts).
-    const rules = { center: area.center, maxMi: filters.distanceMi, exclude, filters };
+    // Everything that passes is kept, dealt now or pooled for a later batch.
+    const rules = { center: area.center, maxMi: filters.distanceMi, exclude, filters, limit: Infinity };
     const take = (found: GooglePlace[]) => {
-      for (const picked of pickSuggestions(found, { ...rules, limit: need - suggestions.length })) {
-        suggestions.push(picked);
+      for (const picked of pickSuggestions(found, rules)) {
+        candidates.push({
+          placeId: picked.placeId,
+          data: toRestaurantData(picked.place, null) as unknown as Json,
+          pooled: false,
+        });
         exclude.add(picked.placeId);
       }
     };
 
-    // Text Search: the first page, or the next one while Google has more. When
-    // the filters leave the batch short, one extra page (never a third per deal).
+    // Text Search, only while the pool is short: the first page, or the next
+    // one while Google has more. When the filters leave the batch short, one
+    // extra page (never a third per deal).
     const body = state.body ?? deckSearchBody(filters, area);
     for (let page = 0; page < 1 + EXTRA_PAGES; page += 1) {
-      if (!(page === 0 ? !state.body || state.pageToken : suggestions.length < need && state.pageToken)) break;
+      if (!(candidates.length < need && (!state.body || state.pageToken))) break;
       const result = await places.searchText(
         state.pageToken ? { ...body, pageToken: state.pageToken } : body,
       );
@@ -169,36 +213,38 @@ export async function dealBatch(deps: DealDeps, input: DealInput): Promise<DealR
 
     // Past the pages: smaller circles, every filter judged here since Nearby has none.
     const circles = subCircles(area);
-    while (suggestions.length < need && !state.pageToken && state.nearbyNext < circles.length) {
+    while (candidates.length < need && state.body && !state.pageToken && state.nearbyNext < circles.length) {
       const circle = circles[state.nearbyNext];
       state = { ...state, nearbyNext: state.nearbyNext + 1 };
       const result = await places.searchNearby(nearbyBody(circle));
       take(result.places ?? []);
     }
 
-    exhausted = suggestions.length === 0 && !state.pageToken && state.nearbyNext >= circles.length;
+    exhausted = candidates.length === 0 && !state.pageToken && state.nearbyNext >= circles.length;
   }
 
-  if (batchAdds.length + suggestions.length === 0) return { ok: false, code: "nothing_to_deal" };
+  const split = splitBatch(size, mix, queue.length, candidates.length);
+  const batchAdds = queue.slice(0, split.adds);
+  const picked = candidates.slice(0, split.suggestions);
+  const spare = candidates.slice(split.suggestions).filter((c) => !c.pooled);
+  if (batchAdds.length + picked.length === 0) return { ok: false, code: "nothing_to_deal" };
 
-  // One photo per new card; a failed photo is a blank tile, never a lost card.
-  const rows = await mapLimit(suggestions, PHOTO_CONCURRENCY, async (suggestion): Promise<RestaurantInsert> => {
-    let photoUri: string | null = null;
-    const photoName = suggestion.place.photos?.[0]?.name;
-    if (photoName) {
-      try {
-        photoUri = await places.photoUri(photoName);
-      } catch (error) {
-        console.warn("suggestion photo failed", suggestion.placeId, error);
-      }
+  // One photo per card dealt; a failed photo is a blank tile, never a lost card.
+  // The pool keeps only the photo's name, so a card nobody sees costs nothing.
+  const withPhotos = await mapLimit(picked, PHOTO_CONCURRENCY, async (candidate): Promise<Candidate> => {
+    const photo = readRestaurantData(candidate.data)?.details?.photos?.[0];
+    if (!photo || !isRecord(candidate.data)) return candidate;
+    try {
+      const photoUri = await places.photoUri(photo.name);
+      if (!photoUri) return candidate;
+      const data: { [key: string]: Json | undefined } = { ...candidate.data, photoUri };
+      // Attribution belongs with the photo it credits.
+      if (photo.attributions?.length) data.photoAttributions = photo.attributions as unknown as Json;
+      return { ...candidate, data };
+    } catch (error) {
+      console.warn("suggestion photo failed", candidate.placeId, error);
+      return candidate;
     }
-    return {
-      session_id: session.id,
-      place_id: suggestion.placeId,
-      source: "suggested",
-      batch,
-      data: toRestaurantData(suggestion.place, photoUri),
-    };
   });
 
   const claimed = await store.claimBatch(
@@ -208,11 +254,37 @@ export async function dealBatch(deps: DealDeps, input: DealInput): Promise<DealR
   );
   if (!claimed) return { ok: false, code: "conflict" };
 
-  if (rows.length) await store.insertSuggestions(rows);
+  // New rows keep Google's order (confirmed matches first) through created_at:
+  // the pool is dealt oldest first, and a single insert would stamp them all alike.
+  const now = Date.now();
+  const dealtFresh = withPhotos.filter((c) => !c.pooled);
+  const fresh = [...dealtFresh, ...spare].map(
+    (candidate, index): RestaurantInsert => ({
+      session_id: session.id,
+      place_id: candidate.placeId,
+      source: "suggested",
+      batch: index < dealtFresh.length ? batch : null,
+      data: candidate.data,
+      created_at: new Date(now + index).toISOString(),
+    }),
+  );
+  const fromPool = withPhotos.filter((c) => c.pooled).map((c) => ({ place_id: c.placeId, data: c.data }));
+  if (fresh.length) await store.insertSuggestions(fresh);
+  if (fromPool.length) await store.dealPool(session.id, fromPool, batch);
   if (batchAdds.length) await store.dealAdds(session.id, batchAdds, batch);
   const yes = autoYes(batchAdds, adds).map((row) => ({ session_id: session.id, ...row }));
   if (yes.length) await store.recordYes(yes);
   await store.resetDoneSwiping(session.id);
 
-  return { ok: true, batch, adds: batchAdds, suggestions: rows.map((row) => row.place_id), exhausted };
+  // A member whose batch is only their own adds has nothing to swipe. Someone
+  // still has to finish the batch from their phone for the tally to run, so
+  // this never marks the whole group.
+  const suggestions = withPhotos.map((c) => c.placeId);
+  const idle = nothingToSwipe([...batchAdds, ...suggestions], adds);
+  if (idle.length) {
+    const memberIds = await store.listMemberIds(session.id);
+    if (memberIds.some((id) => !idle.includes(id))) await store.markDoneSwiping(session.id, idle);
+  }
+
+  return { ok: true, batch, adds: batchAdds, suggestions, exhausted };
 }

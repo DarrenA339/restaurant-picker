@@ -9,7 +9,8 @@ export type SessionView = Pick<
   | "status"
   | "host_id"
   | "voting_method"
-  | "suggestions_on"
+  | "batch_size"
+  | "deck_mix"
   | "filters"
   | "center_lat"
   | "center_lng"
@@ -17,13 +18,13 @@ export type SessionView = Pick<
 >;
 
 export const SESSION_VIEW_COLUMNS =
-  "id, code, name, status, host_id, voting_method, suggestions_on, filters, center_lat, center_lng, batch";
+  "id, code, name, status, host_id, voting_method, batch_size, deck_mix, filters, center_lat, center_lng, batch";
 
 /** The member columns everyone in the session may see. */
 export type MemberView = Pick<
   Tables<"members">,
-  "user_id" | "display_name" | "color" | "lat" | "lng" | "vetoes_left" | "done_swiping" | "done_ranking"
+  "user_id" | "display_name" | "color" | "lat" | "lng" | "vetoes_left" | "ready" | "done_swiping" | "done_ranking"
 >;
 
 export const MEMBER_VIEW_COLUMNS =
-  "user_id, display_name, color, lat, lng, vetoes_left, done_swiping, done_ranking";
+  "user_id, display_name, color, lat, lng, vetoes_left, ready, done_swiping, done_ranking";
